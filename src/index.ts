@@ -1,30 +1,18 @@
 import "module-alias/register";
-import "reflect-metadata";
-import { createConnection, getConnectionOptions } from "typeorm";
-import express from "express";
-import { ApolloServer } from "apollo-server-express";
-import { buildSchema } from "type-graphql";
-import { SourceResolver, TransactionResolver } from "@resolvers";
+import startServer from "./server";
 
-(async () => {
-  const app = express();
+import yargs from "yargs";
 
-  const options = await getConnectionOptions(
-    process.env.NODE_ENV || "development"
-  );
-  await createConnection({ ...options, name: "default" });
+console.dir(process.argv.slice(2));
 
-  const apolloServer = new ApolloServer({
-    schema: await buildSchema({
-      resolvers: [SourceResolver, TransactionResolver],
-      validate: true,
-    }),
-    context: ({ req, res }) => ({ req, res }),
-  });
-
-  apolloServer.applyMiddleware({ app, cors: false });
-  const port = process.env.PORT || 4000;
-  app.listen(port, () => {
-    console.log(`server started at http://localhost:${port}/graphql`);
-  });
-})();
+yargs(process.argv.slice(2))
+  .command(
+    "start-server",
+    "Starts the graphQL and Web server",
+    (_) => {},
+    (_) => {
+      startServer();
+    }
+  )
+  .demandCommand(1)
+  .help().argv;
