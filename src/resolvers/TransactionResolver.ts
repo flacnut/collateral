@@ -1,4 +1,4 @@
-import { Transaction } from "../entity/Transaction";
+import { Transaction } from "@entities";
 import {
   Arg,
   Field,

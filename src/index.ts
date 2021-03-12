@@ -1,10 +1,10 @@
+import "module-alias/register";
 import "reflect-metadata";
 import { createConnection, getConnectionOptions } from "typeorm";
 import express from "express";
 import { ApolloServer } from "apollo-server-express";
 import { buildSchema } from "type-graphql";
-import { SourceResolver } from "./resolvers/SourceResolver";
-import { TransactionResolver } from "./resolvers/TransactionResolver";
+import { SourceResolver, TransactionResolver } from "@resolvers";
 
 (async () => {
   const app = express();
