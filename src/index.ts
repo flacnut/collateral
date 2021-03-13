@@ -2,7 +2,8 @@ import "module-alias/register";
 import yargs from "yargs";
 
 import startServer from "./server";
-import { BasicCSVParser } from "./cli/BasicCSVParser";
+import { BasicCSVParser } from "./cli/parser/BasicCSVParser";
+import { IngestUtils } from "./cli/utils/IngestUtils";
 
 yargs(process.argv.slice(2))
   .scriptName("collateral-cli")
@@ -61,8 +62,12 @@ yargs(process.argv.slice(2))
         amount: argv.amountColumn,
         description: argv.descColumn,
       });
-      const transactions = await parser.parse(argv.file);
-      console.dir(transactions);
+      try {
+        const transactions = await parser.parse(argv.file);
+        await IngestUtils.storeTransactions(argv.file, transactions); //console.dir(transactions);
+      } catch (err) {
+        console.error(err);
+      }
     }
   )
   .demandCommand(1)

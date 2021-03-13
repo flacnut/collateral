@@ -38,8 +38,8 @@ export class TransactionResolver {
 
   @Query(() => [Transaction])
   async transactions() {
-    var Transactions = await Transaction.find();
-    console.dir(Transactions);
-    return Transactions;
+    var transactions = await Transaction.find();
+    console.dir(transactions.map(async (t) => await t.source));
+    return transactions;
   }
 }

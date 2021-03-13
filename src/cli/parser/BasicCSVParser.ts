@@ -1,7 +1,7 @@
 import fs from "fs";
 import csv from "csv-parser";
 
-type Transaction = {
+export type ParsedTransaction = {
   date: Date;
   description: string;
   amount_cents: number;
@@ -14,7 +14,7 @@ export type CSVFormat = {
 };
 
 export interface TransactionParser {
-  parse(fileName: string): Promise<Array<Transaction>>;
+  parse(fileName: string): Promise<Array<ParsedTransaction>>;
 }
 
 export class BasicCSVParser implements TransactionParser {
@@ -34,10 +34,10 @@ export class BasicCSVParser implements TransactionParser {
     });
   }
 
-  public async parse(fileName: string): Promise<Array<Transaction>> {
+  public async parse(fileName: string): Promise<Array<ParsedTransaction>> {
     return new Promise((resolve, reject) => {
       const rows: Array<{ [key: string]: string }> = [];
-      let transactions: Transaction[] = [];
+      let transactions: ParsedTransaction[] = [];
       try {
         fs.createReadStream(fileName)
           .pipe(csv())

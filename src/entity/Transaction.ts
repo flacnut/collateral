@@ -27,7 +27,7 @@ export class Transaction extends BaseEntity {
   originalDescription: string;
 
   @Field()
-  @Column()
+  @Column({ nullable: true })
   friendlyDescription: string;
 
   @Field(() => Int)
@@ -37,9 +37,9 @@ export class Transaction extends BaseEntity {
   @Field(() => [Tag])
   @ManyToMany(() => Tag)
   @JoinTable()
-  tags: Tag[];
+  tags: Promise<Tag[]>;
 
   @Field(() => Source)
-  @ManyToOne(() => Source, (source) => source.transactions)
-  source: Source;
+  @ManyToOne(() => Source, (source) => source.transactions, { lazy: true })
+  source: Promise<Source>;
 }
