@@ -4,6 +4,8 @@ import yargs from "yargs";
 import startServer from "./server";
 import { BasicCSVParser } from "./cli/parser/BasicCSVParser";
 import { IngestUtils } from "./cli/utils/IngestUtils";
+import { readdirSync } from "fs";
+import path from "path";
 
 yargs(process.argv.slice(2))
   .scriptName("collateral-cli")
@@ -27,7 +29,9 @@ yargs(process.argv.slice(2))
         .option("f", {
           alias: "file",
           description: "The file to be imported",
-          demandOption: true,
+        })
+        .option("dir", {
+          description: "The directory where files can be found.",
         })
         .option("p", {
           alias: "parser",
@@ -42,8 +46,12 @@ yargs(process.argv.slice(2))
         })
         .option("a", {
           alias: "amount-column",
-          description: "The column heading for the amount value.",
+          description: "The column heading for the amount or debit value.",
           demandOption: true,
+        })
+        .option("c", {
+          alias: "credit-column",
+          description: "The column heading for the credit value.",
         })
         .option("desc", {
           alias: "desc-column",
@@ -54,19 +62,45 @@ yargs(process.argv.slice(2))
     async (argv: {
       dateColumn: string;
       amountColumn: string;
+      creditColumn: string;
       descColumn: string;
-      file: string;
+      file?: string;
+      dir?: string;
     }) => {
       const parser = new BasicCSVParser({
         date: argv.dateColumn,
         amount: argv.amountColumn,
+        credit: argv.creditColumn,
         description: argv.descColumn,
       });
-      try {
-        const transactions = await parser.parse(argv.file);
-        await IngestUtils.storeTransactions(argv.file, transactions); //console.dir(transactions);
-      } catch (err) {
-        console.error(err);
+
+      const { file, dir } = argv;
+      const ingestUtils = new IngestUtils();
+
+      if (dir != null) {
+        const files = readdirSync(dir);
+        console.dir(files);
+        const parseFuncs: Array<() => Promise<void>> = files.map(
+          (f: string) => {
+            return async () => {
+              console.dir(`>>> Insert ${path.join(dir, f)}`);
+              const trans = await parser.parse(path.join(dir, f));
+              await ingestUtils.storeTransactions(path.join(dir, f), trans);
+            };
+          }
+        );
+
+        return await parseFuncs.reduce(
+          (prev, cur) => prev.then(cur),
+          Promise.resolve()
+        );
+      } else if (file != null) {
+        try {
+          const transactions = await parser.parse(file);
+          await ingestUtils.storeTransactions(file, transactions);
+        } catch (err) {
+          console.error(err);
+        }
       }
     }
   )

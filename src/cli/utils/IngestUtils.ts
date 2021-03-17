@@ -1,16 +1,24 @@
 import { ParsedTransaction } from "../parser/BasicCSVParser";
 import { Transaction, Source, Tag } from "@entities";
-import { createConnection, getConnectionOptions } from "typeorm";
+import { createConnection, getConnectionOptions, Connection } from "typeorm";
 
 export class IngestUtils {
-  public static async storeTransactions(
-    fileName: string,
-    transactions: ParsedTransaction[]
-  ): Promise<void> {
+  private _connection: Connection | null;
+
+  public async getConnection() {
     const options = await getConnectionOptions(
       process.env.NODE_ENV || "development"
     );
-    await createConnection({ ...options, name: "default" });
+    this._connection = await createConnection({ ...options, name: "default" });
+  }
+
+  public async storeTransactions(
+    fileName: string,
+    transactions: ParsedTransaction[]
+  ): Promise<void> {
+    if (!this._connection) {
+      await this.getConnection();
+    }
 
     const source = await Source.create({
       fileName,
@@ -23,7 +31,7 @@ export class IngestUtils {
     transactions.forEach((t) => {
       const yearTag = `Year:${t.date.getFullYear()}`;
       if (
-        tagNames.indexOf(yearTag) === -1 ||
+        tagNames.indexOf(yearTag) === -1 &&
         newtagNamesNeeded.indexOf(yearTag) === -1
       ) {
         newtagNamesNeeded.push(yearTag);
@@ -31,15 +39,19 @@ export class IngestUtils {
 
       const monthTag = `Month:${t.date.getMonth()}`;
       if (
-        tagNames.indexOf(monthTag) === -1 ||
+        tagNames.indexOf(monthTag) === -1 &&
         newtagNamesNeeded.indexOf(monthTag) === -1
       ) {
         newtagNamesNeeded.push(monthTag);
       }
     });
 
+    console.dir(newtagNamesNeeded);
+
     await Promise.all(
-      newtagNamesNeeded.map((tagName) => Tag.create({ tag: tagName }).save())
+      newtagNamesNeeded.map(
+        async (tagName) => await Tag.create({ tag: tagName }).save()
+      )
     );
 
     const tags = await Tag.find();

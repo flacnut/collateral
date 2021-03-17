@@ -10,6 +10,7 @@ export type ParsedTransaction = {
 export type CSVFormat = {
   date: string;
   amount: string;
+  credit: string;
   description: string;
 };
 
@@ -28,7 +29,9 @@ export class BasicCSVParser implements TransactionParser {
     return rows.map((row) => {
       return {
         date: new Date(Date.parse(row[this._format.date])),
-        amount_cents: Math.floor(Number(row[this._format.amount]) * 100),
+        amount_cents: row[this._format.amount]
+          ? Math.floor(Number(row[this._format.amount]) * 100)
+          : Math.floor(Number(row[this._format.credit]) * 100),
         description: row[this._format.description],
       };
     });
