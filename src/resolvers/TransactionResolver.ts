@@ -39,7 +39,7 @@ export class TransactionResolver {
 
   @Query(() => [Transaction])
   async transactions() {
-    var transactions = await Transaction.find({ id: 801 });
+    var transactions = await Transaction.find();
     return transactions;
   }
 

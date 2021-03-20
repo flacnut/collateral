@@ -1,4 +1,5 @@
 import { SourceResolver } from "./SourceResolver";
 import { TransactionResolver } from "./TransactionResolver";
+import { TagResolver } from "./TagResolver";
 
-export { SourceResolver, TransactionResolver };
+export { SourceResolver, TagResolver, TransactionResolver };
