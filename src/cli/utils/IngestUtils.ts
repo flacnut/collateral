@@ -37,7 +37,8 @@ export class IngestUtils {
         newtagNamesNeeded.push(yearTag);
       }
 
-      const monthTag = `Month:${t.date.getMonth()}`;
+      // Jan = 0 ??
+      const monthTag = `Month:${t.date.getMonth() + 1}`;
       if (
         tagNames.indexOf(monthTag) === -1 &&
         newtagNamesNeeded.indexOf(monthTag) === -1
@@ -45,8 +46,6 @@ export class IngestUtils {
         newtagNamesNeeded.push(monthTag);
       }
     });
-
-    console.dir(newtagNamesNeeded);
 
     await Promise.all(
       newtagNamesNeeded.map(

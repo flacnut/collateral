@@ -79,11 +79,9 @@ yargs(process.argv.slice(2))
 
       if (dir != null) {
         const files = readdirSync(dir);
-        console.dir(files);
         const parseFuncs: Array<() => Promise<void>> = files.map(
           (f: string) => {
             return async () => {
-              console.dir(`>>> Insert ${path.join(dir, f)}`);
               const trans = await parser.parse(path.join(dir, f));
               await ingestUtils.storeTransactions(path.join(dir, f), trans);
             };
