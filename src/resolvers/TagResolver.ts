@@ -1,5 +1,13 @@
 import { Tag } from "@entities";
-import { Arg, Field, Mutation, InputType, Query, Resolver } from "type-graphql";
+import {
+  Arg,
+  Field,
+  Int,
+  Mutation,
+  InputType,
+  Query,
+  Resolver,
+} from "type-graphql";
 
 @InputType()
 class TagCreateInput {
@@ -15,6 +23,16 @@ export class TagResolver {
     options: TagCreateInput
   ) {
     return await Tag.create({ tag: options.tag }).save();
+  }
+
+  @Mutation(() => Boolean)
+  async deleteTag(@Arg("id", () => Int) id: number) {
+    const tagToRemove = await Tag.find({ id });
+
+    /* TODO: Handle cascade deletes */
+
+    await Tag.remove(tagToRemove);
+    return true;
   }
 
   @Query(() => [Tag])

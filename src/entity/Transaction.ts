@@ -35,8 +35,8 @@ export class Transaction extends BaseEntity {
   amountCents: number;
 
   @Field(() => [Tag])
-  @ManyToMany(() => Tag)
   @JoinTable()
+  @ManyToMany(() => Tag, { onDelete: "NO ACTION" })
   tags: Promise<Tag[]>;
 
   @Field(() => Source)
