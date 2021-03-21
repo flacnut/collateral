@@ -1,4 +1,5 @@
 import { Transaction, Tag } from "@entities";
+import { getManager, In } from "typeorm";
 import {
   Arg,
   Field,
@@ -7,8 +8,20 @@ import {
   InputType,
   Query,
   Resolver,
+  registerEnumType,
+  ObjectType,
 } from "type-graphql";
-import { getManager, In } from "typeorm";
+
+enum GroupByOption {
+  originalDescription = "originalDescription",
+  friendlyDescription = "friendlyDescription",
+  Tag = "Tag",
+}
+
+registerEnumType(GroupByOption, {
+  name: "GroupByOption",
+  description: "Basic group-by options for transactions", // this one is optional
+});
 
 @InputType()
 class TransactionUpdateInput {
@@ -25,6 +38,27 @@ class TransactionUpdateInput {
   amountCents?: number;
 }
 
+@ObjectType()
+export class TransactionGroup {
+  @Field(() => String, { nullable: true })
+  originalDescription: string | null;
+
+  @Field(() => String, { nullable: true })
+  friendlyDescription: string | null;
+
+  @Field(() => String, { nullable: true })
+  tag: string | null;
+
+  @Field(() => Int)
+  amountCentsSum: number;
+
+  @Field(() => Int)
+  transactionCount: number;
+
+  @Field(() => [Int])
+  transactionIds: Array<number>;
+}
+
 @Resolver()
 export class TransactionResolver {
   @Mutation(() => Boolean)
@@ -39,8 +73,50 @@ export class TransactionResolver {
 
   @Query(() => [Transaction])
   async transactions() {
-    var transactions = await Transaction.find();
-    return transactions;
+    return await Transaction.find();
+  }
+
+  @Query(() => [TransactionGroup])
+  async groupedTransactions(
+    @Arg("groupBy", () => GroupByOption) groupBy: GroupByOption,
+    @Arg("tag", () => String, { nullable: true }) tagName: String | null
+  ) {
+    let raw = [];
+    if (
+      groupBy === GroupByOption.friendlyDescription ||
+      groupBy === GroupByOption.originalDescription
+    ) {
+      raw = await Transaction.createQueryBuilder("tran")
+        .select(groupBy.toString(), groupBy.toString())
+        .addSelect("COUNT(*)", "transactionCount")
+        .addSelect("SUM(tran.amountCents)", "amountCentsSum")
+        .addSelect("group_concat(id)", "_transactionIds")
+        .groupBy(groupBy.toString())
+        .getRawMany();
+    }
+
+    if (groupBy === GroupByOption.Tag) {
+      if (!tagName) {
+        throw new Error("tag required when grouping by tag");
+      }
+
+      raw = await Transaction.createQueryBuilder("tran")
+        .innerJoinAndSelect("tran.tags", "tag")
+        .select("tag.tag", "tag")
+        .addSelect("COUNT(*)", "transactionCount")
+        .addSelect("SUM(tran.amountCents)", "amountCentsSum")
+        .addSelect("group_concat(tran.id)", "_transactionIds")
+        .where("tag.tag = :tagName", { tagName })
+        .groupBy("tag.tag")
+        .getRawMany();
+    }
+
+    return raw.map((transactionGroup) => {
+      return {
+        ...transactionGroup,
+        transactionIds: transactionGroup._transactionIds.split(","),
+      };
+    });
   }
 
   @Query(() => [Transaction])
