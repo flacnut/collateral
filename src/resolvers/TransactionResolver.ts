@@ -141,6 +141,8 @@ export class TransactionResolver {
         ) 
         WHERE tagIds = "${tagIds}"`);
 
-    return Transaction.findByIds(transactionish.map((t) => t.transactionId));
+    return await Transaction.findByIds(
+      transactionish.map((t) => t.transactionId)
+    );
   }
 }
