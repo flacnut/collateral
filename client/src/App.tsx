@@ -1,25 +1,12 @@
 import React from "react";
+import { useQuery } from "@apollo/client";
 import { SelectableTransactionGrid } from "./features/grids";
+import Queries from "./graphql/Queries";
+//import { getAllTransactions } from "./graphql/types/getAllTransactions";
 import "./App.css";
 
-import { useQuery, gql } from "@apollo/client";
-
-const TRANSACTIONS = gql`
-  query {
-    transactions {
-      id
-      date
-      amountCents
-      originalDescription
-      tags {
-        tag
-      }
-    }
-  }
-`;
-
 function App() {
-  const { loading, error, data } = useQuery(TRANSACTIONS);
+  const { loading, error, data } = useQuery(Queries.GET_ALL_TRANSACTIONS);
 
   return (
     <div className="App">
@@ -36,11 +23,12 @@ function App() {
             data?.transactions
               ? data.transactions.map((t: any) => {
                   return {
-                    ...t,
+                    id: t.id,
+                    date: t.date ?? "",
+                    originalDescription: t.originalDescription,
+                    friendlyDescription: t.friendlyDescription,
                     amount: t.amountCents / 100,
-                    tags: t.tags
-                      .map((tg: { tag: string }) => tg.tag)
-                      .join(", "),
+                    tags: t.tags.map((tg: any) => tg.tag).join(", "),
                   };
                 })
               : []
