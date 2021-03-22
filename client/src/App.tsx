@@ -1,19 +1,16 @@
 import React from "react";
-import { TransactionGrid } from "./features/grids/TransactionGrid";
+import { SelectableTransactionGrid } from "./features/grids";
 import "./App.css";
 
 import { useQuery, gql } from "@apollo/client";
 
 const TRANSACTIONS = gql`
   query {
-    transactionsByTags(tags: ["Month:3", "Year:2020"]) {
+    transactions {
       id
       date
       amountCents
       originalDescription
-      source {
-        fileName
-      }
       tags {
         tag
       }
@@ -24,15 +21,32 @@ const TRANSACTIONS = gql`
 function App() {
   const { loading, error, data } = useQuery(TRANSACTIONS);
 
-  console.dir(data);
-
   return (
     <div className="App">
-      <TransactionGrid
-        rows={data?.transactionsByTags?.map((t: any) => {
-          return { ...t, amount: t.amountCents / 100 };
-        })}
-      />
+      {loading ? (
+        <div>Loading....</div>
+      ) : error ? (
+        <>
+          <pre>{error.message}</pre>
+          <pre>{error.stack}</pre>
+        </>
+      ) : (
+        <SelectableTransactionGrid
+          rows={
+            data?.transactions
+              ? data.transactions.map((t: any) => {
+                  return {
+                    ...t,
+                    amount: t.amountCents / 100,
+                    tags: t.tags
+                      .map((tg: { tag: string }) => tg.tag)
+                      .join(", "),
+                  };
+                })
+              : []
+          }
+        />
+      )}
     </div>
   );
 }
