@@ -18,7 +18,7 @@ export class Transaction extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => String)
   @Column("date")
   date: Date;
 
@@ -26,8 +26,8 @@ export class Transaction extends BaseEntity {
   @Column()
   originalDescription: string;
 
-  @Field()
-  @Column({ nullable: true })
+  @Field(() => String)
+  @Column()
   friendlyDescription: string;
 
   @Field(() => Int)

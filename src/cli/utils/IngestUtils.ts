@@ -58,8 +58,9 @@ export class IngestUtils {
     await Promise.all(
       transactions.map(async (t: ParsedTransaction) => {
         let tt = await Transaction.create({
-          date: t.date,
+          date: t.date ?? "",
           originalDescription: t.description,
+          friendlyDescription: "",
           amountCents: t.amount_cents,
         }).save();
         tt.source = Promise.resolve(source);
@@ -68,7 +69,7 @@ export class IngestUtils {
           (tag) => tag.tag === `Year:${t.date.getFullYear()}`
         );
         let monthTag = tags.find(
-          (tag) => tag.tag === `Month:${t.date.getMonth()}`
+          (tag) => tag.tag === `Month:${t.date.getMonth() + 1}`
         );
         tt.tags = Promise.resolve([yearTag as Tag, monthTag as Tag]);
 
