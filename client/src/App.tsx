@@ -1,15 +1,40 @@
 import React from "react";
 import { useQuery } from "@apollo/client";
 import { SelectableTransactionGrid } from "./features/grids";
+import TagAutoComplete from "./features/TagAutoComplete";
 import Queries from "./graphql/Queries";
-//import { getAllTransactions } from "./graphql/types/getAllTransactions";
+import { getAllTransactions } from "./graphql/types/getAllTransactions";
+import { getAllTags } from "./graphql/types/getAllTags";
 import "./App.css";
 
+function Tags() {
+  const { loading, error, data } = useQuery<getAllTags>(Queries.GET_ALL_TAGS);
+  return (
+    <div>
+      <TagAutoComplete
+        tags={
+          data?.tags
+            ? data.tags.map((t) => {
+                return {
+                  id: t.id,
+                  tag: t.tag,
+                };
+              })
+            : []
+        }
+      />
+    </div>
+  );
+}
+
 function App() {
-  const { loading, error, data } = useQuery(Queries.GET_ALL_TRANSACTIONS);
+  const { loading, error, data } = useQuery<getAllTransactions>(
+    Queries.GET_ALL_TRANSACTIONS
+  );
 
   return (
     <div className="App">
+      {<Tags />}
       {loading ? (
         <div>Loading....</div>
       ) : error ? (
