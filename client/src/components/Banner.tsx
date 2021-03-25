@@ -75,7 +75,9 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-export default function Banner() {
+export default function Banner(props: {
+  setSelectedView: (view: string) => void;
+}) {
   const classes = useStyles();
 
   return (
@@ -104,17 +106,29 @@ export default function Banner() {
           </div>
           <div className={classes.grow} />
           <div className={classes.sectionDesktop}>
-            <IconButton aria-label="Component Library" color="inherit">
+            <IconButton
+              aria-label="Component Library"
+              color="inherit"
+              onClick={() => props.setSelectedView("Library")}
+            >
               <Badge badgeContent={0} color="secondary">
                 <MenuBook />
               </Badge>
             </IconButton>
-            <IconButton aria-label="Charts" color="inherit">
+            <IconButton
+              aria-label="Charts"
+              color="inherit"
+              onClick={() => props.setSelectedView("Charts")}
+            >
               <Badge badgeContent={0} color="secondary">
                 <EqualizerIcon />
               </Badge>
             </IconButton>
-            <IconButton aria-label="Transactions" color="inherit">
+            <IconButton
+              aria-label="Transactions"
+              color="inherit"
+              onClick={() => props.setSelectedView("Transactions")}
+            >
               <Badge badgeContent={0} color="secondary">
                 <ReceiptIcon />
               </Badge>
