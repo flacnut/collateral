@@ -5,6 +5,7 @@ import TagMultiSelector from "./features/input/TagMultiSelector";
 import Queries from "./graphql/Queries";
 import { getAllTransactions } from "./graphql/types/getAllTransactions";
 import { getAllTags } from "./graphql/types/getAllTags";
+import Banner from "./features/Banner";
 import "./App.css";
 
 function Tags() {
@@ -34,6 +35,7 @@ function App() {
 
   return (
     <div className="App">
+      <Banner />
       {<Tags />}
       {loading ? (
         <div>Loading....</div>
