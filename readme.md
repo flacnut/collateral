@@ -1,6 +1,6 @@
 # Collateral
 
-An improvement on Mint.com for transaction analysis.
+An improvement on Mint.com for transaction analysis, I am building this while on paternity leave, in the brief minutes I get while being full time Papa.
 
 Proposed:
 
