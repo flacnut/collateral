@@ -12,28 +12,6 @@ const client = new ApolloClient({
   cache: new InMemoryCache(),
 });
 
-/*
-client
-  .query({
-    query: gql`
-      query {
-        transactionsByTags(tags: ["Month:3", "Year:2020"]) {
-          id
-          amountCents
-          originalDescription
-          source {
-            fileName
-          }
-          tags {
-            tag
-          }
-        }
-      }
-    `,
-  })
-  .then(console.dir)
-  .catch(console.dir); */
-
 ReactDOM.render(
   <React.StrictMode>
     <ApolloProvider client={client}>

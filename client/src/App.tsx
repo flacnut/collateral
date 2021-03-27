@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import Banner from "./components/Banner";
-import "./App.css";
 import Library from "./views/Library";
 import Transactions from "./views/Transactions";
 
