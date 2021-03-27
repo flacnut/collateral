@@ -82,12 +82,12 @@ export default function Banner(props: {
 
   return (
     <div className={classes.grow}>
-      <AppBar position="static">
+      <AppBar position="fixed">
         <Toolbar>
           <Icon className={classes.logo}>
             <LocalAtm />
           </Icon>
-          <Typography className={classes.title} variant="h6" noWrap>
+          <Typography className={classes.title} variant="h5" noWrap>
             Collateral
           </Typography>
           <div className={classes.grow} />

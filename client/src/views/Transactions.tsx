@@ -5,13 +5,40 @@ import TagMultiSelector from "../components/input/TagMultiSelector";
 import Queries from "../graphql/Queries";
 import { getAllTransactions } from "../graphql/types/getAllTransactions";
 import { getAllTags } from "../graphql/types/getAllTags";
+import Grid from "@material-ui/core/Grid";
+import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
+
+const useStyles = makeStyles((theme: Theme) =>
+  createStyles({
+    root: {
+      flexGrow: 1,
+    },
+    paper: {
+      padding: theme.spacing(2),
+      textAlign: "center",
+      color: theme.palette.text.secondary,
+    },
+    body: {
+      padding: 30,
+      paddingTop: 75,
+    },
+  })
+);
 
 export default function Transactions() {
+  const classes = useStyles();
+
   return (
-    <div>
-      <TagsFilter />
-      <TransactionsGrid />
-    </div>
+    <Grid container className={classes.body}>
+      <Grid item container xs={12} direction="column">
+        <Grid item>
+          <TagsFilter />
+        </Grid>
+        <Grid item>
+          <TransactionsGrid />
+        </Grid>
+      </Grid>
+    </Grid>
   );
 }
 

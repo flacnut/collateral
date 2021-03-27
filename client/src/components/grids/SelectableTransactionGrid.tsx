@@ -213,7 +213,7 @@ const EnhancedTableToolbar = (props: EnhancedTableToolbarProps) => {
           id="tableTitle"
           component="div"
         >
-          Nutrition
+          Transactions
         </Typography>
       )}
       {numSelected > 0 ? (
@@ -269,7 +269,7 @@ export function SelectableTransactionGrid(props: Props) {
   const [orderBy, setOrderBy] = React.useState<keyof TransactionRow>("amount");
   const [selected, setSelected] = React.useState<number[]>([]);
   const [page, setPage] = React.useState(0);
-  const [rowsPerPage, setRowsPerPage] = React.useState(500);
+  const [rowsPerPage, setRowsPerPage] = React.useState(100);
 
   const handleRequestSort = (
     event: React.MouseEvent<unknown>,

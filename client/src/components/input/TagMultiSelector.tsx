@@ -67,7 +67,7 @@ function TagMultiSelector(props: Props) {
         <TextField
           {...params}
           variant="outlined"
-          label="filterSelectedOptions"
+          label="Tags Filter"
           placeholder="Favorites"
         />
       )}
