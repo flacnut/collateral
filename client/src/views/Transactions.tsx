@@ -6,6 +6,7 @@ import Queries from "../graphql/Queries";
 import { getAllTransactions } from "../graphql/types/getAllTransactions";
 import { getAllTags } from "../graphql/types/getAllTags";
 import Grid from "@material-ui/core/Grid";
+import TextField from "@material-ui/core/TextField";
 import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -38,9 +39,16 @@ export default function Transactions() {
 
   return (
     <Grid container className={classes.body}>
-      <Grid item container xs={12} direction="column">
+      <Grid item container xs={12} direction="column" spacing={2}>
         <Grid item>
           <TagsFilter onChange={(tf: Tag[]) => setTagFilters(tf)} />
+        </Grid>
+        <Grid item>
+          <TextField
+            label="Description"
+            variant="outlined"
+            onChange={(event) => setDescriptionFilters(event.target.value)}
+          />
         </Grid>
         <Grid item>
           <TransactionsGrid
@@ -94,6 +102,11 @@ function TransactionsGrid(props: {
       rows={
         data?.transactions
           ? data.transactions
+              .filter((t) => {
+                return (
+                  t.originalDescription.indexOf(props.descriptionFilter) !== -1
+                );
+              })
               .filter((t) => {
                 return props.tagFilters.every(
                   (tf) => t.tags.map((tg) => tg.tag).indexOf(tf.tag) >= 0
