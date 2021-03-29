@@ -1,5 +1,5 @@
 import { Transaction, Tag } from "@entities";
-import { getManager, In } from "typeorm";
+import { getManager, getConnection, In } from "typeorm";
 import {
   Arg,
   Field,
@@ -38,6 +38,15 @@ class TransactionUpdateInput {
   amountCents?: number;
 }
 
+@InputType()
+class TransactionUpdateTagsInput {
+  @Field(() => Int)
+  id: number;
+
+  @Field(() => [Int])
+  tags: number[];
+}
+
 @ObjectType()
 export class TransactionGroup {
   @Field(() => String, { nullable: true })
@@ -68,6 +77,40 @@ export class TransactionResolver {
     options: TransactionUpdateInput
   ) {
     await Transaction.update({ id }, options);
+    return true;
+  }
+
+  @Mutation(() => Boolean)
+  async updateTransactionTags(
+    @Arg("options", () => [TransactionUpdateTagsInput])
+    options: TransactionUpdateTagsInput[]
+  ) {
+    const connection = await getConnection();
+    const transactions = await Transaction.findByIds(
+      options.map((transactionUpdateTagsInput) => transactionUpdateTagsInput.id)
+    );
+
+    const allUpdateActions = transactions.map(async (transaction) => {
+      const allExpectedTags =
+        options.find((o) => o.id === transaction.id)?.tags ?? [];
+      const existingTags = (await transaction.tags).map((et) => et.id);
+
+      const tagsToAdd = allExpectedTags.filter(
+        (expectedId) => existingTags.indexOf(expectedId) < 0
+      );
+
+      const updateActions = tagsToAdd.map((tagToAdd) => {
+        return connection
+          .createQueryBuilder()
+          .relation(Transaction, "tags")
+          .of(transaction)
+          .add(tagToAdd);
+      });
+
+      return Promise.all(updateActions);
+    });
+
+    await Promise.all(allUpdateActions);
     return true;
   }
 
