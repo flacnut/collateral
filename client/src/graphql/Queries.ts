@@ -28,6 +28,12 @@ const queries = {
       }
     }
   `,
+
+  UPDATE_TRANSACTION_TAGS: gql`
+    mutation updateTransactionTags($options: [TransactionUpdateTagsInput!]!) {
+      updateTransactionTags(options: $options)
+    }
+  `,
 };
 
 export default queries;
