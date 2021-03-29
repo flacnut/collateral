@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { useQuery } from "@apollo/client";
+import { useQuery, useMutation } from "@apollo/client";
 import { SelectableTransactionGrid } from "../components/grids";
 import TagMultiSelector from "../components/input/TagMultiSelector";
 import Queries from "../graphql/Queries";
 import { getAllTransactions } from "../graphql/types/getAllTransactions";
 import { getAllTags } from "../graphql/types/getAllTags";
+import { updateTransactionTags } from "../graphql/types/updateTransactionTags";
 import { TextField, Grid } from "@material-ui/core";
 import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
 import OutlinedGroup from "../components/OutlinedGroup";
@@ -46,6 +47,11 @@ export default function Transactions() {
   const [selectedTransactionIds, setSelectedTransactions] = useState<number[]>(
     []
   );
+
+  const [
+    updateTransactionTags,
+    { loading, error },
+  ] = useMutation<updateTransactionTags>(Queries.UPDATE_TRANSACTION_TAGS);
 
   useEffect(() => {
     // compute and update transactions
