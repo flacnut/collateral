@@ -13,6 +13,7 @@ type Tag = {
 
 type Props = {
   tags?: Tag[];
+  label: string;
   onChange?: (tags: Tag[]) => void;
 };
 
@@ -67,8 +68,8 @@ function TagMultiSelector(props: Props) {
         <TextField
           {...params}
           variant="outlined"
-          label="Tags Filter"
-          placeholder="Favorites"
+          label={props.label}
+          placeholder=""
         />
       )}
     />

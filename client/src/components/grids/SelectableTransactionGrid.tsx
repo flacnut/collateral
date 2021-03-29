@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import clsx from "clsx";
 import {
   createStyles,
@@ -261,6 +261,7 @@ const useStyles = makeStyles((theme: Theme) =>
 
 type Props = {
   rows: TransactionRow[];
+  onSelectedChanged: (rowIds: number[]) => void;
 };
 
 export function SelectableTransactionGrid(props: Props) {
@@ -270,6 +271,10 @@ export function SelectableTransactionGrid(props: Props) {
   const [selected, setSelected] = React.useState<number[]>([]);
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(100);
+
+  useEffect(() => {
+    props.onSelectedChanged(selected);
+  }, [props, selected]);
 
   const handleRequestSort = (
     event: React.MouseEvent<unknown>,

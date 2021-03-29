@@ -1,13 +1,13 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useQuery } from "@apollo/client";
 import { SelectableTransactionGrid } from "../components/grids";
 import TagMultiSelector from "../components/input/TagMultiSelector";
 import Queries from "../graphql/Queries";
 import { getAllTransactions } from "../graphql/types/getAllTransactions";
 import { getAllTags } from "../graphql/types/getAllTags";
-import Grid from "@material-ui/core/Grid";
-import TextField from "@material-ui/core/TextField";
+import { TextField, Grid } from "@material-ui/core";
 import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
+import OutlinedGroup from "../components/OutlinedGroup";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -21,7 +21,13 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     body: {
       padding: 30,
-      paddingTop: 75,
+      paddingTop: 80,
+    },
+    inputGroup: {
+      padding: 30,
+    },
+    textField: {
+      width: "100%",
     },
   })
 );
@@ -35,23 +41,69 @@ export default function Transactions() {
   const classes = useStyles();
 
   const [tagFilters, setTagFilters] = useState<Tag[]>([]);
+  const [tagsToAdd, setTagsToAdd] = useState<Tag[]>([]);
   const [descriptionFilter, setDescriptionFilters] = useState("");
+  const [selectedTransactionIds, setSelectedTransactions] = useState<number[]>(
+    []
+  );
+
+  useEffect(() => {
+    // compute and update transactions
+    console.dir("=======");
+    console.dir(selectedTransactionIds);
+    console.dir(tagsToAdd);
+  }, [tagsToAdd, selectedTransactionIds]);
 
   return (
     <Grid container className={classes.body}>
       <Grid item container xs={12} direction="column" spacing={2}>
         <Grid item>
-          <TagsFilter onChange={(tf: Tag[]) => setTagFilters(tf)} />
+          <OutlinedGroup id={"filterGroup"} label={"Filters"}>
+            <Grid item container xs={12} spacing={2}>
+              <Grid item xs={6}>
+                <TagsFilter
+                  label={"Filter Tags"}
+                  onChange={(tf: Tag[]) => setTagFilters(tf)}
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <TextField
+                  label="Description"
+                  variant="outlined"
+                  onChange={(event) =>
+                    setDescriptionFilters(event.target.value)
+                  }
+                  className={classes.textField}
+                />
+              </Grid>
+            </Grid>
+          </OutlinedGroup>
         </Grid>
+
         <Grid item>
-          <TextField
-            label="Description"
-            variant="outlined"
-            onChange={(event) => setDescriptionFilters(event.target.value)}
-          />
+          <OutlinedGroup id={"updateGroup"} label={"Edit Transactions"}>
+            <Grid item container xs={12} spacing={2}>
+              <Grid item xs={6}>
+                <TagsFilter
+                  label={"Add Tags"}
+                  onChange={(tagsToAdd: Tag[]) => setTagsToAdd(tagsToAdd)}
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <TextField
+                  label="Set Friendly Description"
+                  variant="outlined"
+                  onChange={(event) => console.dir(event.target.value)}
+                  className={classes.textField}
+                />
+              </Grid>
+            </Grid>
+          </OutlinedGroup>
         </Grid>
+
         <Grid item>
           <TransactionsGrid
+            onSelectedChanged={setSelectedTransactions}
             tagFilters={tagFilters}
             descriptionFilter={descriptionFilter}
           />
@@ -61,11 +113,12 @@ export default function Transactions() {
   );
 }
 
-function TagsFilter(props: { onChange: (tags: Tag[]) => void }) {
+function TagsFilter(props: { label: string; onChange: (tags: Tag[]) => void }) {
   const { data } = useQuery<getAllTags>(Queries.GET_ALL_TAGS);
   return (
     <div>
       <TagMultiSelector
+        label={props.label}
         onChange={props.onChange}
         tags={
           data?.tags
@@ -85,6 +138,7 @@ function TagsFilter(props: { onChange: (tags: Tag[]) => void }) {
 function TransactionsGrid(props: {
   tagFilters: Tag[];
   descriptionFilter: string;
+  onSelectedChanged: (selectedIds: number[]) => void;
 }) {
   const { data, loading, error } = useQuery<getAllTransactions>(
     Queries.GET_ALL_TRANSACTIONS
@@ -99,12 +153,15 @@ function TransactionsGrid(props: {
     </>
   ) : (
     <SelectableTransactionGrid
+      onSelectedChanged={props.onSelectedChanged}
       rows={
         data?.transactions
           ? data.transactions
               .filter((t) => {
                 return (
-                  t.originalDescription.indexOf(props.descriptionFilter) !== -1
+                  t.originalDescription
+                    .toLowerCase()
+                    .indexOf(props.descriptionFilter.toLowerCase()) !== -1
                 );
               })
               .filter((t) => {
