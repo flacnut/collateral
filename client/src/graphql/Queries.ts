@@ -29,6 +29,15 @@ const queries = {
     }
   `,
 
+  CREATE_TAG: gql`
+    mutation createSingleTag($tag: String!) {
+      createTag(options: { tag: $tag }) {
+        id
+        tag
+      }
+    }
+  `,
+
   UPDATE_TRANSACTION_TAGS: gql`
     mutation updateTransactionTags($options: [TransactionUpdateTagsInput!]!) {
       updateTransactionTags(options: $options)
