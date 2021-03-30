@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation } from "@apollo/client";
 import { SelectableTransactionGrid } from "../components/grids";
 import TagMultiSelector from "../components/input/TagMultiSelector";
@@ -6,9 +6,12 @@ import Queries from "../graphql/Queries";
 import { getAllTransactions } from "../graphql/types/getAllTransactions";
 import { getAllTags } from "../graphql/types/getAllTags";
 import { updateTransactionTags } from "../graphql/types/updateTransactionTags";
-import { TextField, Grid } from "@material-ui/core";
+import { createSingleTag } from "../graphql/types/createSingleTag";
+import { TransactionUpdateTagsInput } from "../graphql/graphql-global-types";
+import { TextField, Grid, Button } from "@material-ui/core";
 import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
 import OutlinedGroup from "../components/OutlinedGroup";
+import { Refresh, Save } from "@material-ui/icons";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -29,6 +32,10 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     textField: {
       width: "100%",
+    },
+    buttons: {
+      width: 140,
+      marginLeft: 20,
     },
   })
 );
@@ -53,12 +60,36 @@ export default function Transactions() {
     { loading, error },
   ] = useMutation<updateTransactionTags>(Queries.UPDATE_TRANSACTION_TAGS);
 
-  useEffect(() => {
-    // compute and update transactions
-    console.dir("=======");
-    console.dir(selectedTransactionIds);
-    console.dir(tagsToAdd);
-  }, [tagsToAdd, selectedTransactionIds]);
+  const [createTag] = useMutation<createSingleTag>(Queries.CREATE_TAG);
+
+  const performSave = async () => {
+    const createdTags = (await Promise.all(
+      tagsToAdd
+        .filter((tag) => tag.id === -1)
+        .map((tag) =>
+          createTag({
+            variables: { tag: tag.tag },
+            refetchQueries: [{ query: Queries.GET_ALL_TAGS }],
+          }).then((response) => response.data?.createTag)
+        )
+    )) as Tag[];
+
+    const tagsToAddWithIds = tagsToAdd.map((tag) =>
+      tag.id > -1 ? tag : createdTags.find((ct) => ct.tag === tag.tag)
+    ) as Tag[];
+
+    const updateData = selectedTransactionIds.map((id) => {
+      return {
+        id,
+        tags: tagsToAddWithIds.map((tag) => tag.id),
+      } as TransactionUpdateTagsInput;
+    });
+
+    await updateTransactionTags({
+      variables: { options: updateData },
+      refetchQueries: [{ query: Queries.GET_ALL_TAGS }],
+    });
+  };
 
   return (
     <Grid container className={classes.body}>
@@ -107,6 +138,30 @@ export default function Transactions() {
           </OutlinedGroup>
         </Grid>
 
+        <Grid item container xs={12} direction="row-reverse" spacing={0}>
+          <Grid item>
+            <Button
+              className={classes.buttons}
+              variant="contained"
+              color="primary"
+              startIcon={<Save />}
+              onClick={performSave}
+            >
+              Save
+            </Button>
+          </Grid>
+          <Grid item>
+            <Button
+              className={classes.buttons}
+              variant="contained"
+              color="secondary"
+              startIcon={<Refresh />}
+              disabled={true}
+            >
+              Refresh
+            </Button>
+          </Grid>
+        </Grid>
         <Grid item>
           <TransactionsGrid
             onSelectedChanged={setSelectedTransactions}
