@@ -20,6 +20,18 @@ const queries = {
     }
   `,
 
+  GET_TRANSACTIONS_ONLY_BY_TAG: gql`
+    query getTransactionsByTags($tags: [String!]!) {
+      transactionsByTags(tags: $tags) {
+        id
+        date
+        amountCents
+        originalDescription
+        friendlyDescription
+      }
+    }
+  `,
+
   GET_ALL_TAGS: gql`
     query getAllTags {
       tags {
