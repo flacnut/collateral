@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Banner from "./components/Banner";
 import Library from "./views/Library";
 import Transactions from "./views/Transactions";
+import Charts from "./views/Charts";
 
 function getView(viewName: string) {
   switch (viewName) {
@@ -9,8 +10,14 @@ function getView(viewName: string) {
       return <Library />;
     case "Transactions":
       return <Transactions />;
+    case "Charts":
+      return <Charts />;
     default:
-      return <div>{`View '${viewName}' selected but not found.`}</div>;
+      return (
+        <div
+          style={{ marginTop: "80px" }}
+        >{`View '${viewName}' selected but not found.`}</div>
+      );
   }
 }
 

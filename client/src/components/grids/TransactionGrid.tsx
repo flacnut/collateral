@@ -35,13 +35,14 @@ const StyledTableRow = withStyles((theme: Theme) =>
   })
 )(TableRow);
 
-interface Data {
+export type GridData = {
   id: number;
-  date: Date;
+  date: string;
   originalDescription: string;
+  friendlyDescription?: string | null;
   amount: number;
-  tags: Array<{ tag: string }>;
-}
+  tags?: Array<{ tag: string }>;
+};
 
 const useStyles = makeStyles({
   table: {
@@ -49,7 +50,10 @@ const useStyles = makeStyles({
   },
 });
 
-export function TransactionGrid(props: { rows: Data[] }) {
+export function TransactionGrid(props: {
+  transactions: GridData[];
+  showTags: boolean;
+}) {
   const classes = useStyles();
 
   return (
@@ -60,11 +64,13 @@ export function TransactionGrid(props: { rows: Data[] }) {
             <StyledTableCell>Date</StyledTableCell>
             <StyledTableCell align="right">Description</StyledTableCell>
             <StyledTableCell align="right">Amount</StyledTableCell>
-            <StyledTableCell align="right">Tags</StyledTableCell>
+            {props.showTags ? (
+              <StyledTableCell align="right">Tags</StyledTableCell>
+            ) : null}
           </TableRow>
         </TableHead>
         <TableBody>
-          {props?.rows?.map((row) => (
+          {props?.transactions?.map((row) => (
             <StyledTableRow key={row.id}>
               <StyledTableCell component="th" scope="row">
                 {row.date}
@@ -73,9 +79,11 @@ export function TransactionGrid(props: { rows: Data[] }) {
                 {row.originalDescription}
               </StyledTableCell>
               <StyledTableCell align="right">{row.amount}</StyledTableCell>
-              <StyledTableCell align="right">
-                {row.tags.map((t) => t.tag).join(", ")}
-              </StyledTableCell>
+              {props.showTags ? (
+                <StyledTableCell align="right">
+                  {row.tags?.map((t) => t.tag).join(", ")}
+                </StyledTableCell>
+              ) : null}
             </StyledTableRow>
           ))}
         </TableBody>
