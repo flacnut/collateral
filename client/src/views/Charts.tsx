@@ -7,7 +7,13 @@ import { Grid } from "@material-ui/core";
 import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
 import OutlinedGroup from "../components/OutlinedGroup";
 import { TransactionGrid } from "../components/grids";
-import { getTransactionsByTags } from "../graphql/types/getTransactionsByTags";
+import {
+  getTransactionsByTags,
+  getTransactionsByTags_transactionsByTags,
+} from "../graphql/types/getTransactionsByTags";
+import Highcharts from "highcharts";
+import HighchartsReact from "highcharts-react-official";
+import CommunicationStayCurrentLandscape from "material-ui/svg-icons/communication/stay-current-landscape";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -27,6 +33,40 @@ type Tag = {
   tag: string;
 };
 
+function groupDataByMonth(
+  transactions: getTransactionsByTags_transactionsByTags[]
+): Array<[number, number]> {
+  if (!transactions) {
+    return [];
+  }
+  const monthData: { [key: string]: number } = {};
+
+  const dateTimeData = transactions
+    .map((t) => {
+      return {
+        time: new Date(t.date),
+        amountCents: t.amountCents,
+      };
+    })
+    .forEach((current) => {
+      const monthGroup = `${current.time.getFullYear()}-${
+        current.time.getMonth() + 1
+      }`;
+      if (!monthData[monthGroup]) {
+        monthData[monthGroup] = current.amountCents;
+      } else {
+        monthData[monthGroup] += current.amountCents;
+      }
+    });
+
+  return Object.keys(monthData)
+    .map((key) => {
+      return { time: new Date(key).getTime(), amount: monthData[key] / 100 };
+    })
+    .sort((a, b) => a.time - b.time)
+    .map((t) => [t.time, t.amount]);
+}
+
 export default function Charts() {
   const classes = useStyles();
 
@@ -43,6 +83,23 @@ export default function Charts() {
       },
     });
   }, [tagFilters, getTransactions]);
+
+  const options = {
+    chart: {
+      type: "spline",
+    },
+    title: {
+      text: "My chart",
+    },
+    xAxis: {
+      type: "datetime",
+    },
+    series: [
+      {
+        data: groupDataByMonth(data?.transactionsByTags ?? []),
+      },
+    ],
+  };
 
   return (
     <Grid container className={classes.body}>
@@ -84,6 +141,10 @@ export default function Charts() {
               }) ?? []
             }
           />
+        </Grid>
+
+        <Grid item>
+          <HighchartsReact highcharts={Highcharts} options={options} />
         </Grid>
       </Grid>
     </Grid>
