@@ -13,7 +13,6 @@ import {
 } from "../graphql/types/getTransactionsByTags";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
-import CommunicationStayCurrentLandscape from "material-ui/svg-icons/communication/stay-current-landscape";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -41,7 +40,7 @@ function groupDataByMonth(
   }
   const monthData: { [key: string]: number } = {};
 
-  const dateTimeData = transactions
+  transactions
     .map((t) => {
       return {
         time: new Date(t.date),
@@ -86,7 +85,7 @@ export default function Charts() {
 
   const options = {
     chart: {
-      type: "spline",
+      type: "column",
     },
     title: {
       text: "My chart",
@@ -99,6 +98,19 @@ export default function Charts() {
         data: groupDataByMonth(data?.transactionsByTags ?? []),
       },
     ],
+    plotOptions: {
+      series: {
+        cursor: "pointer",
+        point: {
+          events: {
+            click: function (event: { point: { x: number; y: number } }) {
+              console.dir(event.point.x);
+              console.dir(event.point.y);
+            },
+          },
+        },
+      },
+    },
   };
 
   return (

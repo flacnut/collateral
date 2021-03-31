@@ -2,22 +2,29 @@ import React from "react";
 import ReactDOM from "react-dom";
 import "./index.css";
 import App from "./App";
-import { store } from "./app/store";
-import { Provider } from "react-redux";
 import * as serviceWorker from "./serviceWorker";
 import { ApolloClient, ApolloProvider, InMemoryCache } from "@apollo/client";
+import { ThemeProvider, createMuiTheme } from "@material-ui/core/styles";
+import CssBaseline from "@material-ui/core/CssBaseline";
 
 const client = new ApolloClient({
   uri: "/graphql",
   cache: new InMemoryCache(),
 });
 
+const theme = createMuiTheme({
+  palette: {
+    type: "dark",
+  },
+});
+
 ReactDOM.render(
   <React.StrictMode>
     <ApolloProvider client={client}>
-      <Provider store={store}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
         <App />
-      </Provider>
+      </ThemeProvider>
     </ApolloProvider>
   </React.StrictMode>,
   document.getElementById("root")
