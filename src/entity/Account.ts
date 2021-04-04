@@ -7,6 +7,7 @@ import {
   BaseEntity,
 } from "typeorm";
 import { AccountBalance } from "./AccountBalance";
+import { Transaction } from "./Transaction";
 
 @Entity()
 @ObjectType()
@@ -28,6 +29,12 @@ export class Account extends BaseEntity {
   accountName: String;
 
   @Field(() => [AccountBalance], { nullable: true })
-  @OneToMany(() => AccountBalance, (balance) => balance.account)
-  balances: AccountBalance[];
+  @OneToMany(() => AccountBalance, (balance) => balance.account, { lazy: true })
+  balances: Promise<AccountBalance[]>;
+
+  @Field(() => [Transaction], { nullable: true })
+  @OneToMany(() => Transaction, (transaction) => transaction.source, {
+    lazy: true,
+  })
+  transactions: Promise<Transaction[]>;
 }

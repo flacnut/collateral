@@ -9,6 +9,7 @@ import {
 } from "typeorm";
 import { Tag } from "./Tag";
 import { Source } from "./Source";
+import { Account } from "./Account";
 import { Field, ObjectType, Int } from "type-graphql";
 
 @Entity()
@@ -42,4 +43,8 @@ export class Transaction extends BaseEntity {
   @Field(() => Source)
   @ManyToOne(() => Source, (source) => source.transactions, { lazy: true })
   source: Promise<Source>;
+
+  @Field(() => Account)
+  @ManyToOne(() => Account, (account) => account.transactions, { lazy: true })
+  account: Promise<Account>;
 }
