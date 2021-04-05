@@ -11,5 +11,6 @@ test("renders learn react link", () => {
     </Provider>
   );
 
+  // TODO: fix later
   expect(getByText(/learn/i)).toBeInTheDocument();
 });

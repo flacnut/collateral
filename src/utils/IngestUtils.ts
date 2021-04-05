@@ -1,4 +1,4 @@
-import { ParsedTransaction } from "../parser/BasicCSVParser";
+import { ParsedTransaction } from "../cli/parser/BasicCSVParser";
 import { Transaction, Source, Tag } from "@entities";
 import { createConnection, getConnectionOptions, Connection } from "typeorm";
 

@@ -3,7 +3,7 @@ import yargs from "yargs";
 
 import startServer from "./server";
 import { BasicCSVParser } from "./cli/parser/BasicCSVParser";
-import { IngestUtils } from "./cli/utils/IngestUtils";
+import { IngestUtils } from "./utils/IngestUtils";
 import { readdirSync } from "fs";
 import path from "path";
 

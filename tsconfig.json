@@ -26,6 +26,6 @@
       "@resolvers": ["src/resolvers"]
     }
   },
-  "exclude": ["node_modules"],
+  "exclude": ["node_modules", "client"],
   "include": ["./src/**/*.tsx", "./src/**/*.ts"]
 }
