@@ -1,5 +1,6 @@
 import React, { useCallback } from "react";
 import { useDropzone } from "react-dropzone";
+import Papa from "papaparse";
 
 import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
 import Paper from "@material-ui/core/Paper";
@@ -24,16 +25,10 @@ function MyDropzone() {
   const onDrop = useCallback((acceptedFiles: File[]) => {
     // Do something with the files
     acceptedFiles.forEach((file: File) => {
-      const reader = new FileReader();
-
-      reader.onabort = () => console.log("file reading was aborted");
-      reader.onerror = () => console.log("file reading has failed");
-      reader.onload = () => {
-        // Do whatever you want with the file contents
-        const binaryStr = reader.result;
-        console.dir(binaryStr?.toString());
-      };
-      reader.readAsArrayBuffer(file);
+      Papa.parse(file, {
+        complete: (d) => console.dir(d),
+        error: (e) => console.error(e),
+      });
     });
   }, []);
 
