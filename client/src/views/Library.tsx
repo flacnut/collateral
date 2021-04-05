@@ -1,5 +1,6 @@
 import React, { useCallback } from "react";
 import { useDropzone } from "react-dropzone";
+import CSVDropZone from "../components/input/CSVDropZone";
 import Papa from "papaparse";
 
 import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
@@ -52,6 +53,7 @@ export default function Library() {
   return (
     <div className={classes.root}>
       <MyDropzone />
+      <CSVDropZone onSaveFile={(f) => true} />
       <Grid container spacing={3}>
         <Grid item xs={12}>
           <Paper className={classes.paper}>xs=12</Paper>
