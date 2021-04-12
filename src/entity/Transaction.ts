@@ -27,8 +27,8 @@ export class Transaction extends BaseEntity {
   @Column()
   originalDescription: string;
 
-  @Field(() => String)
-  @Column()
+  @Field(() => String, { nullable: true })
+  @Column({ nullable: true })
   friendlyDescription: string;
 
   @Field(() => Int)

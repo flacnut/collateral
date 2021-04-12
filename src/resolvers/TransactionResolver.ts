@@ -1,4 +1,4 @@
-import { Transaction, Tag } from "@entities";
+import { Account, Transaction, Tag, Source } from "@entities";
 import { getManager, getConnection, In } from "typeorm";
 import {
   Arg,
@@ -47,6 +47,27 @@ class TransactionUpdateTagsInput {
   tags: number[];
 }
 
+@InputType()
+class TransactionCreateInput {
+  @Field(() => Date)
+  date: Date;
+
+  @Field()
+  originalDescription: string;
+
+  @Field({ nullable: true })
+  friendlyDescription?: string;
+
+  @Field(() => Int)
+  amountCents: number;
+
+  @Field(() => Int)
+  sourceId: number;
+
+  @Field(() => Int)
+  accountId: number;
+}
+
 @ObjectType()
 export class TransactionGroup {
   @Field(() => String, { nullable: true })
@@ -70,6 +91,29 @@ export class TransactionGroup {
 
 @Resolver()
 export class TransactionResolver {
+  @Mutation(() => Transaction)
+  async createTransaction(
+    @Arg("options", () => TransactionCreateInput)
+    options: TransactionCreateInput
+  ) {
+    const [source, account] = await Promise.all([
+      (await Source.findByIds([options.sourceId]))?.pop(),
+      (await Account.findByIds([options.accountId]))?.pop(),
+    ]);
+
+    if (!source || !account) {
+      throw new Error(
+        `createTransaction: Invalid ${source ? "accountId" : "sourceId"}`
+      );
+    }
+
+    const newTransaction = await Transaction.create(options).save();
+    newTransaction.source = Promise.resolve(source);
+    newTransaction.account = Promise.resolve(account);
+    newTransaction.tags = Promise.resolve([]);
+    return newTransaction;
+  }
+
   @Mutation(() => Boolean)
   async updateTransaction(
     @Arg("id", () => Int) id: number,

@@ -3,16 +3,17 @@ import { Arg, Mutation, Query, Resolver } from "type-graphql";
 
 @Resolver()
 export class SourceResolver {
-  @Mutation(() => Boolean)
+  @Mutation(() => Source)
   async createSource(@Arg("name") fileName: string) {
-    await Source.insert({ fileName, importDate: new Date(Date.now()) });
-    return true;
+    return await Source.create({
+      fileName,
+      importDate: new Date(Date.now()),
+    }).save();
   }
 
   @Query(() => [Source])
-  async sources() {
+  async allSources() {
     var sources = await Source.find();
-    console.dir(sources);
     return sources;
   }
 }
