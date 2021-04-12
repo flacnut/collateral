@@ -1,7 +1,5 @@
-import React, { useCallback } from "react";
-import { useDropzone } from "react-dropzone";
+import React from "react";
 import CSVDropZone from "../components/input/CSVDropZone";
-import Papa from "papaparse";
 
 import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
 import Paper from "@material-ui/core/Paper";
@@ -22,37 +20,11 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-function MyDropzone() {
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    // Do something with the files
-    acceptedFiles.forEach((file: File) => {
-      Papa.parse(file, {
-        complete: (d) => console.dir(d),
-        error: (e) => console.error(e),
-      });
-    });
-  }, []);
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
-
-  return (
-    <div {...getRootProps()}>
-      <input {...getInputProps()} />
-      {isDragActive ? (
-        <p>Drop the files here ...</p>
-      ) : (
-        <p>Drag 'n' drop some files here, or click to select files</p>
-      )}
-    </div>
-  );
-}
-
 export default function Library() {
   const classes = useStyles();
 
   return (
     <div className={classes.root}>
-      <MyDropzone />
       <CSVDropZone onSaveFile={(f) => true} />
       <Grid container spacing={3}>
         <Grid item xs={12}>
