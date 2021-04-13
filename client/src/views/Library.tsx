@@ -25,10 +25,9 @@ export default function Library() {
 
   return (
     <div className={classes.root}>
-      <CSVDropZone onSaveFile={(f) => true} />
-      <Grid container spacing={3}>
+      <Grid container spacing={2}>
         <Grid item xs={12}>
-          <Paper className={classes.paper}>xs=12</Paper>
+          <CSVDropZone onSaveFile={(f) => true} />
         </Grid>
         <Grid item xs={12} sm={6}>
           <Paper className={classes.paper}>xs=12 sm=6</Paper>

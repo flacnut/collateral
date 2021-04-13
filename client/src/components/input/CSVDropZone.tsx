@@ -2,7 +2,9 @@ import React, { useCallback, useState, useEffect } from "react";
 import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
 import { useDropzone } from "react-dropzone";
 import Papa from "papaparse";
-import { Grid, Paper } from "@material-ui/core";
+import { Grid, Paper, Container } from "@material-ui/core";
+import DescriptionIcon from "@material-ui/icons/Description";
+import DescriptionOutlinedIcon from "@material-ui/icons/DescriptionOutlined";
 
 type Account = {
   id: number;
@@ -32,8 +34,8 @@ type Props = {
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    root: {
-      width: "100%",
+    prompt: {
+      textAlign: "center",
     },
     dropzone: {
       borderWidth: 1,
@@ -41,7 +43,7 @@ const useStyles = makeStyles((theme: Theme) =>
       borderStyle: "solid",
       borderRadius: theme.shape.borderRadius,
       background: theme.palette.primary.light,
-      textAlign: "center",
+      padding: theme.spacing(2),
     },
     paper: {
       padding: theme.spacing(2),
@@ -113,30 +115,37 @@ export default function CSVDropZone(props: Props) {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
   return (
-    <Grid container direction="column" spacing={2}>
-      <Grid item>
-        <div {...getRootProps()} className={classes.dropzone}>
+    <Container className={classes.dropzone}>
+      <Grid container direction="column" spacing={2}>
+        <Grid item {...getRootProps()} className={classes.prompt}>
           <input {...getInputProps()} />
           {isDragActive ? (
-            <p>Drop...</p>
+            <p>
+              <DescriptionIcon />
+            </p>
           ) : (
-            <p>Drag CSV files here or click to select...</p>
+            <p>
+              <DescriptionOutlinedIcon />
+            </p>
           )}
-        </div>
-      </Grid>
-      {files.map((fd, i) => (
-        <Grid item>
-          <FileUploadSummary
-            file={fd.file}
-            parsedResult={fd.parsedResult}
-            onSave={() => {
-              const newFiles = [...files];
-              newFiles[i].saved = props.onSaveFile(prepareFile(fd));
-              setFiles(newFiles);
-            }}
-          />
         </Grid>
-      ))}
-    </Grid>
+        {files.length > 0 ? <Grid item>Select Account:</Grid> : null}
+        {files
+          .sort((a, b) => a.file.name.localeCompare(b.file.name))
+          .map((fd, i) => (
+            <Grid item>
+              <FileUploadSummary
+                file={fd.file}
+                parsedResult={fd.parsedResult}
+                onSave={() => {
+                  const newFiles = [...files];
+                  newFiles[i].saved = props.onSaveFile(prepareFile(fd));
+                  setFiles(newFiles);
+                }}
+              />
+            </Grid>
+          ))}
+      </Grid>
+    </Container>
   );
 }
