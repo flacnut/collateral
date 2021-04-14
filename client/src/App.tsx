@@ -3,6 +3,7 @@ import Banner from "./components/Banner";
 import Library from "./views/Library";
 import Transactions from "./views/Transactions";
 import Charts from "./views/Charts";
+import Upload from "./views/Upload";
 
 function getView(viewName: string) {
   switch (viewName) {
@@ -12,6 +13,8 @@ function getView(viewName: string) {
       return <Transactions />;
     case "Charts":
       return <Charts />;
+    case "Upload":
+      return <Upload />;
     default:
       return (
         <div
@@ -22,7 +25,7 @@ function getView(viewName: string) {
 }
 
 function App() {
-  const [selectedView, setSelectedView] = useState("Library");
+  const [selectedView, setSelectedView] = useState("Upload");
 
   return (
     <>
