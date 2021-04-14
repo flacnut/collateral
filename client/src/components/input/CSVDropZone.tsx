@@ -6,11 +6,8 @@ import { Grid, Paper, Container } from "@material-ui/core";
 import DescriptionIcon from "@material-ui/icons/Description";
 import DescriptionOutlinedIcon from "@material-ui/icons/DescriptionOutlined";
 import TagMultiSelector from "./TagMultiSelector";
-
-import InputLabel from "@material-ui/core/InputLabel";
-import MenuItem from "@material-ui/core/MenuItem";
-import FormControl from "@material-ui/core/FormControl";
-import Select from "@material-ui/core/Select";
+import OutlinedDropdown from "./OutlinedDropdown";
+import OutlinedGroup from "../OutlinedGroup";
 
 type Account = {
   id: number;
@@ -56,12 +53,12 @@ const useStyles = makeStyles((theme: Theme) =>
       textAlign: "center",
       color: theme.palette.text.secondary,
     },
-    formControl: {
-      margin: theme.spacing(1),
-      minWidth: 120,
-    },
     selectEmpty: {
       marginTop: theme.spacing(2),
+    },
+    container: {
+      padding: theme.spacing(2),
+      boxSizing: "border-box",
     },
   })
 );
@@ -73,11 +70,16 @@ function FileUploadSummary(props: {
     dateColumn: number | null;
     amountColumn: number | null;
     descriptionColumn: number | null;
+    otherAmountColumn: number | null;
   };
   onSave: () => void;
 }) {
   const classes = useStyles();
   const data = props.parsedResult?.data ?? [[], []];
+  if (!props.parsedResult?.data) {
+    return null;
+  }
+
   return (
     <Paper className={classes.paper}>
       {props.file.name}
@@ -89,7 +91,7 @@ function FileUploadSummary(props: {
       {(data[1] as [])[props.columns.descriptionColumn ?? 0]}
       <br />
       Date:
-      {(data[1] as [])[props.columns.dateColumn ?? 0]}
+      {(props.parsedResult?.data[1] as [])[props.columns.dateColumn ?? 0]}
     </Paper>
   );
 }
@@ -107,85 +109,58 @@ function prepareFile(fd: FileData): Source {
 function UploadMenu(props: {
   columnHeaders: string[];
   setAmountColumn: (column: number) => void;
+  setOtherAmountColumn: (column: number) => void;
   setDescriptionColumn: (column: number) => void;
   setDateColumn: (column: number) => void;
-  dateColumn: number | null;
-  amountColumn: number | null;
-  descriptionColumn: number | null;
 }) {
   const classes = useStyles();
   return (
-    <Container>
+    <Container className={classes.container}>
       <Grid container direction="column" spacing={2}>
         <Grid item>
-          <TagMultiSelector
-            label={"Account"}
-            tags={[]}
-            onChange={console.dir}
-          />
+          <OutlinedGroup id="account-group" label="Account">
+            <TagMultiSelector
+              label={"Account"}
+              tags={[]}
+              onChange={console.dir}
+            />
+          </OutlinedGroup>
         </Grid>
         <Grid item>
-          <Container>
-            <Grid container direction="row">
-              <Grid item>
-                <FormControl variant="outlined" className={classes.formControl}>
-                  <InputLabel>Date</InputLabel>
-                  <Select
-                    value={props.dateColumn}
-                    onChange={(e) =>
-                      props.setDateColumn(Number(e.target.value))
-                    }
+          <OutlinedGroup id="ingest-group" label="Ingest Options">
+            <Container className={classes.container}>
+              <Grid container direction="row">
+                <Grid item>
+                  <OutlinedDropdown
                     label="Date"
-                  >
-                    <MenuItem value="">
-                      <em>None</em>
-                    </MenuItem>
-                    {props.columnHeaders.map((col, i) => {
-                      return <MenuItem value={i}>{col}</MenuItem>;
-                    })}
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item>
-                <FormControl variant="outlined" className={classes.formControl}>
-                  <InputLabel>Amount</InputLabel>
-                  <Select
-                    value={props.amountColumn}
-                    onChange={(e) =>
-                      props.setAmountColumn(Number(e.target.value))
-                    }
-                    label="Amount"
-                  >
-                    <MenuItem value="">
-                      <em>None</em>
-                    </MenuItem>
-                    {props.columnHeaders.map((col, i) => {
-                      return <MenuItem value={i}>{col}</MenuItem>;
-                    })}
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item>
-                <FormControl variant="outlined" className={classes.formControl}>
-                  <InputLabel>Description</InputLabel>
-                  <Select
-                    value={props.descriptionColumn}
-                    onChange={(e) =>
-                      props.setDescriptionColumn(Number(e.target.value))
-                    }
+                    onSetSelectedIndex={props.setDateColumn}
+                    options={props.columnHeaders}
+                  />
+                </Grid>
+                <Grid item>
+                  <OutlinedDropdown
                     label="Description"
-                  >
-                    <MenuItem value="">
-                      <em>None</em>
-                    </MenuItem>
-                    {props.columnHeaders.map((col, i) => {
-                      return <MenuItem value={i}>{col}</MenuItem>;
-                    })}
-                  </Select>
-                </FormControl>
+                    onSetSelectedIndex={props.setDescriptionColumn}
+                    options={props.columnHeaders}
+                  />
+                </Grid>
+                <Grid item>
+                  <OutlinedDropdown
+                    label="Amount"
+                    onSetSelectedIndex={props.setAmountColumn}
+                    options={props.columnHeaders}
+                  />
+                </Grid>
+                <Grid item>
+                  <OutlinedDropdown
+                    label="Amount (optional)"
+                    onSetSelectedIndex={props.setOtherAmountColumn}
+                    options={props.columnHeaders}
+                  />
+                </Grid>
               </Grid>
-            </Grid>
-          </Container>
+            </Container>
+          </OutlinedGroup>
         </Grid>
       </Grid>
     </Container>
@@ -226,9 +201,11 @@ export default function CSVDropZone(props: Props) {
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
-
   const [dateColumn, setDateColumn] = useState<number | null>(null);
   const [amountColumn, setAmountColumn] = useState<number | null>(null);
+  const [otherAmountColumn, setOtherAmountColumn] = useState<number | null>(
+    null
+  );
   const [descriptionColumn, setDescriptionColumn] = useState<number | null>(
     null
   );
@@ -250,12 +227,10 @@ export default function CSVDropZone(props: Props) {
         </Grid>
         {files.length > 0 ? (
           <UploadMenu
-            dateColumn={dateColumn}
-            amountColumn={amountColumn}
-            descriptionColumn={descriptionColumn}
             setDateColumn={setDateColumn}
             setAmountColumn={setAmountColumn}
             setDescriptionColumn={setDescriptionColumn}
+            setOtherAmountColumn={setOtherAmountColumn}
             columnHeaders={(files[0].parsedResult?.data[0] as string[]) ?? []}
           />
         ) : null}
@@ -266,7 +241,12 @@ export default function CSVDropZone(props: Props) {
               <FileUploadSummary
                 file={fd.file}
                 parsedResult={fd.parsedResult}
-                columns={{ dateColumn, amountColumn, descriptionColumn }}
+                columns={{
+                  dateColumn,
+                  amountColumn,
+                  otherAmountColumn,
+                  descriptionColumn,
+                }}
                 onSave={() => {
                   const newFiles = [...files];
                   newFiles[i].saved = props.onSaveFile(prepareFile(fd));
