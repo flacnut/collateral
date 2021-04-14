@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import Banner from "./components/Banner";
-import Library from "./views/Library";
-import Transactions from "./views/Transactions";
-import Charts from "./views/Charts";
-import Upload from "./views/Upload";
+import Library from "./pages/Library";
+import Transactions from "./pages/Transactions";
+import Charts from "./pages/Charts";
+import Upload from "./pages/Upload";
 
 function getView(viewName: string) {
   switch (viewName) {
