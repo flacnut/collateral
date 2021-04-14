@@ -1,4 +1,4 @@
-import { Account, AccountBalance } from "@entities";
+import { Account, AccountBalance, Transaction } from "@entities";
 import {
   Arg,
   Mutation,
@@ -7,6 +7,7 @@ import {
   InputType,
   Field,
   Int,
+  ObjectType,
 } from "type-graphql";
 
 @InputType()
@@ -22,6 +23,15 @@ class AccountCreateInput {
 
   @Field({ nullable: true })
   currency?: string;
+}
+
+@ObjectType()
+class AccountWithState extends Account {
+  @Field(() => Transaction)
+  latestTransaction: Transaction;
+
+  @Field(() => AccountBalance)
+  latestBalance: AccountBalance;
 }
 
 @Resolver()
@@ -41,10 +51,25 @@ export class AccountResolver {
     return newAccount;
   }
 
-  @Query(() => [Account])
+  @Query(() => [AccountWithState])
   async allAccounts() {
     var accounts = await Account.find();
-    return accounts;
+
+    return await Promise.all(
+      accounts.map(async (account) => {
+        const transactions = await account.transactions;
+        const balances = await account.balances;
+        return {
+          ...account,
+          latestTransaction: transactions
+            .sort((a, b) => a.date.getTime() - b.date.getTime())
+            .pop(),
+          latestBalance: balances
+            .sort((a, b) => a.date.getTime() - b.date.getTime())
+            .pop(),
+        } as AccountWithState;
+      })
+    );
   }
 
   @Query(() => [AccountBalance])
