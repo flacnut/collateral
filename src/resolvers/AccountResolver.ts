@@ -8,6 +8,7 @@ import {
   Field,
   Int,
   ObjectType,
+  Info,
 } from "type-graphql";
 
 @InputType()
@@ -27,11 +28,11 @@ class AccountCreateInput {
 
 @ObjectType()
 class AccountWithState extends Account {
-  @Field(() => Transaction)
-  latestTransaction: Transaction;
+  @Field(() => Transaction, { nullable: true })
+  latestTransaction: Transaction | null;
 
-  @Field(() => AccountBalance)
-  latestBalance: AccountBalance;
+  @Field(() => AccountBalance, { nullable: true })
+  latestBalance: AccountBalance | null;
 }
 
 @Resolver()
@@ -52,8 +53,20 @@ export class AccountResolver {
   }
 
   @Query(() => [AccountWithState])
-  async allAccounts() {
+  async allAccounts(@Info() requestInfo: any) {
     var accounts = await Account.find();
+    const selectedFields: Array<string> = requestInfo.fieldNodes[0].selectionSet.selections.map(
+      (selection: any) => selection.name.value
+    );
+
+    if (
+      !selectedFields.includes("latestTransaction") &&
+      !selectedFields.includes("latestBalance")
+    ) {
+      return accounts;
+    }
+
+    console.dir(await accounts[0].transactions);
 
     return await Promise.all(
       accounts.map(async (account) => {
@@ -62,10 +75,14 @@ export class AccountResolver {
         return {
           ...account,
           latestTransaction: transactions
-            .sort((a, b) => a.date.getTime() - b.date.getTime())
+            .sort(
+              (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+            )
             .pop(),
           latestBalance: balances
-            .sort((a, b) => a.date.getTime() - b.date.getTime())
+            .sort(
+              (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+            )
             .pop(),
         } as AccountWithState;
       })

@@ -111,6 +111,7 @@ export class TransactionResolver {
     newTransaction.source = Promise.resolve(source);
     newTransaction.account = Promise.resolve(account);
     newTransaction.tags = Promise.resolve([]);
+    newTransaction.save();
     return newTransaction;
   }
 

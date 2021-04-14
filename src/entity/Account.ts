@@ -42,7 +42,7 @@ export class Account extends BaseEntity {
   holdings: Promise<Holding[]>;
 
   @Field(() => [Transaction], { nullable: true })
-  @OneToMany(() => Transaction, (transaction) => transaction.source, {
+  @OneToMany(() => Transaction, (transaction) => transaction.account, {
     lazy: true,
   })
   transactions: Promise<Transaction[]>;
