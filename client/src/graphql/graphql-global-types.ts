@@ -7,6 +7,22 @@
 // START Enums and Input Objects
 //==============================================================
 
+export interface AccountCreateInput {
+  accountName: string;
+  accountNumber: string;
+  institution: string;
+  currency?: string | null;
+}
+
+export interface TransactionCreateInput {
+  date: any;
+  originalDescription: string;
+  friendlyDescription?: string | null;
+  amountCents: number;
+  sourceId: number;
+  accountId: number;
+}
+
 export interface TransactionUpdateTagsInput {
   id: number;
   tags: number[];

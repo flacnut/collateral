@@ -4,6 +4,17 @@ import { gql } from "@apollo/client";
 // npx apollo codegen:generate --localSchemaFile=src/graphql/graphql-schema.json --target=typescript --includes=src/graphql/Queries.ts --tagName=gql --addTypename --globalTypesFile=src/graphql/graphql-global-types.ts types
 
 const queries = {
+  CREATE_TRANSACTION: gql`
+    mutation createTransaction($options: TransactionCreateInput!) {
+      createTransaction(options: $options) {
+        id
+        date
+        amountCents
+        originalDescription
+      }
+    }
+  `,
+
   GET_ALL_TRANSACTIONS: gql`
     query getAllTransactions {
       transactions {
@@ -53,6 +64,38 @@ const queries = {
   UPDATE_TRANSACTION_TAGS: gql`
     mutation updateTransactionTags($options: [TransactionUpdateTagsInput!]!) {
       updateTransactionTags(options: $options)
+    }
+  `,
+
+  CREATE_ACCOUNT: gql`
+    mutation createAccount($options: AccountCreateInput!) {
+      createAccount(options: $options) {
+        id
+        currency
+        accountName
+        accountNumber
+        institution
+      }
+    }
+  `,
+
+  GET_ALL_ACCOUNTS: gql`
+    query getAllAccounts {
+      allAccounts {
+        id
+        accountName
+        accountNumber
+        institution
+        latestBalance {
+          id
+          balanceCents
+          date
+        }
+        latestTransaction {
+          id
+          date
+        }
+      }
     }
   `,
 };

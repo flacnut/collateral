@@ -235,7 +235,7 @@ function TransactionsGrid(props: {
                   id: t.id,
                   date: t.date ?? "",
                   originalDescription: t.originalDescription,
-                  friendlyDescription: t.friendlyDescription,
+                  friendlyDescription: t.friendlyDescription ?? "",
                   amount: t.amountCents / 100,
                   tags: t.tags.map((tg) => tg.tag).join(", "),
                 };

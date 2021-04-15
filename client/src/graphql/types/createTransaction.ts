@@ -3,23 +3,24 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
+import { TransactionCreateInput } from "./../graphql-global-types";
+
 // ====================================================
-// GraphQL query operation: getTransactionsByTags
+// GraphQL mutation operation: createTransaction
 // ====================================================
 
-export interface getTransactionsByTags_transactionsByTags {
+export interface createTransaction_createTransaction {
   __typename: "Transaction";
   id: number;
   date: string;
   amountCents: number;
   originalDescription: string;
-  friendlyDescription: string | null;
 }
 
-export interface getTransactionsByTags {
-  transactionsByTags: getTransactionsByTags_transactionsByTags[];
+export interface createTransaction {
+  createTransaction: createTransaction_createTransaction;
 }
 
-export interface getTransactionsByTagsVariables {
-  tags: string[];
+export interface createTransactionVariables {
+  options: TransactionCreateInput;
 }

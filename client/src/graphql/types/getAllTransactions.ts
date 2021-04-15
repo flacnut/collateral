@@ -19,7 +19,7 @@ export interface getAllTransactions_transactions {
   date: string;
   amountCents: number;
   originalDescription: string;
-  friendlyDescription: string;
+  friendlyDescription: string | null;
   tags: getAllTransactions_transactions_tags[];
 }
 
