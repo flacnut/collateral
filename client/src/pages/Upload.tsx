@@ -5,6 +5,7 @@ import SimpleDropzone, { CSVFile } from "../components/input/SimpleDropzone";
 import AccountView from "../components/views/AccountView";
 import { getAllAccounts_allAccounts } from "../graphql/types/getAllAccounts";
 import AccountSelector from "../components/input/AccountSelector";
+import CSVColumnSelectorView from "../components/views/CSVColumnSelectorView";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -13,6 +14,10 @@ const useStyles = makeStyles((theme: Theme) =>
       paddingTop: 80,
       flexGrow: 1,
       boxSizing: "border-box",
+    },
+    container: {
+      marginTop: 20,
+      padding: 0,
     },
   })
 );
@@ -40,6 +45,12 @@ export default function Upload() {
         </Grid>
         <Grid item>
           <AccountView account={selectedAccount} />
+        </Grid>
+        <Grid item>
+          <CSVColumnSelectorView
+            columnHeaders={[]}
+            setColumnPairing={() => {}}
+          />
         </Grid>
       </Grid>
     </Container>
