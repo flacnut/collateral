@@ -5,7 +5,9 @@ import SimpleDropzone, { CSVFile } from "../components/input/SimpleDropzone";
 import AccountView from "../components/views/AccountView";
 import { getAllAccounts_allAccounts } from "../graphql/types/getAllAccounts";
 import AccountSelector from "../components/input/AccountSelector";
-import CSVColumnSelectorView from "../components/views/CSVColumnSelectorView";
+import CSVColumnSelectorView, {
+  ColumnMap,
+} from "../components/views/CSVColumnSelectorView";
 import DeleteIcon from "@material-ui/icons/Delete";
 import SaveIcon from "@material-ui/icons/Save";
 import DescriptionIcon from "@material-ui/icons/Description";
@@ -15,6 +17,12 @@ import CircularProgress, {
 } from "@material-ui/core/CircularProgress";
 import Typography from "@material-ui/core/Typography";
 import Box from "@material-ui/core/Box";
+import { useMutation } from "@apollo/client";
+import Queries from "../graphql/Queries";
+import {
+  createTransaction,
+  createTransaction_createTransaction,
+} from "../graphql/types/createTransaction";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -142,9 +150,38 @@ export default function Upload() {
     setSelectedAccount,
   ] = useState<getAllAccounts_allAccounts | null>(null);
   const [pendingFiles, setPendingFiles] = useState<CSVFile[]>([]);
+  const [columnMap, setColumnMap] = useState<ColumnMap>({
+    Date: 0,
+    Description: 0,
+    Amount: 0,
+    SecondaryAmount: null,
+  });
+
+  const [createTransaction] = useMutation<createTransaction>(
+    Queries.CREATE_TRANSACTION
+  );
 
   const performSave = (file: CSVFile) => {
-    return;
+    file.data.forEach((row) => {
+      createTransaction({
+        variables: {
+          options: {
+            date: row[columnMap.Date],
+            originalDescription: row[columnMap.Description],
+            friendlyDescription: null,
+            amountCents:
+              ((Number(row[columnMap.Amount]) ?? 0) +
+                (columnMap.SecondaryAmount
+                  ? Number(row[columnMap.SecondaryAmount]) ?? 0
+                  : 0)) *
+              100,
+            sourceId: 0,
+            accountId: 0,
+          },
+        },
+        refetchQueries: [],
+      });
+    });
   };
 
   return (
@@ -169,7 +206,9 @@ export default function Upload() {
             columnHeaders={
               ((pendingFiles[0]?.header[0] as any) as string[]) ?? []
             }
-            setColumnPairing={() => {}}
+            setColumnPairing={(transactionColumn, csvColumn) => {
+              setColumnMap({ ...columnMap, [transactionColumn]: csvColumn });
+            }}
           />
         </Grid>
         {pendingFiles.map((file: CSVFile) => {
