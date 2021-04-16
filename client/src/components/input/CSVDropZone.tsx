@@ -130,6 +130,7 @@ function UploadMenu(props: {
           <OutlinedGroup id="ingest-group" label="Ingest Options">
             <Container className={classes.container}>
               <Grid container direction="row">
+                {/*
                 <Grid item>
                   <OutlinedDropdown
                     label="Date"
@@ -157,7 +158,7 @@ function UploadMenu(props: {
                     onSetSelectedIndex={props.setOtherAmountColumn}
                     options={props.columnHeaders}
                   />
-                </Grid>
+               </Grid> */}
               </Grid>
             </Container>
           </OutlinedGroup>

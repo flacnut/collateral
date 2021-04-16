@@ -19,9 +19,9 @@ const useStyles = makeStyles((theme: Theme) =>
 
 export default function OutlinedDropdown(props: Props) {
   const classes = useStyles();
-  const [selectedOption, setSelectedOption] = useState<number>();
+  const [selectedOption, setSelectedOption] = useState<number>(0);
   const onSelect = (event: any) => {
-    const selectedValue = Number(event.target.value);
+    const selectedValue = event.target.value;
     setSelectedOption(selectedValue);
     props.onSetSelectedIndex(selectedValue);
   };
@@ -33,8 +33,12 @@ export default function OutlinedDropdown(props: Props) {
         <MenuItem value="">
           <em>None</em>
         </MenuItem>
-        {props.options.map((opt, i) => {
-          return <MenuItem value={i}>{opt}</MenuItem>;
+        {props.options.map((text, key) => {
+          return (
+            <MenuItem key={key} value={key}>
+              {text}
+            </MenuItem>
+          );
         })}
       </Select>
     </FormControl>

@@ -37,7 +37,7 @@ const LabelledOutline = function (props: {
   }, [props.label]);
 
   return (
-    <div style={{ position: "relative", marginTop: "8px" }}>
+    <div style={{ position: "relative" }}>
       <InputLabel
         ref={labelRef}
         htmlFor={props.id}
