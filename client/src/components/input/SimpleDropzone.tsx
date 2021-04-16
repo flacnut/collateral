@@ -12,6 +12,7 @@ export type CSVFile = {
   header: string[];
   data: string[][];
   meta: Papa.ParseMeta;
+  savedTransactions: number;
 };
 
 type Props = {
@@ -37,6 +38,7 @@ const useStyles = makeStyles((theme: Theme) =>
 function parseFile(file: File): Promise<CSVFile> {
   return new Promise((resolve, reject) => {
     Papa.parse(file, {
+      header: false,
       complete: (pr) => {
         if (pr.errors.length > 0) {
           return reject({ file, ...pr.errors[0] });
@@ -47,6 +49,7 @@ function parseFile(file: File): Promise<CSVFile> {
           header: pr.data.slice(0, 1) as string[],
           data: pr.data.slice(1) as string[][],
           meta: pr.meta,
+          savedTransactions: 0,
         });
       },
     });

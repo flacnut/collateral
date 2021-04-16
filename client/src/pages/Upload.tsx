@@ -1,11 +1,20 @@
 import React, { useState } from "react";
 import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
-import { Container, Grid } from "@material-ui/core";
+import { Container, Grid, Button } from "@material-ui/core";
 import SimpleDropzone, { CSVFile } from "../components/input/SimpleDropzone";
 import AccountView from "../components/views/AccountView";
 import { getAllAccounts_allAccounts } from "../graphql/types/getAllAccounts";
 import AccountSelector from "../components/input/AccountSelector";
 import CSVColumnSelectorView from "../components/views/CSVColumnSelectorView";
+import DeleteIcon from "@material-ui/icons/Delete";
+import SaveIcon from "@material-ui/icons/Save";
+import DescriptionIcon from "@material-ui/icons/Description";
+
+import CircularProgress, {
+  CircularProgressProps,
+} from "@material-ui/core/CircularProgress";
+import Typography from "@material-ui/core/Typography";
+import Box from "@material-ui/core/Box";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -15,12 +24,116 @@ const useStyles = makeStyles((theme: Theme) =>
       flexGrow: 1,
       boxSizing: "border-box",
     },
-    container: {
-      marginTop: 20,
-      padding: 0,
+    dropzone: {
+      textAlign: "center",
+      borderWidth: 2,
+      borderColor: theme.palette.primary.light,
+      borderStyle: "dashed",
+      borderRadius: theme.shape.borderRadius,
+      padding: theme.spacing(2),
+    },
+    pendingFileView: {
+      borderWidth: 1,
+      borderColor: theme.palette.secondary.light,
+      borderStyle: "solid",
+      borderRadius: theme.shape.borderRadius,
+      padding: theme.spacing(2),
+      marginTop: theme.spacing(2),
+    },
+    iconItem: {
+      display: "flex",
+      alignItems: "center",
+    },
+    button: {
+      minWidth: 100,
+      margin: theme.spacing(1),
     },
   })
 );
+
+function CircularProgressWithLabel(
+  props: CircularProgressProps & { value: number }
+) {
+  return (
+    <Box position="relative" display="inline-flex">
+      <CircularProgress variant="determinate" {...props} />
+      <Box
+        top={0}
+        left={0}
+        bottom={0}
+        right={0}
+        position="absolute"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+      >
+        <Typography
+          variant="caption"
+          component="div"
+          color="textSecondary"
+        >{`${Math.round(props.value)}%`}</Typography>
+      </Box>
+    </Box>
+  );
+}
+
+function PendingFileUploadView(props: {
+  file: CSVFile;
+  onSave: () => void;
+  onDelete: () => void;
+}) {
+  const classes = useStyles();
+  const [saving, setSaving] = useState(false);
+
+  return (
+    <Container className={classes.pendingFileView}>
+      <Grid container direction="row" spacing={2}>
+        <Grid item className={classes.iconItem} xs sm>
+          <DescriptionIcon />
+        </Grid>
+        <Grid item xs={10} sm={10}>
+          <Grid container direction="column">
+            <Grid item>{props.file.file.name}</Grid>
+            <Grid item>{props.file.file.size}</Grid>
+          </Grid>
+        </Grid>
+        <Grid item xs sm>
+          {saving ? (
+            <CircularProgressWithLabel
+              value={props.file.savedTransactions / props.file.data.length}
+            />
+          ) : (
+            <>
+              <Button
+                variant="contained"
+                color="secondary"
+                size="small"
+                className={classes.button}
+                startIcon={<DeleteIcon />}
+                onClick={props.onDelete}
+              >
+                Delete
+              </Button>
+              <Button
+                variant="contained"
+                color="primary"
+                size="small"
+                className={classes.button}
+                startIcon={<SaveIcon />}
+                onClick={() => {
+                  setSaving(true);
+                  props.onSave();
+                }}
+              >
+                Save
+              </Button>
+            </>
+          )}
+        </Grid>
+      </Grid>
+    </Container>
+  );
+}
 
 export default function Upload() {
   const classes = useStyles();
@@ -30,12 +143,17 @@ export default function Upload() {
   ] = useState<getAllAccounts_allAccounts | null>(null);
   const [pendingFiles, setPendingFiles] = useState<CSVFile[]>([]);
 
+  const performSave = (file: CSVFile) => {
+    return;
+  };
+
   return (
     <Container className={classes.root}>
       <Grid container spacing={0} direction="column">
         <Grid item>
           <SimpleDropzone
             onFilesDropped={(files: CSVFile[]) => {
+              console.dir(files);
               setPendingFiles(pendingFiles.concat(files));
             }}
           />
@@ -48,10 +166,27 @@ export default function Upload() {
         </Grid>
         <Grid item>
           <CSVColumnSelectorView
-            columnHeaders={[]}
+            columnHeaders={
+              ((pendingFiles[0]?.header[0] as any) as string[]) ?? []
+            }
             setColumnPairing={() => {}}
           />
         </Grid>
+        {pendingFiles.map((file: CSVFile) => {
+          return (
+            <Grid item>
+              <PendingFileUploadView
+                file={file}
+                onSave={() => performSave(file)}
+                onDelete={() =>
+                  setPendingFiles(
+                    pendingFiles.filter((f) => f.file.name !== file.file.name)
+                  )
+                }
+              />
+            </Grid>
+          );
+        })}
       </Grid>
     </Container>
   );
