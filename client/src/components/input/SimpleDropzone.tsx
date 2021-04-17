@@ -12,7 +12,6 @@ export type CSVFile = {
   header: string[];
   data: string[][];
   meta: Papa.ParseMeta;
-  savedTransactions: number;
 };
 
 type Props = {
@@ -49,7 +48,6 @@ function parseFile(file: File): Promise<CSVFile> {
           header: pr.data.slice(0, 1) as string[],
           data: pr.data.slice(1) as string[][],
           meta: pr.meta,
-          savedTransactions: 0,
         });
       },
     });

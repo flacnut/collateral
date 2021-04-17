@@ -26,8 +26,6 @@ export default function OutlinedDropdown(props: Props) {
     props.onSetSelectedIndex(selectedValue);
   };
 
-  console.dir(props.options);
-
   return (
     <FormControl variant="outlined" className={classes.formControl}>
       <InputLabel>{props.label}</InputLabel>
