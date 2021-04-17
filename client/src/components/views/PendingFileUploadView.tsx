@@ -136,7 +136,9 @@ export default function PendingFileUploadView(props: Props) {
             friendlyDescription: null,
             amountCents: Number(
               (
-                calculateTransactionAmountDollars(row, props.columnMap) * 100
+                calculateTransactionAmountDollars(row, props.columnMap) *
+                100 *
+                props.columnMap.AmountModifier
               ).toFixed(0)
             ),
             sourceId: sourceId,
@@ -169,11 +171,11 @@ export default function PendingFileUploadView(props: Props) {
               {calculateTransactionAmountDollars(
                 props.file.data[0],
                 props.columnMap
-              )}
+              ) * props.columnMap.AmountModifier}
             </Grid>
           </Grid>
         </Grid>
-        <Grid item className={classes.iconItem} xs sm>
+        <Grid item xs sm>
           {saving ? (
             <CircularProgressWithLabel
               value={Math.round(

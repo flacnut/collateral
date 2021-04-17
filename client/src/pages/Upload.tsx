@@ -42,6 +42,7 @@ export default function Upload() {
     Description: 0,
     Amount: 0,
     SecondaryAmount: null,
+    AmountModifier: 1,
   });
 
   return (

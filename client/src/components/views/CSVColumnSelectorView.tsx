@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
-import { Container, Grid } from "@material-ui/core";
+import { Container, Grid, Switch } from "@material-ui/core";
 import OutlinedDropdown from "../input/OutlinedDropdown";
 import OutlinedGroup from "../OutlinedGroup";
 
@@ -18,6 +18,7 @@ export type ColumnMap = {
   Description: number;
   Amount: number;
   SecondaryAmount: number | null;
+  AmountModifier: -1 | 1;
 };
 
 type Props = {
@@ -30,6 +31,8 @@ type Props = {
 
 export default function CSVColumnSelectorView(props: Props) {
   const classes = useStyles();
+  const [invertAmounts, setInvertAmounts] = useState(false);
+
   return (
     <Container className={classes.container}>
       <OutlinedGroup id="csv-group" label="CSV Columns">
@@ -68,6 +71,20 @@ export default function CSVColumnSelectorView(props: Props) {
                 props.setColumnPairing("SecondaryAmount", index)
               }
               options={props.columnHeaders}
+            />
+          </Grid>
+          <Grid item>
+            <Switch
+              checked={invertAmounts}
+              onChange={(e) => {
+                setInvertAmounts(e.target.checked);
+                props.setColumnPairing(
+                  "AmountModifier",
+                  e.target.checked ? -1 : 1
+                );
+              }}
+              name="invert_amounts"
+              color="primary"
             />
           </Grid>
         </Grid>
