@@ -55,10 +55,9 @@ export default function Transactions() {
     []
   );
 
-  const [
-    updateTransactionTags,
-    { loading, error },
-  ] = useMutation<updateTransactionTags>(Queries.UPDATE_TRANSACTION_TAGS);
+  const [updateTransactionTags] = useMutation<updateTransactionTags>(
+    Queries.UPDATE_TRANSACTION_TAGS
+  );
 
   const [createTag] = useMutation<createSingleTag>(Queries.CREATE_TAG);
 
