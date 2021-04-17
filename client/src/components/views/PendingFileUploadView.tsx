@@ -75,12 +75,14 @@ function CircularProgressWithLabel(
   );
 }
 
-export default function PendingFileUploadView(props: {
+type Props = {
   file: CSVFile;
   columnMap: ColumnMap;
   accountId: number | null;
   onDelete: () => void;
-}) {
+};
+
+export default function PendingFileUploadView(props: Props) {
   const classes = useStyles();
 
   const [saving, setSaving] = useState(false);
