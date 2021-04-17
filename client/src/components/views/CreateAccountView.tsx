@@ -1,28 +1,8 @@
 import React, { useState } from "react";
-import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
 import { Grid, Button, TextField } from "@material-ui/core";
 import { useMutation } from "@apollo/client";
 import Queries from "../../graphql/Queries";
 import { createAccount } from "../../graphql/types/createAccount";
-
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    uploadRoot: {
-      padding: 30,
-      paddingTop: 80,
-      flexGrow: 1,
-      boxSizing: "border-box",
-    },
-    dropzone: {
-      textAlign: "center",
-      borderWidth: 2,
-      borderColor: theme.palette.primary.light,
-      borderStyle: "dashed",
-      borderRadius: theme.shape.borderRadius,
-      padding: theme.spacing(2),
-    },
-  })
-);
 
 export default function CreateAccountView() {
   const [showCreateAccount, setShowCreateAccount] = useState(false);
