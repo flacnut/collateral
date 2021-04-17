@@ -15,6 +15,7 @@ import { useMutation } from "@apollo/client";
 import Queries from "../../graphql/Queries";
 import { createTransaction } from "../../graphql/types/createTransaction";
 import { TransactionCreateInput } from "../../graphql/graphql-global-types";
+import { createSource } from "../../graphql/types/createSource";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -92,6 +93,7 @@ export default function PendingFileUploadView(props: Props) {
   const [createTransaction] = useMutation<createTransaction>(
     Queries.CREATE_TRANSACTION
   );
+  const [createSource] = useMutation<createSource>(Queries.CREATE_SOURCE);
 
   useEffect(() => {
     async function saveOneTransaction() {
@@ -113,8 +115,18 @@ export default function PendingFileUploadView(props: Props) {
     saveOneTransaction();
   }, [unsavedTransactions, setUnsavedTransactions, createTransaction]);
 
-  const save = () => {
+  const save = async () => {
     setSaving(true);
+
+    const response = await createSource({
+      variables: { name: props.file.file.name },
+    });
+    const sourceId = response.data?.createSource.id;
+    if (!sourceId) {
+      console.warn("Unable to create source" + JSON.stringify(response));
+      return;
+    }
+
     setUnsavedTransactions(
       props.file.data
         .map((row) => {
@@ -127,7 +139,7 @@ export default function PendingFileUploadView(props: Props) {
                 calculateTransactionAmountDollars(row, props.columnMap) * 100
               ).toFixed(0)
             ),
-            sourceId: 1,
+            sourceId: sourceId,
             accountId: props.accountId,
           } as TransactionCreateInput;
         })
