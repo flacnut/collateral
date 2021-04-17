@@ -37,6 +37,7 @@ const useStyles = makeStyles((theme: Theme) =>
 function parseFile(file: File): Promise<CSVFile> {
   return new Promise((resolve, reject) => {
     Papa.parse(file, {
+      header: false,
       complete: (pr) => {
         if (pr.errors.length > 0) {
           return reject({ file, ...pr.errors[0] });

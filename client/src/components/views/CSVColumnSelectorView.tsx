@@ -13,9 +13,19 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
+export type ColumnMap = {
+  Date: number;
+  Description: number;
+  Amount: number;
+  SecondaryAmount: number | null;
+};
+
 type Props = {
   columnHeaders: string[];
-  setColumnPairing: (csvColmn: string, transactionColumn: string) => void;
+  setColumnPairing: (
+    transactionColumn: keyof ColumnMap,
+    csvColmn: number
+  ) => void;
 };
 
 export default function CSVColumnSelectorView(props: Props) {
@@ -28,7 +38,7 @@ export default function CSVColumnSelectorView(props: Props) {
             <OutlinedDropdown
               label="Date"
               onSetSelectedIndex={(index) =>
-                props.setColumnPairing("Date", props.columnHeaders[index])
+                props.setColumnPairing("Date", index)
               }
               options={props.columnHeaders}
             />
@@ -37,10 +47,7 @@ export default function CSVColumnSelectorView(props: Props) {
             <OutlinedDropdown
               label="Description"
               onSetSelectedIndex={(index) =>
-                props.setColumnPairing(
-                  "OriginalDescription",
-                  props.columnHeaders[index]
-                )
+                props.setColumnPairing("Description", index)
               }
               options={props.columnHeaders}
             />
@@ -49,7 +56,7 @@ export default function CSVColumnSelectorView(props: Props) {
             <OutlinedDropdown
               label="Amount"
               onSetSelectedIndex={(index) =>
-                props.setColumnPairing("Amount", props.columnHeaders[index])
+                props.setColumnPairing("Amount", index)
               }
               options={props.columnHeaders}
             />
@@ -58,10 +65,7 @@ export default function CSVColumnSelectorView(props: Props) {
             <OutlinedDropdown
               label="Amount (optional)"
               onSetSelectedIndex={(index) =>
-                props.setColumnPairing(
-                  "SecondaryAmount",
-                  props.columnHeaders[index]
-                )
+                props.setColumnPairing("SecondaryAmount", index)
               }
               options={props.columnHeaders}
             />

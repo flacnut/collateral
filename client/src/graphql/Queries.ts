@@ -98,6 +98,25 @@ const queries = {
       }
     }
   `,
+
+  CREATE_SOURCE: gql`
+    mutation createSource($name: String!) {
+      createSource(name: $name) {
+        id
+        fileName
+      }
+    }
+  `,
+
+  GET_ALL_SOURCES: gql`
+    query getAllSources {
+      allSources {
+        id
+        fileName
+        importDate
+      }
+    }
+  `,
 };
 
 export default queries;

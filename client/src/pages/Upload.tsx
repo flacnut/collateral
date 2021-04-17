@@ -5,19 +5,27 @@ import SimpleDropzone, { CSVFile } from "../components/input/SimpleDropzone";
 import AccountView from "../components/views/AccountView";
 import { getAllAccounts_allAccounts } from "../graphql/types/getAllAccounts";
 import AccountSelector from "../components/input/AccountSelector";
-import CSVColumnSelectorView from "../components/views/CSVColumnSelectorView";
+import CSVColumnSelectorView, {
+  ColumnMap,
+} from "../components/views/CSVColumnSelectorView";
+import PendingFileUploadView from "../components/views/PendingFileUploadView";
+import CreateAccountView from "../components/views/CreateAccountView";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    root: {
+    uploadRoot: {
       padding: 30,
       paddingTop: 80,
       flexGrow: 1,
       boxSizing: "border-box",
     },
-    container: {
-      marginTop: 20,
-      padding: 0,
+    dropzone: {
+      textAlign: "center",
+      borderWidth: 2,
+      borderColor: theme.palette.primary.light,
+      borderStyle: "dashed",
+      borderRadius: theme.shape.borderRadius,
+      padding: theme.spacing(2),
     },
   })
 );
@@ -29,29 +37,58 @@ export default function Upload() {
     setSelectedAccount,
   ] = useState<getAllAccounts_allAccounts | null>(null);
   const [pendingFiles, setPendingFiles] = useState<CSVFile[]>([]);
+  const [columnMap, setColumnMap] = useState<ColumnMap>({
+    Date: 0,
+    Description: 0,
+    Amount: 0,
+    SecondaryAmount: null,
+  });
 
   return (
-    <Container className={classes.root}>
+    <Container className={classes.uploadRoot}>
       <Grid container spacing={0} direction="column">
         <Grid item>
           <SimpleDropzone
-            onFilesDropped={(files: CSVFile[]) => {
-              setPendingFiles(pendingFiles.concat(files));
-            }}
+            onFilesDropped={(files: CSVFile[]) =>
+              setPendingFiles(pendingFiles.concat(files))
+            }
           />
         </Grid>
         <Grid item>
           <AccountSelector onSelectAccount={setSelectedAccount} />
         </Grid>
         <Grid item>
+          <CreateAccountView />
+        </Grid>
+        <Grid item>
           <AccountView account={selectedAccount} />
         </Grid>
         <Grid item>
           <CSVColumnSelectorView
-            columnHeaders={[]}
-            setColumnPairing={() => {}}
+            columnHeaders={
+              ((pendingFiles[0]?.header[0] as any) as string[]) ?? []
+            }
+            setColumnPairing={(transactionColumn, csvColumn) => {
+              setColumnMap({ ...columnMap, [transactionColumn]: csvColumn });
+            }}
           />
         </Grid>
+        {pendingFiles.map((file: CSVFile) => {
+          return (
+            <Grid item>
+              <PendingFileUploadView
+                file={file}
+                columnMap={columnMap}
+                accountId={selectedAccount?.id ?? null}
+                onDelete={() =>
+                  setPendingFiles(
+                    pendingFiles.filter((f) => f.file.name !== file.file.name)
+                  )
+                }
+              />
+            </Grid>
+          );
+        })}
       </Grid>
     </Container>
   );
