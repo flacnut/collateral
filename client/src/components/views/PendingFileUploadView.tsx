@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
 import { Container, Grid, Button } from "@material-ui/core";
+import { DataGrid, GridColDef } from "@material-ui/data-grid";
 import { ColumnMap } from "./CSVColumnSelectorView";
 import DeleteIcon from "@material-ui/icons/Delete";
 import SaveIcon from "@material-ui/icons/Save";
@@ -34,6 +35,9 @@ const useStyles = makeStyles((theme: Theme) =>
     button: {
       minWidth: 100,
       margin: theme.spacing(1),
+    },
+    dataPreviewGrid: {
+      height: 425,
     },
   })
 );
@@ -84,6 +88,44 @@ type Props = {
   onDelete: () => void;
 };
 
+function TransactionPreviewGrid(props: {
+  rows: Array<TransactionCreateInput>;
+}) {
+  const classes = useStyles();
+  const rowsCopy = [...props.rows];
+  rowsCopy.sort((a, b) => a.amountCents - b.amountCents);
+  const mostAndLeast =
+    rowsCopy.length > 6
+      ? [...rowsCopy.slice(0, 3), ...rowsCopy.slice(-3)]
+      : rowsCopy;
+
+  const columns: GridColDef[] = [
+    { field: "date", headerName: "Date", width: 150 },
+    { field: "originalDescription", headerName: "Description", width: 400 },
+    {
+      field: "amount",
+      headerName: "Amount",
+      width: 150,
+    },
+  ];
+  const formatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+  return (
+    <DataGrid
+      className={classes.dataPreviewGrid}
+      rows={mostAndLeast.map((t, i) => {
+        return { id: i, amount: formatter.format(t.amountCents / 100), ...t };
+      })}
+      columns={columns}
+    />
+  );
+}
+
 export default function PendingFileUploadView(props: Props) {
   const classes = useStyles();
 
@@ -122,34 +164,38 @@ export default function PendingFileUploadView(props: Props) {
     const response = await createSource({
       variables: { name: props.file.file.name },
     });
+
     const sourceId = response.data?.createSource.id;
     if (!sourceId) {
       console.warn("Unable to create source" + JSON.stringify(response));
       return;
     }
 
-    setUnsavedTransactions(
-      props.file.data
-        .map((row) => {
-          return {
-            date: row[props.columnMap.Date],
-            originalDescription: row[props.columnMap.Description],
-            friendlyDescription: null,
-            amountCents: Number(
-              (
-                calculateTransactionAmountDollars(row, props.columnMap) * 100
-              ).toFixed(0)
-            ),
-            sourceId: sourceId,
-            accountId: props.accountId,
-          } as TransactionCreateInput;
-        })
-        .filter((t) => !isNaN(t.amountCents) && t.date != null)
-    );
+    setUnsavedTransactions(generateTransactions(sourceId));
+  };
+
+  const generateTransactions = (sourceId: number) => {
+    return props.file.data
+      .map((row) => {
+        return {
+          date: row[props.columnMap.Date],
+          originalDescription: row[props.columnMap.Description],
+          friendlyDescription: null,
+          amountCents: Number(
+            (
+              calculateTransactionAmountDollars(row, props.columnMap) * 100
+            ).toFixed(0)
+          ),
+          sourceId: sourceId,
+          accountId: props.accountId,
+        } as TransactionCreateInput;
+      })
+      .filter((t) => !isNaN(t.amountCents) && t.date != null);
   };
 
   const totalTransactionsCount = props.file.data.length;
   const unsavedTransactionsCount = unsavedTransactions.length;
+  const transactions = generateTransactions(-1);
 
   return (
     <Container className={classes.pendingFileView}>
@@ -157,22 +203,15 @@ export default function PendingFileUploadView(props: Props) {
         <Grid item className={classes.iconItem} xs sm>
           <DescriptionIcon />
         </Grid>
-        <Grid item xs={10} sm={10}>
+        <Grid item xs={2} sm={2}>
           <Grid container direction="column">
-            <Grid item>{props.file.file.name}</Grid>
-            <Grid item>{props.file.file.size}</Grid>
-            <Grid item>Date: {props.file.data[0][props.columnMap.Date]}</Grid>
-            <Grid item>
-              Description: {props.file.data[0][props.columnMap.Description]}
-            </Grid>
-            <Grid item>
-              Amount:
-              {calculateTransactionAmountDollars(
-                props.file.data[0],
-                props.columnMap
-              )}
-            </Grid>
+            <Grid item>File: {props.file.file.name}</Grid>
+            <Grid item>Size: {props.file.file.size / 1000} KB</Grid>
+            <Grid item>Transactions: {transactions.length}</Grid>
           </Grid>
+        </Grid>
+        <Grid item xs={8} sm={8}>
+          <TransactionPreviewGrid rows={transactions} />
         </Grid>
         <Grid item xs sm>
           {saving ? (
