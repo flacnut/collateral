@@ -1,6 +1,10 @@
 import { Transaction } from "../entity";
 
 type DateAmountTuple = { date: Date; amountCents: number };
+type DateAmountAccountTuple = DateAmountTuple & {
+  transactionId: number;
+  accountId: number;
+};
 
 export function CalculateBalance(
   transactions: DateAmountTuple[] | Transaction[],
@@ -50,6 +54,44 @@ export function CalculateBalance(
     .map((tuple) => {
       return { ...tuple, amountCents: tuple.amountCents + balanceOffset };
     });
+}
+
+function checkMatch(
+  t1: DateAmountAccountTuple,
+  t2: DateAmountAccountTuple
+): boolean {
+  return (
+    t1.amountCents * -1 === t2.amountCents && t1.accountId !== t2.accountId
+  );
+}
+
+export function MatchTransfers(
+  transactions: DateAmountAccountTuple[],
+  distance = 14
+): Array<[number, number]> {
+  transactions.sort((a, b) => a.date.getTime() - b.date.getTime());
+  const possiblePairs: Array<[number, number]> = [];
+
+  transactions.forEach((transaction, index) => {
+    let windex = index;
+    while (--windex >= 0) {
+      if (
+        transaction.date.getTime() - transactions[windex].date.getTime() >
+        60 * 60 * 24 * 1000 * distance
+      ) {
+        break;
+      }
+
+      if (checkMatch(transaction, transactions[windex])) {
+        possiblePairs.push([
+          transaction.transactionId,
+          transactions[windex].transactionId,
+        ]);
+      }
+    }
+  });
+
+  return possiblePairs;
 }
 
 function addDays(date: Date, days: number) {
