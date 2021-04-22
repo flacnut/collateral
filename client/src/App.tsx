@@ -4,6 +4,7 @@ import Library from "./pages/Library";
 import Transactions from "./pages/Transactions";
 import Charts from "./pages/Charts";
 import Upload from "./pages/Upload";
+import Accounts from "./pages/Accounts";
 
 function getView(viewName: string) {
   switch (viewName) {
@@ -15,6 +16,8 @@ function getView(viewName: string) {
       return <Charts />;
     case "Upload":
       return <Upload />;
+    case "Accounts":
+      return <Accounts />;
     default:
       return (
         <div
@@ -25,7 +28,7 @@ function getView(viewName: string) {
 }
 
 function App() {
-  const [selectedView, setSelectedView] = useState("Upload");
+  const [selectedView, setSelectedView] = useState("Accounts");
 
   return (
     <>
