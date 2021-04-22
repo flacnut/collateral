@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
-import { Container, Grid, Switch } from "@material-ui/core";
+import { Container, Grid, Switch, InputLabel } from "@material-ui/core";
 import OutlinedDropdown from "../input/OutlinedDropdown";
 import OutlinedGroup from "../OutlinedGroup";
 
@@ -19,6 +19,7 @@ export type ColumnMap = {
   Amount: number;
   SecondaryAmount: number | null;
   AmountModifier: -1 | 1;
+  SecondaryAmountModifier: -1 | 1;
 };
 
 type Props = {
@@ -31,7 +32,8 @@ type Props = {
 
 export default function CSVColumnSelectorView(props: Props) {
   const classes = useStyles();
-  const [invertAmounts, setInvertAmounts] = useState(false);
+  const [invertAmount, setInvertAmount] = useState(false);
+  const [invertOtherAmount, setInvertOtherAmount] = useState(false);
 
   return (
     <Container className={classes.container}>
@@ -65,6 +67,21 @@ export default function CSVColumnSelectorView(props: Props) {
             />
           </Grid>
           <Grid item>
+            <InputLabel shrink>Invert</InputLabel>
+            <Switch
+              checked={invertAmount}
+              onChange={(e) => {
+                setInvertAmount(e.target.checked);
+                props.setColumnPairing(
+                  "AmountModifier",
+                  e.target.checked ? -1 : 1
+                );
+              }}
+              name="invert_amount"
+              color="primary"
+            />
+          </Grid>
+          <Grid item>
             <OutlinedDropdown
               label="Amount (optional)"
               onSetSelectedIndex={(index) =>
@@ -74,16 +91,17 @@ export default function CSVColumnSelectorView(props: Props) {
             />
           </Grid>
           <Grid item>
+            <InputLabel shrink>Invert</InputLabel>
             <Switch
-              checked={invertAmounts}
+              checked={invertOtherAmount}
               onChange={(e) => {
-                setInvertAmounts(e.target.checked);
+                setInvertOtherAmount(e.target.checked);
                 props.setColumnPairing(
-                  "AmountModifier",
+                  "SecondaryAmountModifier",
                   e.target.checked ? -1 : 1
                 );
               }}
-              name="invert_amounts"
+              name="invert_other_amount"
               color="primary"
             />
           </Grid>

@@ -43,9 +43,10 @@ function calculateTransactionAmountDollars(
   columnMap: ColumnMap
 ): number {
   return (
-    (Number(row[columnMap.Amount]) ?? 0) +
+    (Number(row[columnMap.Amount]) ?? 0) * columnMap.AmountModifier +
     (columnMap.SecondaryAmount
-      ? Number(row[columnMap.SecondaryAmount]) ?? 0
+      ? Number(row[columnMap.SecondaryAmount]) *
+          columnMap.SecondaryAmountModifier ?? 0
       : 0)
   );
 }
@@ -136,9 +137,7 @@ export default function PendingFileUploadView(props: Props) {
             friendlyDescription: null,
             amountCents: Number(
               (
-                calculateTransactionAmountDollars(row, props.columnMap) *
-                100 *
-                props.columnMap.AmountModifier
+                calculateTransactionAmountDollars(row, props.columnMap) * 100
               ).toFixed(0)
             ),
             sourceId: sourceId,
@@ -171,7 +170,7 @@ export default function PendingFileUploadView(props: Props) {
               {calculateTransactionAmountDollars(
                 props.file.data[0],
                 props.columnMap
-              ) * props.columnMap.AmountModifier}
+              )}
             </Grid>
           </Grid>
         </Grid>
