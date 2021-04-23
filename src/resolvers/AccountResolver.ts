@@ -10,6 +10,7 @@ import {
   ObjectType,
   Info,
 } from "type-graphql";
+import { CalculateBalance } from "../utils/AccountUtils";
 
 @InputType()
 class AccountCreateInput {
@@ -33,6 +34,15 @@ class AccountWithState extends Account {
 
   @Field(() => AccountBalance, { nullable: true })
   latestBalance: AccountBalance | null;
+}
+
+@InputType()
+class KnownBalance {
+  @Field(() => Date)
+  date: Date;
+
+  @Field(() => Number)
+  amountCents: Number;
 }
 
 @Resolver()
@@ -66,8 +76,6 @@ export class AccountResolver {
       return accounts;
     }
 
-    console.dir(await accounts[0].transactions);
-
     return await Promise.all(
       accounts.map(async (account) => {
         const transactions = await account.transactions;
@@ -89,11 +97,48 @@ export class AccountResolver {
     );
   }
 
+  @Mutation(() => Account)
+  async generateBalancesForAccount(
+    @Arg("id", () => Int) id: number,
+    @Arg("knownBalance", () => KnownBalance) knownBalance: KnownBalance
+  ) {
+    const account = (await Account.findByIds([id])).pop();
+    if (!account) {
+      throw new Error(`Account for id '${id}' could not be found.`);
+    }
+
+    const transactions = await account.transactions;
+
+    const balances = CalculateBalance(
+      transactions.map((t) => {
+        return { date: new Date(t.date), amountCents: t.amountCents };
+      }),
+      {
+        date: new Date(knownBalance.date),
+        amountCents: Number(knownBalance.amountCents),
+      }
+    );
+
+    await AccountBalance.delete({ account: account });
+
+    const inserts = balances.map(
+      async (bal) =>
+        await AccountBalance.create({
+          account: account,
+          balanceCents: bal.amountCents,
+          date: bal.date,
+        }).save()
+    );
+
+    await Promise.all(inserts);
+    return (await Account.findByIds([id])).pop();
+  }
+
   @Query(() => [AccountBalance])
   async getBalancesForAccount(@Arg("id", () => Int) id: number) {
     const account = (await Account.findByIds([id])).pop();
     if (!account) {
-      throw new Error(`Accoun for id '${id}' could not be found.`);
+      throw new Error(`Account for id '${id}' could not be found.`);
     }
 
     return await account.balances;
@@ -103,7 +148,7 @@ export class AccountResolver {
   async computeBalancesForAccount(@Arg("id", () => Int) id: number) {
     const account = (await Account.findByIds([id])).pop();
     if (!account) {
-      throw new Error(`Accoun for id '${id}' could not be found.`);
+      throw new Error(`Account for id '${id}' could not be found.`);
     }
 
     return await account.balances;
