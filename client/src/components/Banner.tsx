@@ -18,6 +18,7 @@ import MenuBook from "@material-ui/icons/MenuBook";
 import EqualizerIcon from "@material-ui/icons/Equalizer";
 import Icon from "@material-ui/core/Icon";
 import ReceiptIcon from "@material-ui/icons/Receipt";
+import AccountBalanceIcon from "@material-ui/icons/AccountBalance";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -141,6 +142,15 @@ export default function Banner(props: {
             >
               <Badge badgeContent={0} color="secondary">
                 <CloudUploadIcon />
+              </Badge>
+            </IconButton>
+            <IconButton
+              aria-label="Accounts"
+              color="inherit"
+              onClick={() => props.setSelectedView("Accounts")}
+            >
+              <Badge badgeContent={0} color="secondary">
+                <AccountBalanceIcon />
               </Badge>
             </IconButton>
           </div>
