@@ -47,7 +47,7 @@ test("Detect transfers between accounts", () => {
         transactionId: 5,
       },
     ])
-  ).toEqual([[5, 4]]);
+  ).toEqual([{ from: 4, to: 5, amountCents: 1000 }]);
 
   expect(
     MatchTransfers([
@@ -88,5 +88,5 @@ test("Detect transfers between accounts", () => {
         transactionId: 6,
       },
     ])
-  ).toEqual([[2, 5]]);
+  ).toEqual([{ from: 5, to: 2, amountCents: 5000 }]);
 });
