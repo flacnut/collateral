@@ -76,6 +76,8 @@ export function MatchTransfers(
 ): Array<MatchedPair> {
   transactions.sort((a, b) => a.date.getTime() - b.date.getTime());
   const possiblePairs: Array<MatchedPair> = [];
+  const isAlreadyMatched = (id: number) =>
+    possiblePairs.find((p) => p.from === id || p.to === id) != null;
 
   transactions.forEach((transaction, index) => {
     let windex = index;
@@ -87,7 +89,10 @@ export function MatchTransfers(
         break;
       }
 
-      if (checkMatch(transaction, transactions[windex])) {
+      if (
+        checkMatch(transaction, transactions[windex]) &&
+        !isAlreadyMatched(transactions[windex].transactionId)
+      ) {
         possiblePairs.push({
           from:
             transaction.amountCents < 0
@@ -99,6 +104,7 @@ export function MatchTransfers(
               : transaction.transactionId,
           amountCents: Math.abs(transaction.amountCents),
         });
+        break;
       }
     }
   });
