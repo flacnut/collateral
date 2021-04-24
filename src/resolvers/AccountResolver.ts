@@ -10,7 +10,11 @@ import {
   ObjectType,
   Info,
 } from "type-graphql";
-import { CalculateBalance } from "../utils/AccountUtils";
+import {
+  CalculateBalance,
+  DateAmountAccountTuple,
+  MatchTransfers,
+} from "../utils/AccountUtils";
 
 @InputType()
 class AccountCreateInput {
@@ -34,6 +38,15 @@ class AccountWithState extends Account {
 
   @Field(() => AccountBalance, { nullable: true })
   latestBalance: AccountBalance | null;
+}
+
+@ObjectType()
+class TransferPair {
+  @Field(() => Transaction)
+  from: Transaction;
+
+  @Field(() => Transaction)
+  to: Transaction;
 }
 
 @InputType()
@@ -132,6 +145,58 @@ export class AccountResolver {
 
     await Promise.all(inserts);
     return (await Account.findByIds([id])).pop();
+  }
+
+  @Mutation(() => [TransferPair])
+  async generateTransfers(
+    @Arg("accountIds", () => [Int]) accountIds: Array<number>
+  ) {
+    const accounts = await Account.findByIds(accountIds);
+
+    const transactionsByAccount = await Promise.all(
+      accounts.map(async (accnt) => {
+        const transactions = await accnt.transactions;
+        return transactions.map((t) => {
+          return {
+            date: new Date(t.date),
+            amountCents: t.amountCents,
+            transactionId: t.id,
+            accountId: accnt.id,
+          } as DateAmountAccountTuple;
+        });
+      })
+    );
+
+    let allTransactions: DateAmountAccountTuple[] = [];
+    transactionsByAccount.forEach(
+      (trans) => (allTransactions = allTransactions.concat(trans))
+    );
+
+    const pairs = MatchTransfers(allTransactions);
+
+    const allPairIds: number[] = [];
+    pairs.forEach((p) => {
+      allPairIds.push(p.from);
+      allPairIds.push(p.to);
+    });
+
+    const matchedTransactions = await Transaction.findByIds(allPairIds);
+
+    const p = pairs.map((pair) => {
+      return {
+        from: matchedTransactions.find((t) => t.id === pair.from),
+        to: matchedTransactions.find((t) => t.id === pair.to),
+      } as TransferPair;
+    });
+
+    await Promise.all(
+      p.map(async (pair) => {
+        pair.to.transferPair = pair.from;
+        pair.from.transferPair = pair.to;
+        await Promise.all([pair.to.save(), pair.from.save()]);
+      })
+    );
+    return p;
   }
 
   @Query(() => [AccountBalance])
