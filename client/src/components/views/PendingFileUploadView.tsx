@@ -14,8 +14,11 @@ import Typography from "@material-ui/core/Typography";
 import Box from "@material-ui/core/Box";
 import { useMutation } from "@apollo/client";
 import Queries from "../../graphql/Queries";
-import { createTransaction } from "../../graphql/types/createTransaction";
-import { TransactionCreateInput } from "../../graphql/graphql-global-types";
+import { createTransactions } from "../../graphql/types/createTransactions";
+import {
+  TransactionBulkCreateInput,
+  TransactionCreateInput,
+} from "../../graphql/graphql-global-types";
 import { createSource } from "../../graphql/types/createSource";
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -133,30 +136,38 @@ export default function PendingFileUploadView(props: Props) {
   const [unsavedTransactions, setUnsavedTransactions] = useState<
     TransactionCreateInput[]
   >([]);
-  const [createTransaction] = useMutation<createTransaction>(
-    Queries.CREATE_TRANSACTION
+  const [createTransactions] = useMutation<createTransactions>(
+    Queries.CREATE_TRANSACTIONS
   );
   const [createSource] = useMutation<createSource>(Queries.CREATE_SOURCE);
 
   useEffect(() => {
-    async function saveOneTransaction() {
+    async function saveSomeTransactions() {
       if (unsavedTransactions.length > 0) {
-        const nextTransaction = unsavedTransactions[0];
-        await createTransaction({
+        const nextTransactions = unsavedTransactions.slice(0, 20);
+        await createTransactions({
           variables: {
-            options: nextTransaction,
+            transactions: nextTransactions.map((t) => {
+              return {
+                date: t.date,
+                amountCents: t.amountCents,
+                originalDescription: t.originalDescription,
+              } as TransactionBulkCreateInput;
+            }),
+            sourceId: nextTransactions[0].sourceId,
+            accountId: nextTransactions[0].accountId,
           },
           refetchQueries: [],
         });
 
         setTimeout(
-          () => setUnsavedTransactions(unsavedTransactions.slice(1)),
+          () => setUnsavedTransactions(unsavedTransactions.slice(20)),
           0
         );
       }
     }
-    saveOneTransaction();
-  }, [unsavedTransactions, setUnsavedTransactions, createTransaction]);
+    saveSomeTransactions();
+  }, [unsavedTransactions, setUnsavedTransactions, createTransactions]);
 
   const save = async () => {
     setSaving(true);
