@@ -9,6 +9,7 @@ import {
 import { AccountBalance } from "./AccountBalance";
 import { Transaction } from "./Transaction";
 import { Holding } from "./Holding";
+import { Transfer } from "@entities";
 
 @Entity()
 @ObjectType()
@@ -51,4 +52,12 @@ export class Account extends BaseEntity {
     lazy: true,
   })
   transactions: Promise<Transaction[]>;
+
+  @Field(() => [Transfer], { nullable: false })
+  @OneToMany(() => Transfer, (transfer) => transfer.toAccount)
+  incomingTransfers: Transfer[];
+
+  @Field(() => [Transfer], { nullable: false })
+  @OneToMany(() => Transfer, (transfer) => transfer.toAccount)
+  outgoingTransfers: Transfer[];
 }
