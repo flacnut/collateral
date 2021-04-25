@@ -38,7 +38,12 @@ export class Account extends BaseEntity {
   balances: Promise<AccountBalance[]>;
 
   @Field(() => [AccountBalance], { nullable: true })
-  @OneToMany(() => AccountBalance, (balance) => balance.account, { lazy: true })
+  @OneToMany(() => AccountBalance, (balance) => balance.account, {
+    lazy: true,
+    cascade: true,
+    onUpdate: "CASCADE",
+    onDelete: "CASCADE",
+  })
   holdings: Promise<Holding[]>;
 
   @Field(() => [Transaction], { nullable: true })

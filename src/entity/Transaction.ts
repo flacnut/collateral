@@ -6,6 +6,7 @@ import {
   ManyToMany,
   JoinTable,
   ManyToOne,
+  OneToOne,
   JoinColumn,
 } from "typeorm";
 import { Tag } from "./Tag";
@@ -56,4 +57,9 @@ export class Transaction extends BaseEntity {
 
   @Column()
   accountId: number;
+
+  @Field(() => Transaction, { nullable: true })
+  @OneToOne(() => Transaction)
+  @JoinColumn()
+  transferPair: Transaction | null;
 }
