@@ -5,13 +5,14 @@ import {
   Column,
   ManyToMany,
   JoinTable,
+  JoinColumn,
   ManyToOne,
   OneToOne,
-  JoinColumn,
 } from "typeorm";
 import { Tag } from "./Tag";
 import { Source } from "./Source";
 import { Account } from "./Account";
+import { Transfer } from "./Transfer";
 import { Field, ObjectType, Int } from "type-graphql";
 
 @Entity()
@@ -58,8 +59,7 @@ export class Transaction extends BaseEntity {
   @Column()
   accountId: number;
 
-  @Field(() => Transaction, { nullable: true })
-  @OneToOne(() => Transaction)
-  @JoinColumn()
-  transferPair: Transaction | null;
+  @Field(() => Transfer, { nullable: true })
+  @OneToOne(() => Transfer)
+  transferPair: Transfer | null;
 }

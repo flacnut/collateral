@@ -93,6 +93,35 @@ const queries = {
     }
   `,
 
+  GENERATE_TRANSFERS: gql`
+    mutation generateTransfers($accountIds: [Int!]!) {
+      generateTransfers(accountIds: $accountIds) {
+        from {
+          id
+          date
+          amountCents
+          account {
+            id
+            accountName
+            institution
+            accountNumber
+          }
+        }
+        to {
+          id
+          date
+          amountCents
+          account {
+            id
+            accountName
+            institution
+            accountNumber
+          }
+        }
+      }
+    }
+  `,
+
   GET_ALL_ACCOUNTS: gql`
     query getAllAccounts {
       allAccounts {

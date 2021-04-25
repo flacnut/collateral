@@ -1,4 +1,4 @@
-import { Account, AccountBalance, Transaction } from "@entities";
+import { Account, AccountBalance, Transaction, Transfer } from "@entities";
 import {
   Arg,
   Mutation,
@@ -10,6 +10,7 @@ import {
   ObjectType,
   Info,
 } from "type-graphql";
+import { In } from "typeorm";
 import {
   CalculateBalance,
   DateAmountAccountTuple,
@@ -38,15 +39,6 @@ class AccountWithState extends Account {
 
   @Field(() => AccountBalance, { nullable: true })
   latestBalance: AccountBalance | null;
-}
-
-@ObjectType()
-class TransferPair {
-  @Field(() => Transaction)
-  from: Transaction;
-
-  @Field(() => Transaction)
-  to: Transaction;
 }
 
 @InputType()
@@ -147,7 +139,7 @@ export class AccountResolver {
     return (await Account.findByIds([id])).pop();
   }
 
-  @Mutation(() => [TransferPair])
+  @Mutation(() => [Transfer])
   async generateTransfers(
     @Arg("accountIds", () => [Int]) accountIds: Array<number>
   ) {
@@ -181,22 +173,32 @@ export class AccountResolver {
     });
 
     const matchedTransactions = await Transaction.findByIds(allPairIds);
+    const transfers = await Promise.all(
+      pairs.map(async (pair) => {
+        let t = {
+          from: matchedTransactions.find((t) => t.id === pair.from),
+          to: matchedTransactions.find((t) => t.id === pair.to),
+        };
 
-    const p = pairs.map((pair) => {
-      return {
-        from: matchedTransactions.find((t) => t.id === pair.from),
-        to: matchedTransactions.find((t) => t.id === pair.to),
-      } as TransferPair;
-    });
-
-    await Promise.all(
-      p.map(async (pair) => {
-        pair.to.transferPair = pair.from;
-        pair.from.transferPair = pair.to;
-        await Promise.all([pair.to.save(), pair.from.save()]);
+        return await Transfer.create({
+          ...t,
+          fromAccount: await t.from?.account,
+          toAccount: await t.to?.account,
+          date: t.from?.date,
+        }).save();
       })
     );
-    return p;
+
+    return transfers;
+  }
+
+  @Query(() => [Transfer])
+  async getTransfers(
+    @Arg("accountIds", () => [Int]) accountIds: Array<number>
+  ) {
+    return await Transfer.find({
+      where: [{ toAccount: In(accountIds) }, { fromAccount: In(accountIds) }],
+    });
   }
 
   @Query(() => [AccountBalance])
