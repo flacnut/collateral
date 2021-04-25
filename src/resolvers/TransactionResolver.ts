@@ -48,7 +48,7 @@ class TransactionUpdateTagsInput {
 }
 
 @InputType()
-class TransactionCreateInput {
+class TransactionBulkCreateInput {
   @Field(() => Date)
   date: Date;
 
@@ -60,7 +60,10 @@ class TransactionCreateInput {
 
   @Field(() => Int)
   amountCents: number;
+}
 
+@InputType()
+class TransactionCreateInput extends TransactionBulkCreateInput {
   @Field(() => Int)
   sourceId: number;
 
@@ -91,6 +94,40 @@ export class TransactionGroup {
 
 @Resolver()
 export class TransactionResolver {
+  @Mutation(() => Boolean)
+  async createTransactions(
+    @Arg("transactions", () => [TransactionCreateInput])
+    transactions: Array<TransactionCreateInput>,
+    @Arg("sourceId", () => Number) sourceId: number,
+    @Arg("accountId", () => Number) accountId: number
+  ) {
+    const [source, account] = await Promise.all([
+      (await Source.findByIds([sourceId]))?.pop(),
+      (await Account.findByIds([accountId]))?.pop(),
+    ]);
+
+    if (!source || !account) {
+      throw new Error(
+        `createTransaction: Invalid ${source ? "accountId" : "sourceId"}`
+      );
+    }
+
+    const insertTransactions = transactions.map((transaction) => {
+      return {
+        ...transaction,
+        source: Promise.resolve(source),
+        account: Promise.resolve(account),
+      };
+    });
+
+    await Transaction.createQueryBuilder()
+      .insert()
+      .values(insertTransactions)
+      .execute();
+
+    return true;
+  }
+
   @Mutation(() => Transaction)
   async createTransaction(
     @Arg("options", () => TransactionCreateInput)

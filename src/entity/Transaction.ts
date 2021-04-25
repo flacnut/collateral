@@ -6,6 +6,7 @@ import {
   ManyToMany,
   JoinTable,
   ManyToOne,
+  JoinColumn,
 } from "typeorm";
 import { Tag } from "./Tag";
 import { Source } from "./Source";
@@ -42,9 +43,17 @@ export class Transaction extends BaseEntity {
 
   @Field(() => Source)
   @ManyToOne(() => Source, (source) => source.transactions, { lazy: true })
+  @JoinColumn({ name: "sourceId" })
   source: Promise<Source>;
+
+  @Column()
+  sourceId: number;
 
   @Field(() => Account)
   @ManyToOne(() => Account, (account) => account.transactions, { lazy: true })
+  @JoinColumn({ name: "accountId" })
   account: Promise<Account>;
+
+  @Column()
+  accountId: number;
 }
