@@ -101,6 +101,7 @@ export class TransactionResolver {
     @Arg("sourceId", () => Number) sourceId: number,
     @Arg("accountId", () => Number) accountId: number
   ) {
+    // Verify source & account exist so we don't break foreign keys
     const [source, account] = await Promise.all([
       (await Source.findByIds([sourceId]))?.pop(),
       (await Account.findByIds([accountId]))?.pop(),
@@ -115,8 +116,8 @@ export class TransactionResolver {
     const insertTransactions = transactions.map((transaction) => {
       return {
         ...transaction,
-        source: Promise.resolve(source),
-        account: Promise.resolve(account),
+        sourceId: sourceId,
+        accountId: accountId,
       };
     });
 
