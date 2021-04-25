@@ -14,6 +14,13 @@ export interface AccountCreateInput {
   currency?: string | null;
 }
 
+export interface TransactionBulkCreateInput {
+  date: any;
+  originalDescription: string;
+  friendlyDescription?: string | null;
+  amountCents: number;
+}
+
 export interface TransactionCreateInput {
   date: any;
   originalDescription: string;

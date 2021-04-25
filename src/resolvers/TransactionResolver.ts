@@ -96,7 +96,7 @@ export class TransactionGroup {
 export class TransactionResolver {
   @Mutation(() => Boolean)
   async createTransactions(
-    @Arg("transactions", () => [TransactionCreateInput])
+    @Arg("transactions", () => [TransactionBulkCreateInput])
     transactions: Array<TransactionCreateInput>,
     @Arg("sourceId", () => Number) sourceId: number,
     @Arg("accountId", () => Number) accountId: number

@@ -15,6 +15,20 @@ const queries = {
     }
   `,
 
+  CREATE_TRANSACTIONS: gql`
+    mutation createTransactions(
+      $transactions: [TransactionBulkCreateInput!]!
+      $sourceId: Float!
+      $accountId: Float!
+    ) {
+      createTransactions(
+        transactions: $transactions
+        sourceId: $sourceId
+        accountId: $accountId
+      )
+    }
+  `,
+
   GET_ALL_TRANSACTIONS: gql`
     query getAllTransactions {
       transactions {
