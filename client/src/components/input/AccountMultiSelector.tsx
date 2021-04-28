@@ -12,18 +12,20 @@ type Option = {
 };
 
 type Props = {
-  options?: Option[];
+  options: Option[];
   label: string;
   onChange?: (options: Option[]) => void;
 };
 
 function OptionMultiSelector(props: Props) {
   const filter = createFilterOptions<Option>();
+  const optionsWithAny = [{ id: 0, name: "Any" }, ...props.options];
+
   return (
     <Autocomplete
       multiple
       id="options-outlined"
-      options={props.options ?? []}
+      options={optionsWithAny}
       getOptionLabel={(option) => option.name}
       onChange={(_, value, reason) => {
         props.onChange && props.onChange(value as Option[]);

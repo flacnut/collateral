@@ -342,7 +342,10 @@ function TransactionsGrid(props: {
                 return true;
               })
               .filter((t) => {
-                return props.accountFilters.some((af) => t.account.id);
+                return props.accountFilters.some(
+                  (af) =>
+                    af.id === t.account.id || af.id === 0 /* any account */
+                );
               })
               .filter((t) => {
                 return props.tagFilters.every(
