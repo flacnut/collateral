@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useQuery } from "@apollo/client";
 import Queries from "../../graphql/Queries";
 import OutlinedDropdown from "../input/OutlinedDropdown";

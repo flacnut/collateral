@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useQuery, useMutation } from "@apollo/client";
 import { SelectableTransactionGrid } from "../components/grids";
 import TagMultiSelector from "../components/input/TagMultiSelector";
+import AccountMultiSelector from "../components/input/AccountMultiSelector";
 import Queries from "../graphql/Queries";
 import { getAllTransactions } from "../graphql/types/getAllTransactions";
 import { getAllTags } from "../graphql/types/getAllTags";
@@ -12,6 +13,7 @@ import { TextField, Grid, Button } from "@material-ui/core";
 import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
 import OutlinedGroup from "../components/OutlinedGroup";
 import { Refresh, Save } from "@material-ui/icons";
+import { getAllAccounts } from "../graphql/types/getAllAccounts";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -45,10 +47,16 @@ type Tag = {
   tag: string;
 };
 
+type Account = {
+  id: number;
+  name: string;
+};
+
 export default function Transactions() {
   const classes = useStyles();
 
   const [tagFilters, setTagFilters] = useState<Tag[]>([]);
+  const [accountFilters, setAccountFilters] = useState<Account[]>([]);
   const [tagsToAdd, setTagsToAdd] = useState<Tag[]>([]);
   const [descriptionFilter, setDescriptionFilters] = useState("");
   const [selectedTransactionIds, setSelectedTransactions] = useState<number[]>(
@@ -96,13 +104,15 @@ export default function Transactions() {
         <Grid item>
           <OutlinedGroup id={"filterGroup"} label={"Filters"}>
             <Grid item container xs={12} spacing={2}>
-              <Grid item xs={6}>
-                <TagsFilter
-                  label={"Filter Tags"}
-                  onChange={(tf: Tag[]) => setTagFilters(tf)}
+              <Grid item xs={4}>
+                <TagsFilter onChange={(tf: Tag[]) => setTagFilters(tf)} />
+              </Grid>
+              <Grid item xs={4}>
+                <AccountsFilter
+                  onChange={(acc: Account[]) => setAccountFilters(acc)}
                 />
               </Grid>
-              <Grid item xs={6}>
+              <Grid item xs={4}>
                 <TextField
                   label="Description"
                   variant="outlined"
@@ -121,7 +131,6 @@ export default function Transactions() {
             <Grid item container xs={12} spacing={2}>
               <Grid item xs={6}>
                 <TagsFilter
-                  label={"Add Tags"}
                   onChange={(tagsToAdd: Tag[]) => setTagsToAdd(tagsToAdd)}
                 />
               </Grid>
@@ -165,6 +174,7 @@ export default function Transactions() {
           <TransactionsGrid
             onSelectedChanged={setSelectedTransactions}
             tagFilters={tagFilters}
+            accountFilters={accountFilters}
             descriptionFilter={descriptionFilter}
           />
         </Grid>
@@ -173,16 +183,16 @@ export default function Transactions() {
   );
 }
 
-function TagsFilter(props: { label: string; onChange: (tags: Tag[]) => void }) {
-  const { data } = useQuery<getAllTags>(Queries.GET_ALL_TAGS);
+function TagsFilter(props: { onChange: (tags: Tag[]) => void }) {
+  const tagsResult = useQuery<getAllTags>(Queries.GET_ALL_TAGS);
   return (
     <div>
       <TagMultiSelector
-        label={props.label}
+        label={"Filter Tags"}
         onChange={props.onChange}
         tags={
-          data?.tags
-            ? data.tags.map((t) => {
+          tagsResult.data?.tags
+            ? tagsResult.data.tags.map((t) => {
                 return {
                   id: t.id,
                   tag: t.tag,
@@ -195,8 +205,28 @@ function TagsFilter(props: { label: string; onChange: (tags: Tag[]) => void }) {
   );
 }
 
+function AccountsFilter(props: { onChange: (options: Account[]) => void }) {
+  const accountsResult = useQuery<getAllAccounts>(Queries.GET_ALL_ACCOUNTS);
+  return (
+    <div>
+      <AccountMultiSelector
+        label={"Accounts"}
+        onChange={props.onChange}
+        options={
+          accountsResult.data?.allAccounts
+            ? accountsResult.data?.allAccounts.map((a) => {
+                return { id: a.id, name: a.accountName };
+              })
+            : []
+        }
+      />
+    </div>
+  );
+}
+
 function TransactionsGrid(props: {
   tagFilters: Tag[];
+  accountFilters: Account[];
   descriptionFilter: string;
   onSelectedChanged: (selectedIds: number[]) => void;
 }) {
@@ -223,6 +253,9 @@ function TransactionsGrid(props: {
                     .toLowerCase()
                     .indexOf(props.descriptionFilter.toLowerCase()) !== -1
                 );
+              })
+              .filter((t) => {
+                return props.accountFilters.some((af) => t.account.id);
               })
               .filter((t) => {
                 return props.tagFilters.every(
