@@ -39,6 +39,22 @@ const useStyles = makeStyles((theme: Theme) =>
       width: 140,
       marginLeft: 20,
     },
+    buttonTextbox: {
+      width: "100%",
+      height: "100%",
+      position: "relative",
+      display: "flex",
+    },
+    buttonTextboxText: {
+      flexGrow: 1,
+      borderTopRightRadius: 0,
+      borderBottomLeftRadius: 0,
+    },
+    buttonTextboxButton: {
+      borderTopLeftRadius: 0,
+      borderBottomLeftRadius: 0,
+      height: "100%",
+    },
   })
 );
 
@@ -61,6 +77,7 @@ export default function Transactions() {
   const [amountMaxFilter, setAmountMaxFilter] = useState<number | null>(null);
   const [tagsToAdd, setTagsToAdd] = useState<Tag[]>([]);
   const [descriptionFilter, setDescriptionFilters] = useState("");
+  const [allRowsSelected, setAllRowsSelected] = useState(false);
   const [selectedTransactionIds, setSelectedTransactions] = useState<number[]>(
     []
   );
@@ -107,7 +124,10 @@ export default function Transactions() {
           <OutlinedGroup id={"filterGroup"} label={"Filters"}>
             <Grid item container xs={12} spacing={2}>
               <Grid item xs={4}>
-                <TagsFilter onChange={(tf: Tag[]) => setTagFilters(tf)} />
+                <TagsFilter
+                  label={"Filter Tags"}
+                  onChange={(tf: Tag[]) => setTagFilters(tf)}
+                />
               </Grid>
               <Grid item xs={4}>
                 <AccountsFilter
@@ -142,6 +162,26 @@ export default function Transactions() {
                   className={classes.textField}
                 />
               </Grid>
+              <Grid item xs={4}>
+                <div className={classes.buttonTextbox}>
+                  <TextField
+                    label="Save Rule"
+                    variant="outlined"
+                    onChange={(event) =>
+                      setAmountMaxFilter(Number(event.target.value))
+                    }
+                    className={classes.buttonTextboxText}
+                  />
+                  <Button
+                    className={classes.buttonTextboxButton}
+                    variant="contained"
+                    color="secondary"
+                    startIcon={<Save />}
+                    disabled={!allRowsSelected}
+                    onClick={() => alert("save new rule!")}
+                  />
+                </div>
+              </Grid>
             </Grid>
           </OutlinedGroup>
         </Grid>
@@ -151,6 +191,7 @@ export default function Transactions() {
             <Grid item container xs={12} spacing={2}>
               <Grid item xs={6}>
                 <TagsFilter
+                  label={"Add Tags"}
                   onChange={(tagsToAdd: Tag[]) => setTagsToAdd(tagsToAdd)}
                 />
               </Grid>
@@ -193,6 +234,9 @@ export default function Transactions() {
         <Grid item>
           <TransactionsGrid
             onSelectedChanged={setSelectedTransactions}
+            onAllSelected={(isAllSelected: boolean) =>
+              setAllRowsSelected(isAllSelected)
+            }
             tagFilters={tagFilters}
             accountFilters={accountFilters}
             amountMinFilter={amountMinFilter}
@@ -205,12 +249,12 @@ export default function Transactions() {
   );
 }
 
-function TagsFilter(props: { onChange: (tags: Tag[]) => void }) {
+function TagsFilter(props: { label: string; onChange: (tags: Tag[]) => void }) {
   const tagsResult = useQuery<getAllTags>(Queries.GET_ALL_TAGS);
   return (
     <div>
       <TagMultiSelector
-        label={"Filter Tags"}
+        label={props.label}
         onChange={props.onChange}
         tags={
           tagsResult.data?.tags
@@ -253,6 +297,7 @@ function TransactionsGrid(props: {
   amountMinFilter: number | null;
   amountMaxFilter: number | null;
   onSelectedChanged: (selectedIds: number[]) => void;
+  onAllSelected: (isAllSelected: boolean) => void;
 }) {
   const { data, loading, error } = useQuery<getAllTransactions>(
     Queries.GET_ALL_TRANSACTIONS
@@ -268,6 +313,7 @@ function TransactionsGrid(props: {
   ) : (
     <SelectableTransactionGrid
       onSelectedChanged={props.onSelectedChanged}
+      onAllSelected={props.onAllSelected}
       rows={
         data?.transactions
           ? data.transactions
