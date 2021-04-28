@@ -14,6 +14,15 @@ export interface AccountCreateInput {
   currency?: string | null;
 }
 
+export interface TagRuleCreateInput {
+  name: string;
+  descriptionContains?: string | null;
+  minimumAmount?: number | null;
+  maximumAmount?: number | null;
+  forAccounts?: number[] | null;
+  tagsToAdd: number[];
+}
+
 export interface TransactionBulkCreateInput {
   date: any;
   originalDescription: string;

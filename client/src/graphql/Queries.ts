@@ -78,6 +78,32 @@ const queries = {
     }
   `,
 
+  CREATE_TAG_RULE: gql`
+    mutation createTagRule($options: TagRuleCreateInput!) {
+      createTagRule(options: $options) {
+        id
+        name
+        minimumAmount
+        maximumAmount
+        descriptionContains
+        tagsToAdd {
+          id
+          tag
+        }
+        thisTag {
+          id
+          tag
+        }
+        forAccounts {
+          id
+          institution
+          accountName
+          accountNumber
+        }
+      }
+    }
+  `,
+
   UPDATE_TRANSACTION_TAGS: gql`
     mutation updateTransactionTags($options: [TransactionUpdateTagsInput!]!) {
       updateTransactionTags(options: $options)

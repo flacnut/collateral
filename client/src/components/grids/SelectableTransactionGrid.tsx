@@ -262,6 +262,7 @@ const useStyles = makeStyles((theme: Theme) =>
 type Props = {
   rows: TransactionRow[];
   onSelectedChanged: (rowIds: number[]) => void;
+  onAllSelected: (isAllSelected: boolean) => void;
 };
 
 export function SelectableTransactionGrid(props: Props) {
@@ -334,6 +335,17 @@ export function SelectableTransactionGrid(props: Props) {
     style: "currency",
     currency: "USD",
   });
+
+  useEffect(() => {
+    const rowCount = props.rows.length;
+    const numSelected = selected.length;
+
+    if (rowCount > 0 && numSelected === rowCount) {
+      props.onAllSelected(true);
+    } else {
+      props.onAllSelected(false);
+    }
+  }, [props.rows, props.onAllSelected, selected, props]);
 
   return (
     <div className={classes.root}>

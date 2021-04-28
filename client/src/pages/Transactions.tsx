@@ -5,6 +5,7 @@ import TagMultiSelector from "../components/input/TagMultiSelector";
 import AccountMultiSelector from "../components/input/AccountMultiSelector";
 import Queries from "../graphql/Queries";
 import { getAllTransactions } from "../graphql/types/getAllTransactions";
+import { createTagRule } from "../graphql/types/createTagRule";
 import { getAllTags } from "../graphql/types/getAllTags";
 import { updateTransactionTags } from "../graphql/types/updateTransactionTags";
 import { createSingleTag } from "../graphql/types/createSingleTag";
@@ -39,6 +40,22 @@ const useStyles = makeStyles((theme: Theme) =>
       width: 140,
       marginLeft: 20,
     },
+    buttonTextbox: {
+      width: "100%",
+      height: "100%",
+      position: "relative",
+      display: "flex",
+    },
+    buttonTextboxText: {
+      flexGrow: 1,
+      borderTopRightRadius: 0,
+      borderBottomLeftRadius: 0,
+    },
+    buttonTextboxButton: {
+      borderTopLeftRadius: 0,
+      borderBottomLeftRadius: 0,
+      height: "100%",
+    },
   })
 );
 
@@ -59,17 +76,52 @@ export default function Transactions() {
   const [accountFilters, setAccountFilters] = useState<Account[]>([]);
   const [amountMinFilter, setAmountMinFilter] = useState<number | null>(null);
   const [amountMaxFilter, setAmountMaxFilter] = useState<number | null>(null);
+  const [ruleName, setRuleName] = useState<String | null>(null);
   const [tagsToAdd, setTagsToAdd] = useState<Tag[]>([]);
   const [descriptionFilter, setDescriptionFilters] = useState("");
+  const [allRowsSelected, setAllRowsSelected] = useState(false);
   const [selectedTransactionIds, setSelectedTransactions] = useState<number[]>(
     []
   );
 
+  const [createTagRule] = useMutation<createTagRule>(Queries.CREATE_TAG_RULE);
+  const [createTag] = useMutation<createSingleTag>(Queries.CREATE_TAG);
   const [updateTransactionTags] = useMutation<updateTransactionTags>(
     Queries.UPDATE_TRANSACTION_TAGS
   );
 
-  const [createTag] = useMutation<createSingleTag>(Queries.CREATE_TAG);
+  const saveTagRule = async () => {
+    // BAD COPY PASTA
+    const createdTags = (await Promise.all(
+      tagsToAdd
+        .filter((tag) => tag.id === -1)
+        .map((tag) =>
+          createTag({
+            variables: { tag: tag.tag },
+            refetchQueries: [{ query: Queries.GET_ALL_TAGS }],
+          }).then((response) => response.data?.createTag)
+        )
+    )) as Tag[];
+
+    const tagsToAddWithIds = tagsToAdd.map((tag) =>
+      tag.id > -1 ? tag : createdTags.find((ct) => ct.tag === tag.tag)
+    ) as Tag[];
+
+    await createTagRule({
+      variables: {
+        options: {
+          name: ruleName,
+          minimumAmount: amountMinFilter,
+          maximumAmount: amountMaxFilter,
+          descriptionContains: descriptionFilter,
+          tagsToAdd: tagsToAddWithIds.map((tag) => tag.id),
+          forAccounts: accountFilters
+            .map((acc) => acc.id)
+            .filter((id) => id > 0) /* remove 'any' */,
+        },
+      },
+    });
+  };
 
   const performSave = async () => {
     const createdTags = (await Promise.all(
@@ -107,7 +159,10 @@ export default function Transactions() {
           <OutlinedGroup id={"filterGroup"} label={"Filters"}>
             <Grid item container xs={12} spacing={2}>
               <Grid item xs={4}>
-                <TagsFilter onChange={(tf: Tag[]) => setTagFilters(tf)} />
+                <TagsFilter
+                  label={"Filter Tags"}
+                  onChange={(tf: Tag[]) => setTagFilters(tf)}
+                />
               </Grid>
               <Grid item xs={4}>
                 <AccountsFilter
@@ -136,11 +191,33 @@ export default function Transactions() {
                 <TextField
                   label="Amount (max)"
                   variant="outlined"
-                  onChange={(event) =>
+                  onBlur={(event) =>
                     setAmountMaxFilter(Number(event.target.value))
                   }
                   className={classes.textField}
                 />
+              </Grid>
+              <Grid item xs={4}>
+                <div className={classes.buttonTextbox}>
+                  <TextField
+                    label="Save Rule"
+                    variant="outlined"
+                    onChange={(event) => setRuleName(event.target.value)}
+                    className={classes.buttonTextboxText}
+                  />
+                  <Button
+                    className={classes.buttonTextboxButton}
+                    variant="contained"
+                    color="primary"
+                    startIcon={<Save />}
+                    disabled={
+                      !allRowsSelected ||
+                      ruleName == null ||
+                      ruleName.length < 3
+                    }
+                    onClick={() => saveTagRule()}
+                  />
+                </div>
               </Grid>
             </Grid>
           </OutlinedGroup>
@@ -151,6 +228,7 @@ export default function Transactions() {
             <Grid item container xs={12} spacing={2}>
               <Grid item xs={6}>
                 <TagsFilter
+                  label={"Add Tags"}
                   onChange={(tagsToAdd: Tag[]) => setTagsToAdd(tagsToAdd)}
                 />
               </Grid>
@@ -193,6 +271,9 @@ export default function Transactions() {
         <Grid item>
           <TransactionsGrid
             onSelectedChanged={setSelectedTransactions}
+            onAllSelected={(isAllSelected: boolean) =>
+              setAllRowsSelected(isAllSelected)
+            }
             tagFilters={tagFilters}
             accountFilters={accountFilters}
             amountMinFilter={amountMinFilter}
@@ -205,12 +286,12 @@ export default function Transactions() {
   );
 }
 
-function TagsFilter(props: { onChange: (tags: Tag[]) => void }) {
+function TagsFilter(props: { label: string; onChange: (tags: Tag[]) => void }) {
   const tagsResult = useQuery<getAllTags>(Queries.GET_ALL_TAGS);
   return (
     <div>
       <TagMultiSelector
-        label={"Filter Tags"}
+        label={props.label}
         onChange={props.onChange}
         tags={
           tagsResult.data?.tags
@@ -253,6 +334,7 @@ function TransactionsGrid(props: {
   amountMinFilter: number | null;
   amountMaxFilter: number | null;
   onSelectedChanged: (selectedIds: number[]) => void;
+  onAllSelected: (isAllSelected: boolean) => void;
 }) {
   const { data, loading, error } = useQuery<getAllTransactions>(
     Queries.GET_ALL_TRANSACTIONS
@@ -268,6 +350,7 @@ function TransactionsGrid(props: {
   ) : (
     <SelectableTransactionGrid
       onSelectedChanged={props.onSelectedChanged}
+      onAllSelected={props.onAllSelected}
       rows={
         data?.transactions
           ? data.transactions
@@ -296,7 +379,10 @@ function TransactionsGrid(props: {
                 return true;
               })
               .filter((t) => {
-                return props.accountFilters.some((af) => t.account.id);
+                return props.accountFilters.some(
+                  (af) =>
+                    af.id === t.account.id || af.id === 0 /* any account */
+                );
               })
               .filter((t) => {
                 return props.tagFilters.every(
