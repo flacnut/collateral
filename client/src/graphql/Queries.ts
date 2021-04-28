@@ -41,6 +41,9 @@ const queries = {
           id
           tag
         }
+        account {
+          id
+        }
       }
     }
   `,

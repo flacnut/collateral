@@ -13,6 +13,11 @@ export interface getAllTransactions_transactions_tags {
   tag: string;
 }
 
+export interface getAllTransactions_transactions_account {
+  __typename: "Account";
+  id: number;
+}
+
 export interface getAllTransactions_transactions {
   __typename: "Transaction";
   id: number;
@@ -21,6 +26,7 @@ export interface getAllTransactions_transactions {
   originalDescription: string;
   friendlyDescription: string | null;
   tags: getAllTransactions_transactions_tags[];
+  account: getAllTransactions_transactions_account;
 }
 
 export interface getAllTransactions {
