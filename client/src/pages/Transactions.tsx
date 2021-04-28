@@ -57,6 +57,8 @@ export default function Transactions() {
 
   const [tagFilters, setTagFilters] = useState<Tag[]>([]);
   const [accountFilters, setAccountFilters] = useState<Account[]>([]);
+  const [amountMinFilter, setAmountMinFilter] = useState<number | null>(null);
+  const [amountMaxFilter, setAmountMaxFilter] = useState<number | null>(null);
   const [tagsToAdd, setTagsToAdd] = useState<Tag[]>([]);
   const [descriptionFilter, setDescriptionFilters] = useState("");
   const [selectedTransactionIds, setSelectedTransactions] = useState<number[]>(
@@ -116,8 +118,26 @@ export default function Transactions() {
                 <TextField
                   label="Description"
                   variant="outlined"
+                  onBlur={(event) => setDescriptionFilters(event.target.value)}
+                  className={classes.textField}
+                />
+              </Grid>
+              <Grid item xs={4}>
+                <TextField
+                  label="Amount (min)"
+                  variant="outlined"
+                  onBlur={(event) =>
+                    setAmountMinFilter(Number(event.target.value))
+                  }
+                  className={classes.textField}
+                />
+              </Grid>
+              <Grid item xs={4}>
+                <TextField
+                  label="Amount (max)"
+                  variant="outlined"
                   onChange={(event) =>
-                    setDescriptionFilters(event.target.value)
+                    setAmountMaxFilter(Number(event.target.value))
                   }
                   className={classes.textField}
                 />
@@ -175,6 +195,8 @@ export default function Transactions() {
             onSelectedChanged={setSelectedTransactions}
             tagFilters={tagFilters}
             accountFilters={accountFilters}
+            amountMinFilter={amountMinFilter}
+            amountMaxFilter={amountMaxFilter}
             descriptionFilter={descriptionFilter}
           />
         </Grid>
@@ -228,6 +250,8 @@ function TransactionsGrid(props: {
   tagFilters: Tag[];
   accountFilters: Account[];
   descriptionFilter: string;
+  amountMinFilter: number | null;
+  amountMaxFilter: number | null;
   onSelectedChanged: (selectedIds: number[]) => void;
 }) {
   const { data, loading, error } = useQuery<getAllTransactions>(
@@ -253,6 +277,23 @@ function TransactionsGrid(props: {
                     .toLowerCase()
                     .indexOf(props.descriptionFilter.toLowerCase()) !== -1
                 );
+              })
+              .filter((t) => {
+                if (
+                  props.amountMinFilter &&
+                  t.amountCents < props.amountMinFilter * 100
+                ) {
+                  return false;
+                }
+
+                if (
+                  props.amountMaxFilter &&
+                  t.amountCents > props.amountMaxFilter * 100
+                ) {
+                  return false;
+                }
+
+                return true;
               })
               .filter((t) => {
                 return props.accountFilters.some((af) => t.account.id);
