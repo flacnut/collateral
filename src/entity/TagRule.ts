@@ -45,7 +45,9 @@ export class TagRule extends BaseEntity {
   tagsToAdd: Promise<Tag[]>;
 
   @Field(() => Tag)
-  @OneToOne(() => Tag)
+  @OneToOne(() => Tag, {
+    eager: true,
+  })
   @JoinColumn()
   thisTag: Tag;
 }

@@ -98,4 +98,16 @@ export class TagResolver {
 
     return newTagRule;
   }
+
+  @Mutation(() => Boolean)
+  async deleteTagRule(@Arg("id", () => Int) id: number) {
+    const tagRuleToRemove = await TagRule.find({ id });
+    await TagRule.remove(tagRuleToRemove);
+    return true;
+  }
+
+  @Query(() => [TagRule])
+  async getAllTagRules() {
+    return await TagRule.find();
+  }
 }
