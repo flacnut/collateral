@@ -3,3 +3,5 @@ dist
 database.sqlite
 data
 *.sqlite
+
+src/utils/DBInit_NO_COMMIT.ts
