@@ -9,6 +9,7 @@ import {
   SourceResolver,
   TransactionResolver,
   TagResolver,
+  FilteredTransactionResolver,
 } from "@resolvers";
 
 export default async function StartServer() {
@@ -20,20 +21,27 @@ export default async function StartServer() {
 
   await DBInit();
 
-  const apolloServer = new ApolloServer({
-    schema: await buildSchema({
-      resolvers: [
-        AccountResolver,
-        SourceResolver,
-        TransactionResolver,
-        TagResolver,
-      ],
-      validate: true,
-    }),
-    context: ({ req, res }) => ({ req, res }),
-  });
+  try {
+    const apolloServer = new ApolloServer({
+      schema: await buildSchema({
+        resolvers: [
+          AccountResolver,
+          SourceResolver,
+          TransactionResolver,
+          TagResolver,
+          FilteredTransactionResolver,
+        ],
+        validate: true,
+      }),
+      context: ({ req, res }) => ({ req, res }),
+    });
 
-  apolloServer.applyMiddleware({ app, cors: false });
+    apolloServer.applyMiddleware({ app, cors: false });
+  } catch (err) {
+    console.error(err);
+    console.dir(JSON.stringify(err));
+  }
+
   const port = process.env.PORT || 4000;
   app.listen(port, () => {
     console.log(`server started at http://localhost:${port}/graphql`);
