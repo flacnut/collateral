@@ -1,5 +1,13 @@
 import { Transaction, Transfer } from "@entities";
-import { Between, MoreThan, LessThan, Not, In } from "typeorm";
+import {
+  Between,
+  MoreThan,
+  LessThan,
+  Not,
+  In,
+  FindConditions,
+  Raw,
+} from "typeorm";
 import {
   Arg,
   Field,
@@ -74,9 +82,24 @@ class AmountFilter {
 }
 
 @InputType()
+class TextFilter {
+  @Field(() => String)
+  text: String;
+
+  @Field(() => TextMatchOptions)
+  match: TextMatchOptions;
+}
+
+@InputType()
 class RichQueryFilter {
   @Field(() => AmountFilter, { nullable: true })
   amount: AmountFilter;
+
+  @Field(() => TextFilter, { nullable: true })
+  description: TextFilter;
+
+  @Field(() => Boolean)
+  excludeTransfers: Boolean;
 }
 
 @InputType()
@@ -87,7 +110,7 @@ class RichQuery {
 
 function getAmountFilter(
   amountFilter: AmountFilter
-): FindOperator<Number> | Number {
+): FindOperator<number> | number {
   switch (amountFilter.compare) {
     case NumberCompareOptions.GREATER_THAN:
       return MoreThan(amountFilter.amountCents);
@@ -104,24 +127,65 @@ function getAmountFilter(
   }
 }
 
+function getTextFilter(textFilter: TextFilter): FindOperator<string> | string {
+  const upperText = textFilter.text.toUpperCase();
+  switch (textFilter.match) {
+    case TextMatchOptions.CONTAINS:
+      return Raw(
+        (_) =>
+          `(UPPER(originalDescription) LIKE '%${upperText}%' OR UPPER(friendlyDescription) LIKE '%${upperText}%')`
+      );
+
+    case TextMatchOptions.STARTS_WITH:
+      return Raw(
+        (_) =>
+          `(UPPER(originalDescription) LIKE '${upperText}%' OR UPPER(friendlyDescription) LIKE '${upperText}%')`
+      );
+
+    case TextMatchOptions.ENDS_WITH:
+      return Raw(
+        (_) =>
+          `(UPPER(originalDescription) LIKE '%${upperText}' OR UPPER(friendlyDescription) LIKE '%${upperText}')`
+      );
+    default:
+    case TextMatchOptions.EQUALS:
+      return Raw(
+        (_) =>
+          `(UPPER(originalDescription) = '${upperText}' OR UPPER(friendlyDescription) = '${upperText}')`
+      );
+  }
+}
+
 @Resolver()
 export class FilteredTransactionResolver {
   @Query(() => [Transaction])
   async getFilteredTransactions(
     @Arg("options", () => RichQuery) options: RichQuery
   ) {
-    // We could hand-roll our own SQLite for a perf boost, but
-    // using the API means we can swap the underlying instance
-    // to Postgres or MySQL easily.
-    const transfers = await Transfer.find();
+    const searchOptions: FindConditions<Transaction> = {};
+
+    if (options.where.amount) {
+      searchOptions.amountCents = getAmountFilter(options.where.amount);
+    }
+
+    if (options.where.description) {
+      searchOptions.originalDescription = getTextFilter(
+        options.where.description
+      );
+    }
+
+    if (options.where.excludeTransfers) {
+      // We could hand-roll our own SQLite for a perf boost, but
+      // using the API means we can swap the underlying instance
+      // to Postgres or MySQL easily.
+      const transfers = await Transfer.find();
+      searchOptions.id = Not(
+        In(transfers.map((t) => [t.to.id, t.from.id]).flat())
+      );
+    }
 
     return await Transaction.find({
-      where: [
-        {
-          amountCents: getAmountFilter(options.where.amount),
-          id: Not(In(transfers.map((t) => [t.to.id, t.from.id]).flat())),
-        },
-      ],
+      where: searchOptions,
     });
   }
 
