@@ -110,6 +110,9 @@ class RichQueryFilter {
   @Field(() => ListFilter, { nullable: true })
   tags: ListFilter;
 
+  @Field(() => ListFilter, { nullable: true })
+  accounts: ListFilter;
+
   @Field(() => Boolean)
   excludeTransfers: Boolean;
 }
@@ -163,29 +166,29 @@ function getTextFilter(textFilter: TextFilter): FindOperator<string> | string {
 
 function includeTransactionForFilters(
   tagsFilter: ListFilter,
-  transactionTagsMap: { id: number; tags: number[] } | null
+  transactionItemsMap: { id: number; items: number[] } | null
 ): boolean {
-  if (!transactionTagsMap) {
+  if (!transactionItemsMap) {
     return false;
   }
 
   switch (tagsFilter.queryBy) {
     case ListOptions.ALL_OF:
       return tagsFilter.itemIds.every(
-        (neededTagId) => transactionTagsMap.tags.indexOf(neededTagId) > -1
+        (neededTagId) => transactionItemsMap.items.indexOf(neededTagId) > -1
       );
     case ListOptions.ANY_OF:
       return tagsFilter.itemIds.some((neededTagId) => {
-        return transactionTagsMap.tags.indexOf(neededTagId) > -1;
+        return transactionItemsMap.items.indexOf(neededTagId) > -1;
       });
     case ListOptions.NONE_OF:
       return tagsFilter.itemIds.every(
-        (neededTagId) => transactionTagsMap.tags.indexOf(neededTagId) === -1
+        (neededTagId) => transactionItemsMap.items.indexOf(neededTagId) === -1
       );
     case ListOptions.EMPTY:
-      return transactionTagsMap.tags.length === 0;
+      return transactionItemsMap.items.length === 0;
     case ListOptions.NOT_EMPTY:
-      return transactionTagsMap.tags.length > 0;
+      return transactionItemsMap.items.length > 0;
   }
 }
 
@@ -222,6 +225,15 @@ export class FilteredTransactionResolver {
       where: searchOptions,
     });
 
+    if (options.where.accounts) {
+      transactions = transactions.filter((t) =>
+        includeTransactionForFilters(options.where.accounts, {
+          id: t.id,
+          items: [t.accountId],
+        })
+      );
+    }
+
     if (options.where.tags) {
       const transactionTagMap = (
         await Promise.all(
@@ -230,10 +242,8 @@ export class FilteredTransactionResolver {
           })
         )
       ).map((ttm) => {
-        return { id: ttm.id, tags: ttm.tags.map((tag) => tag.id) };
+        return { id: ttm.id, items: ttm.tags.map((tag) => tag.id) };
       });
-
-      console.dir(transactionTagMap);
 
       transactions = transactions.filter((t) =>
         includeTransactionForFilters(
