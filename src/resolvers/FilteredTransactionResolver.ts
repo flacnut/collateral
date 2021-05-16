@@ -83,8 +83,8 @@ class AmountFilter {
 
 @InputType()
 class TextFilter {
-  @Field(() => String)
-  text: String;
+  @Field(() => [String])
+  text: String[];
 
   @Field(() => TextMatchOptions)
   match: TextMatchOptions;
@@ -128,32 +128,25 @@ function getAmountFilter(
 }
 
 function getTextFilter(textFilter: TextFilter): FindOperator<string> | string {
-  const upperText = textFilter.text.toUpperCase();
-  switch (textFilter.match) {
-    case TextMatchOptions.CONTAINS:
-      return Raw(
-        (_) =>
-          `(UPPER(originalDescription) LIKE '%${upperText}%' OR UPPER(friendlyDescription) LIKE '%${upperText}%')`
-      );
+  const allMatches = textFilter.text
+    .map((t) => t.toUpperCase())
+    .map((upperText) => {
+      switch (textFilter.match) {
+        case TextMatchOptions.CONTAINS:
+          return `(UPPER(originalDescription) LIKE '%${upperText}%' OR UPPER(friendlyDescription) LIKE '%${upperText}%')`;
 
-    case TextMatchOptions.STARTS_WITH:
-      return Raw(
-        (_) =>
-          `(UPPER(originalDescription) LIKE '${upperText}%' OR UPPER(friendlyDescription) LIKE '${upperText}%')`
-      );
+        case TextMatchOptions.STARTS_WITH:
+          return `(UPPER(originalDescription) LIKE '${upperText}%' OR UPPER(friendlyDescription) LIKE '${upperText}%')`;
 
-    case TextMatchOptions.ENDS_WITH:
-      return Raw(
-        (_) =>
-          `(UPPER(originalDescription) LIKE '%${upperText}' OR UPPER(friendlyDescription) LIKE '%${upperText}')`
-      );
-    default:
-    case TextMatchOptions.EQUALS:
-      return Raw(
-        (_) =>
-          `(UPPER(originalDescription) = '${upperText}' OR UPPER(friendlyDescription) = '${upperText}')`
-      );
-  }
+        case TextMatchOptions.ENDS_WITH:
+          return `(UPPER(originalDescription) LIKE '%${upperText}' OR UPPER(friendlyDescription) LIKE '%${upperText}')`;
+        default:
+        case TextMatchOptions.EQUALS:
+          return `(UPPER(originalDescription) = '${upperText}' OR UPPER(friendlyDescription) = '${upperText}')`;
+      }
+    });
+
+  return Raw((_) => `(` + allMatches.join(" OR ") + `)`);
 }
 
 @Resolver()
