@@ -7,6 +7,8 @@ import {
   In,
   FindConditions,
   Raw,
+  MoreThanOrEqual,
+  LessThanOrEqual,
 } from "typeorm";
 import {
   Arg,
@@ -59,7 +61,9 @@ registerEnumType(TextMatchOptions, {
 
 enum NumberCompareOptions {
   GREATER_THAN = "GREATER_THAN",
+  GREATER_THAN_OET = "GREATER_THAN_OET",
   LESS_THAN = "LESS_THAN",
+  LESS_THAN_OET = "LESS_THAN_OET",
   BETWEEN = "BETWEEN",
   EQUALS = "EQUALS",
 }
@@ -76,6 +80,18 @@ class AmountFilter {
 
   @Field(() => Int, { nullable: true })
   secondAmountCents: number;
+
+  @Field(() => NumberCompareOptions)
+  compare: NumberCompareOptions;
+}
+
+@InputType()
+class DateFilter {
+  @Field(() => Date)
+  value: Date;
+
+  @Field(() => Date)
+  secondValue: Date;
 
   @Field(() => NumberCompareOptions)
   compare: NumberCompareOptions;
@@ -107,6 +123,9 @@ class RichQueryFilter {
   @Field(() => TextFilter, { nullable: true })
   description: TextFilter;
 
+  @Field(() => DateFilter, { nullable: true })
+  date: DateFilter;
+
   @Field(() => ListFilter, { nullable: true })
   tags: ListFilter;
 
@@ -129,8 +148,12 @@ function getAmountFilter(
   switch (amountFilter.compare) {
     case NumberCompareOptions.GREATER_THAN:
       return MoreThan(amountFilter.amountCents);
+    case NumberCompareOptions.GREATER_THAN_OET:
+      return MoreThanOrEqual(amountFilter.amountCents);
     case NumberCompareOptions.LESS_THAN:
       return LessThan(amountFilter.amountCents);
+    case NumberCompareOptions.LESS_THAN_OET:
+      return LessThanOrEqual(amountFilter.amountCents);
     case NumberCompareOptions.BETWEEN:
       return Between(
         Math.min(amountFilter.amountCents, amountFilter.secondAmountCents),
@@ -139,6 +162,35 @@ function getAmountFilter(
     default:
     case NumberCompareOptions.EQUALS:
       return amountFilter.amountCents;
+  }
+}
+
+function getDateFilter(dateFilter: DateFilter): FindOperator<string> | string {
+  const firstDate = new Date(dateFilter.value);
+  const secondDate = new Date(dateFilter.secondValue);
+
+  const firstDateStr = `${firstDate.getFullYear()}-${
+    firstDate.getMonth() + 1
+  }-${firstDate.getDate()}}`;
+
+  const secondDateStr = `${secondDate.getFullYear()}-${
+    secondDate.getMonth() + 1
+  }-${secondDate.getDate()}}`;
+
+  switch (dateFilter.compare) {
+    case NumberCompareOptions.GREATER_THAN:
+      return MoreThan(firstDateStr);
+    case NumberCompareOptions.GREATER_THAN_OET:
+      return MoreThanOrEqual(firstDateStr);
+    case NumberCompareOptions.LESS_THAN:
+      return LessThan(firstDateStr);
+    case NumberCompareOptions.LESS_THAN_OET:
+      return LessThanOrEqual(firstDateStr);
+    case NumberCompareOptions.BETWEEN:
+      return Between(firstDateStr, secondDateStr);
+    default:
+    case NumberCompareOptions.EQUALS:
+      return firstDateStr;
   }
 }
 
@@ -212,6 +264,10 @@ export class FilteredTransactionResolver {
       searchOptions.originalDescription = getTextFilter(
         options.where.description
       );
+    }
+
+    if (options.where.date) {
+      searchOptions.date = getDateFilter(options.where.date);
     }
 
     if (options.where.excludeTransfers) {
