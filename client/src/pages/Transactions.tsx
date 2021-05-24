@@ -15,6 +15,7 @@ import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
 import OutlinedGroup from "../components/OutlinedGroup";
 import { Refresh, Save } from "@material-ui/icons";
 import { getAllAccounts } from "../graphql/types/getAllAccounts";
+import { CircularProgress } from "@material-ui/core";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -72,6 +73,7 @@ type Account = {
 export default function Transactions() {
   const classes = useStyles();
 
+  const [savingTagUpdate, setSavingTagUpdate] = useState(false);
   const [tagFilters, setTagFilters] = useState<Tag[]>([]);
   const [accountFilters, setAccountFilters] = useState<Account[]>([]);
   const [amountMinFilter, setAmountMinFilter] = useState<number | null>(null);
@@ -124,6 +126,7 @@ export default function Transactions() {
   };
 
   const performSave = async () => {
+    setSavingTagUpdate(true);
     const createdTags = (await Promise.all(
       tagsToAdd
         .filter((tag) => tag.id === -1)
@@ -150,6 +153,7 @@ export default function Transactions() {
       variables: { options: updateData },
       refetchQueries: [{ query: Queries.GET_ALL_TAGS }],
     });
+    setSavingTagUpdate(false);
   };
 
   return (
@@ -246,15 +250,25 @@ export default function Transactions() {
 
         <Grid item container xs={12} direction="row-reverse" spacing={0}>
           <Grid item>
-            <Button
-              className={classes.buttons}
-              variant="contained"
-              color="primary"
-              startIcon={<Save />}
-              onClick={performSave}
-            >
-              Save
-            </Button>
+            {savingTagUpdate ? (
+              <CircularProgress
+                variant="indeterminate"
+                disableShrink
+                className={classes.buttons}
+                size={40}
+                thickness={4}
+              />
+            ) : (
+              <Button
+                className={classes.buttons}
+                variant="contained"
+                color="primary"
+                startIcon={<Save />}
+                onClick={performSave}
+              >
+                Save
+              </Button>
+            )}
           </Grid>
           <Grid item>
             <Button
