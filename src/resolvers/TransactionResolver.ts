@@ -270,8 +270,6 @@ export class TransactionResolver {
       throw new Error("Invalid tags supplied");
     }
 
-    console.dir(tagIds);
-
     const transactionish: Array<{
       transactionId: number;
       tagIds: string;
