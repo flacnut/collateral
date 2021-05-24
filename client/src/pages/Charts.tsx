@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useLazyQuery } from "@apollo/client";
 import TagMultiSelector from "../components/input/TagMultiSelector";
 import Queries from "../graphql/Queries";
@@ -26,6 +26,13 @@ const useStyles = makeStyles((theme: Theme) =>
     },
   })
 );
+
+type SeriesData = {
+  [key: string]: {
+    series: Array<[number, number]>;
+    transactions: getTransactionsByTags_transactionsByTags[];
+  };
+};
 
 type Tag = {
   id: number;
@@ -68,20 +75,7 @@ function groupDataByMonth(
 
 export default function Charts() {
   const classes = useStyles();
-
-  const [tagFilters, setTagFilters] = useState<Tag[]>([]);
-  const [
-    getTransactions,
-    { data, error, loading },
-  ] = useLazyQuery<getTransactionsByTags>(Queries.GET_TRANSACTIONS_ONLY_BY_TAG);
-
-  useEffect(() => {
-    getTransactions({
-      variables: {
-        tags: tagFilters.map((t) => t.tag),
-      },
-    });
-  }, [tagFilters, getTransactions]);
+  const [series, setSeries] = useState<SeriesData>({});
 
   const options = {
     chart: {
@@ -93,12 +87,16 @@ export default function Charts() {
     xAxis: {
       type: "datetime",
     },
-    series: [
-      {
-        data: groupDataByMonth(data?.transactionsByTags ?? []),
-      },
-    ],
+    series: Object.keys(series).map((seriesName) => {
+      return { name: seriesName, data: series[seriesName].series };
+    }),
     plotOptions: {
+      column: {
+        stacking: "normal",
+        dataLabels: {
+          enabled: false,
+        },
+      },
       series: {
         cursor: "pointer",
         point: {
@@ -122,35 +120,55 @@ export default function Charts() {
               <Grid item xs={6}>
                 <TagsFilter
                   label={"Select Tags"}
-                  onChange={(tf: Tag[]) => setTagFilters(tf)}
+                  onChange={(s: SeriesData) => {
+                    setSeries({ ...series, ...s });
+                  }}
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <TagsFilter
+                  label={"Select Tags"}
+                  onChange={(s: SeriesData) => {
+                    setSeries({ ...series, ...s });
+                  }}
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <TagsFilter
+                  label={"Select Tags"}
+                  onChange={(s: SeriesData) => {
+                    setSeries({ ...series, ...s });
+                  }}
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <TagsFilter
+                  label={"Select Tags"}
+                  onChange={(s: SeriesData) => {
+                    setSeries({ ...series, ...s });
+                  }}
                 />
               </Grid>
             </Grid>
           </OutlinedGroup>
         </Grid>
-        <Grid item>
-          {loading ? <pre>loading...</pre> : null}
-          {error ? (
-            <>
-              <pre>{JSON.stringify(error).toString()}</pre>
-              <pre>{error.message}</pre>
-            </>
-          ) : null}
-        </Grid>
         <Grid item className={classes.table}>
           <TransactionGrid
             showTags={false}
             transactions={
-              data?.transactionsByTags?.map((t) => {
-                return {
-                  id: t.id,
-                  date: t.date ?? "",
-                  originalDescription: t.originalDescription,
-                  friendlyDescription: t.friendlyDescription,
-                  amount: t.amountCents / 100,
-                  tags: [],
-                };
-              }) ?? []
+              Object.keys(series)
+                .map((seriesName) => series[seriesName].transactions)
+                .flat()
+                .map((t) => {
+                  return {
+                    id: t.id,
+                    date: t.date ?? "",
+                    originalDescription: t.originalDescription,
+                    friendlyDescription: t.friendlyDescription,
+                    amount: t.amountCents / 100,
+                    tags: [],
+                  };
+                }) ?? []
             }
           />
         </Grid>
@@ -163,13 +181,38 @@ export default function Charts() {
   );
 }
 
-function TagsFilter(props: { label: string; onChange: (tags: Tag[]) => void }) {
+function TagsFilter(props: {
+  label: string;
+  onChange: (series: SeriesData) => void;
+}) {
   const { data } = useQuery<getAllTags>(Queries.GET_ALL_TAGS);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [getTransactions] = useLazyQuery<getTransactionsByTags>(
+    Queries.GET_TRANSACTIONS_ONLY_BY_TAG,
+    {
+      onCompleted: (data) => {
+        props.onChange({
+          [tags.map((t) => t.tag).join("::")]: {
+            series: groupDataByMonth(data?.transactionsByTags ?? []),
+            transactions: data?.transactionsByTags,
+          },
+        });
+      },
+    }
+  );
+
   return (
     <div>
       <TagMultiSelector
         label={props.label}
-        onChange={props.onChange}
+        onChange={(tf: Tag[]) => {
+          setTags(tf);
+          getTransactions({
+            variables: {
+              tags: tf.map((t) => t.tag),
+            },
+          });
+        }}
         tags={
           data?.tags
             ? data.tags.map((t) => {
