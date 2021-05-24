@@ -169,9 +169,25 @@ export class TransactionResolver {
     options: TransactionUpdateTagsInput[]
   ) {
     const connection = await getConnection();
-    const transactions = await Transaction.findByIds(
-      options.map((transactionUpdateTagsInput) => transactionUpdateTagsInput.id)
+    const transactionIds = options.map(
+      (transactionUpdateTagsInput) => transactionUpdateTagsInput.id
     );
+
+    const chunksArray: number[][] = [];
+    transactionIds.forEach((tid, i) => {
+      if (!chunksArray[Math.floor(i / 100)]) {
+        chunksArray[Math.floor(i / 100)] = [];
+      }
+      chunksArray[Math.floor(i / 100)].push(tid);
+    });
+
+    const transactions = (
+      await Promise.all(
+        chunksArray.map(async (ids) => {
+          return await Transaction.findByIds(ids);
+        })
+      )
+    ).flat();
 
     const allUpdateActions = transactions.map(async (transaction) => {
       const allExpectedTags =
@@ -254,6 +270,8 @@ export class TransactionResolver {
       throw new Error("Invalid tags supplied");
     }
 
+    console.dir(tagIds);
+
     const transactionish: Array<{
       transactionId: number;
       tagIds: string;
@@ -267,8 +285,22 @@ export class TransactionResolver {
         ) 
         WHERE tagIds = "${tagIds}"`);
 
-    return await Transaction.findByIds(
-      transactionish.map((t) => t.transactionId)
-    );
+    const chunksArray: number[][] = [];
+    transactionish
+      .map((t) => t.transactionId)
+      .forEach((tid, i) => {
+        if (!chunksArray[Math.floor(i / 100)]) {
+          chunksArray[Math.floor(i / 100)] = [];
+        }
+        chunksArray[Math.floor(i / 100)].push(tid);
+      });
+
+    return (
+      await Promise.all(
+        chunksArray.map(async (ids) => {
+          return await Transaction.findByIds(ids);
+        })
+      )
+    ).flat();
   }
 }
