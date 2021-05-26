@@ -60,6 +60,22 @@ const queries = {
     }
   `,
 
+  GET_FILTERED_TRANSACTIONS: gql`
+    query getFilteredTransactions($options: RichQuery!) {
+      getFilteredTransactions(options: $options) {
+        id
+        date
+        amountCents
+        originalDescription
+        friendlyDescription
+        tags {
+          id
+          tag
+        }
+      }
+    }
+  `,
+
   GET_ALL_TAGS: gql`
     query getAllTags {
       tags {
