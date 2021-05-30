@@ -12,6 +12,11 @@ import TableContainer from "@material-ui/core/TableContainer";
 import TableHead from "@material-ui/core/TableHead";
 import TableRow from "@material-ui/core/TableRow";
 import Paper from "@material-ui/core/Paper";
+import TagAutoComplete from "../input/TagAutoComplete";
+import { Tag } from "../input/TagMultiSelector";
+import { useQuery } from "@apollo/client";
+import { getAllTags } from "../../graphql/types/getAllTags";
+import Queries from "../../graphql/Queries";
 
 const StyledTableCell = withStyles((theme: Theme) =>
   createStyles({
@@ -41,7 +46,7 @@ export type GridData = {
   originalDescription: string;
   friendlyDescription?: string | null;
   amount: number;
-  tags?: Array<{ tag: string }>;
+  tags?: Tag[];
 };
 
 const useStyles = makeStyles({
@@ -55,6 +60,7 @@ export function TransactionGrid(props: {
   showTags: boolean;
 }) {
   const classes = useStyles();
+  const tagOptionsResult = useQuery<getAllTags>(Queries.GET_ALL_TAGS);
 
   return (
     <TableContainer component={Paper}>
@@ -70,7 +76,7 @@ export function TransactionGrid(props: {
           </TableRow>
         </TableHead>
         <TableBody>
-          {props?.transactions?.map((row) => (
+          {props?.transactions?.map((row, index) => (
             <StyledTableRow key={row.id}>
               <StyledTableCell component="th" scope="row">
                 {row.date}
@@ -81,7 +87,12 @@ export function TransactionGrid(props: {
               <StyledTableCell align="right">{row.amount}</StyledTableCell>
               {props.showTags ? (
                 <StyledTableCell align="right">
-                  {row.tags?.map((t) => t.tag).join(", ")}
+                  <TagAutoComplete
+                    id={"tag-auto-complete-" + index}
+                    options={tagOptionsResult.data?.tags ?? []}
+                    onChange={(t) => console.dir(t)}
+                    initialValue={row.tags ?? []}
+                  />
                 </StyledTableCell>
               ) : null}
             </StyledTableRow>

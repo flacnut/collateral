@@ -56,6 +56,10 @@ const queries = {
         amountCents
         originalDescription
         friendlyDescription
+        tags {
+          id
+          tag
+        }
       }
     }
   `,

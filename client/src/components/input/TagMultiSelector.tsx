@@ -6,7 +6,7 @@ import Autocomplete, {
 import parse from "autosuggest-highlight/parse";
 import match from "autosuggest-highlight/match";
 
-type Tag = {
+export type Tag = {
   id: number;
   tag: string;
 };

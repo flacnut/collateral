@@ -153,7 +153,7 @@ export default function Charts() {
         </Grid>
         <Grid item className={classes.table}>
           <TransactionGrid
-            showTags={false}
+            showTags={true}
             transactions={
               series
                 .map((serie) => serie.transactions)
@@ -165,7 +165,7 @@ export default function Charts() {
                     originalDescription: t.originalDescription,
                     friendlyDescription: t.friendlyDescription,
                     amount: t.amountCents / 100,
-                    tags: [],
+                    tags: t.tags,
                   };
                 }) ?? []
             }
