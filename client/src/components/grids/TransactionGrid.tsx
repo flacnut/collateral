@@ -12,6 +12,11 @@ import TableContainer from "@material-ui/core/TableContainer";
 import TableHead from "@material-ui/core/TableHead";
 import TableRow from "@material-ui/core/TableRow";
 import Paper from "@material-ui/core/Paper";
+import TagAutoComplete from "../input/TagAutoComplete";
+import { useQuery } from "@apollo/client";
+import { getAllTags } from "../../graphql/types/getAllTags";
+import Queries from "../../graphql/Queries";
+import { Transaction } from "../../common/types";
 
 const StyledTableCell = withStyles((theme: Theme) =>
   createStyles({
@@ -35,15 +40,6 @@ const StyledTableRow = withStyles((theme: Theme) =>
   })
 )(TableRow);
 
-export type GridData = {
-  id: number;
-  date: string;
-  originalDescription: string;
-  friendlyDescription?: string | null;
-  amount: number;
-  tags?: Array<{ tag: string }>;
-};
-
 const useStyles = makeStyles({
   table: {
     minWidth: 700,
@@ -51,10 +47,11 @@ const useStyles = makeStyles({
 });
 
 export function TransactionGrid(props: {
-  transactions: GridData[];
+  transactions: Transaction[];
   showTags: boolean;
 }) {
   const classes = useStyles();
+  const tagOptionsResult = useQuery<getAllTags>(Queries.GET_ALL_TAGS);
 
   return (
     <TableContainer component={Paper}>
@@ -70,7 +67,7 @@ export function TransactionGrid(props: {
           </TableRow>
         </TableHead>
         <TableBody>
-          {props?.transactions?.map((row) => (
+          {props?.transactions?.map((row, index) => (
             <StyledTableRow key={row.id}>
               <StyledTableCell component="th" scope="row">
                 {row.date}
@@ -78,10 +75,17 @@ export function TransactionGrid(props: {
               <StyledTableCell align="right">
                 {row.originalDescription}
               </StyledTableCell>
-              <StyledTableCell align="right">{row.amount}</StyledTableCell>
+              <StyledTableCell align="right">
+                {row.amountCents / 100}
+              </StyledTableCell>
               {props.showTags ? (
                 <StyledTableCell align="right">
-                  {row.tags?.map((t) => t.tag).join(", ")}
+                  <TagAutoComplete
+                    id={"tag-auto-complete-" + index}
+                    options={tagOptionsResult.data?.tags ?? []}
+                    onChange={(t) => console.dir(t)}
+                    initialValue={row.tags ?? []}
+                  />
                 </StyledTableCell>
               ) : null}
             </StyledTableRow>

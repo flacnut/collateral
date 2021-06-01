@@ -13,6 +13,7 @@ import {
 } from "../graphql/types/getTransactionsByTags";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
+import { Transaction } from "../common/types";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -153,21 +154,14 @@ export default function Charts() {
         </Grid>
         <Grid item className={classes.table}>
           <TransactionGrid
-            showTags={false}
+            showTags={true}
             transactions={
-              series
+              (series
                 .map((serie) => serie.transactions)
                 .flat()
                 .map((t) => {
-                  return {
-                    id: t.id,
-                    date: t.date ?? "",
-                    originalDescription: t.originalDescription,
-                    friendlyDescription: t.friendlyDescription,
-                    amount: t.amountCents / 100,
-                    tags: [],
-                  };
-                }) ?? []
+                  return { ...t, date: new Date(t.date) };
+                }) as Transaction[]) ?? []
             }
           />
         </Grid>

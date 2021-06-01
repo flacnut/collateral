@@ -16,6 +16,7 @@ import OutlinedGroup from "../components/OutlinedGroup";
 import { Refresh, Save } from "@material-ui/icons";
 import { getAllAccounts } from "../graphql/types/getAllAccounts";
 import { CircularProgress } from "@material-ui/core";
+import { Account, Tag } from "../common/types";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -59,16 +60,6 @@ const useStyles = makeStyles((theme: Theme) =>
     },
   })
 );
-
-type Tag = {
-  id: number;
-  tag: string;
-};
-
-type Account = {
-  id: number;
-  name: string;
-};
 
 export default function Transactions() {
   const classes = useStyles();
@@ -328,7 +319,13 @@ function AccountsFilter(props: { onChange: (options: Account[]) => void }) {
     <div>
       <AccountMultiSelector
         label={"Accounts"}
-        onChange={props.onChange}
+        onChange={(options: Array<{ id: number; name: string }>) => {
+          props.onChange(
+            accountsResult.data?.allAccounts?.filter(
+              (a) => options.find((o) => o.id === a.id) !== null
+            ) as Account[]
+          );
+        }}
         options={
           accountsResult.data?.allAccounts
             ? accountsResult.data?.allAccounts.map((a) => {

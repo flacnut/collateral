@@ -7,6 +7,12 @@
 // GraphQL query operation: getTransactionsByTags
 // ====================================================
 
+export interface getTransactionsByTags_transactionsByTags_tags {
+  __typename: "Tag";
+  id: number;
+  tag: string;
+}
+
 export interface getTransactionsByTags_transactionsByTags {
   __typename: "Transaction";
   id: number;
@@ -14,6 +20,7 @@ export interface getTransactionsByTags_transactionsByTags {
   amountCents: number;
   originalDescription: string;
   friendlyDescription: string | null;
+  tags: getTransactionsByTags_transactionsByTags_tags[];
 }
 
 export interface getTransactionsByTags {
