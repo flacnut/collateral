@@ -3,12 +3,7 @@ import React from "react";
 import Chip from "@material-ui/core/Chip";
 import TextField from "@material-ui/core/TextField";
 import Autocomplete from "@material-ui/lab/Autocomplete";
-
-type Tag = {
-  id: number;
-  tag: string;
-  fixed?: boolean;
-};
+import { Tag } from "../../common/types";
 
 type Props = {
   id: string;

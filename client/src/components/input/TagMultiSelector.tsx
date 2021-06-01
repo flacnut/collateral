@@ -5,11 +5,7 @@ import Autocomplete, {
 } from "@material-ui/lab/Autocomplete";
 import parse from "autosuggest-highlight/parse";
 import match from "autosuggest-highlight/match";
-
-export type Tag = {
-  id: number;
-  tag: string;
-};
+import { Tag } from "../../common/types";
 
 type Props = {
   tags?: Tag[];

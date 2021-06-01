@@ -1,6 +1,4 @@
 import React from "react";
-import CSVDropZone from "../components/input/CSVDropZone";
-
 import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
 import Paper from "@material-ui/core/Paper";
 import Grid from "@material-ui/core/Grid";
@@ -52,9 +50,6 @@ export default function Library() {
   return (
     <div className={classes.root}>
       <Grid container spacing={2}>
-        <Grid item xs={12}>
-          <CSVDropZone onSaveFile={(f) => true} />
-        </Grid>
         <Grid item xs={12}>
           <TagAutoComplete
             id="tags-autocomplete-example"

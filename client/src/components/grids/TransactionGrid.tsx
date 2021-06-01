@@ -13,10 +13,10 @@ import TableHead from "@material-ui/core/TableHead";
 import TableRow from "@material-ui/core/TableRow";
 import Paper from "@material-ui/core/Paper";
 import TagAutoComplete from "../input/TagAutoComplete";
-import { Tag } from "../input/TagMultiSelector";
 import { useQuery } from "@apollo/client";
 import { getAllTags } from "../../graphql/types/getAllTags";
 import Queries from "../../graphql/Queries";
+import { Transaction } from "../../common/types";
 
 const StyledTableCell = withStyles((theme: Theme) =>
   createStyles({
@@ -40,15 +40,6 @@ const StyledTableRow = withStyles((theme: Theme) =>
   })
 )(TableRow);
 
-export type GridData = {
-  id: number;
-  date: string;
-  originalDescription: string;
-  friendlyDescription?: string | null;
-  amount: number;
-  tags?: Tag[];
-};
-
 const useStyles = makeStyles({
   table: {
     minWidth: 700,
@@ -56,7 +47,7 @@ const useStyles = makeStyles({
 });
 
 export function TransactionGrid(props: {
-  transactions: GridData[];
+  transactions: Transaction[];
   showTags: boolean;
 }) {
   const classes = useStyles();
@@ -84,7 +75,9 @@ export function TransactionGrid(props: {
               <StyledTableCell align="right">
                 {row.originalDescription}
               </StyledTableCell>
-              <StyledTableCell align="right">{row.amount}</StyledTableCell>
+              <StyledTableCell align="right">
+                {row.amountCents / 100}
+              </StyledTableCell>
               {props.showTags ? (
                 <StyledTableCell align="right">
                   <TagAutoComplete
