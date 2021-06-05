@@ -10,7 +10,7 @@ import {
   ObjectType,
   Info,
 } from "type-graphql";
-import { In } from "typeorm";
+import { In, IsNull, Not } from "typeorm";
 import {
   CalculateBalance,
   DateAmountAccountTuple,
@@ -70,9 +70,10 @@ export class AccountResolver {
   @Query(() => [AccountWithState])
   async allAccounts(@Info() requestInfo: any) {
     var accounts = await Account.find();
-    const selectedFields: Array<string> = requestInfo.fieldNodes[0].selectionSet.selections.map(
-      (selection: any) => selection.name.value
-    );
+    const selectedFields: Array<string> =
+      requestInfo.fieldNodes[0].selectionSet.selections.map(
+        (selection: any) => selection.name.value
+      );
 
     if (
       !selectedFields.includes("latestTransaction") &&
@@ -143,52 +144,45 @@ export class AccountResolver {
   async generateTransfers(
     @Arg("accountIds", () => [Int]) accountIds: Array<number>
   ) {
-    const accounts = await Account.findByIds(accountIds);
-
-    const transactionsByAccount = await Promise.all(
-      accounts.map(async (accnt) => {
-        const transactions = await accnt.transactions;
-        return transactions.map((t) => {
-          return {
-            date: new Date(t.date),
-            amountCents: t.amountCents,
-            transactionId: t.id,
-            accountId: accnt.id,
-          } as DateAmountAccountTuple;
-        });
+    const transactions = await Transaction.find({
+      transferPair: IsNull(),
+      accountId: In(accountIds),
+    });
+    const pairs = MatchTransfers(
+      transactions.map((t) => {
+        return {
+          date: new Date(t.date),
+          amountCents: t.amountCents,
+          transactionId: t.id,
+          accountId: t.accountId,
+        } as DateAmountAccountTuple;
       })
     );
 
-    let allTransactions: DateAmountAccountTuple[] = [];
-    transactionsByAccount.forEach(
-      (trans) => (allTransactions = allTransactions.concat(trans))
-    );
+    const transfers: Transfer[] = [];
+    const updateTransactionsPromises = pairs.map(async (p) => {
+      let fromT = transactions.find((t) => t.id === p.from);
+      let toT = transactions.find((t) => t.id === p.to);
 
-    const pairs = MatchTransfers(allTransactions);
+      if (fromT == null || toT == null) {
+        throw new Error("???");
+      }
 
-    const allPairIds: number[] = [];
-    pairs.forEach((p) => {
-      allPairIds.push(p.from);
-      allPairIds.push(p.to);
+      if (
+        fromT?.amountCents + toT?.amountCents === 0 &&
+        fromT.amountCents < 0
+      ) {
+        fromT.transferPair = toT;
+        toT.transferPair = fromT;
+      }
+
+      transfers.push({
+        from: await fromT.save(),
+        to: await toT.save(),
+      });
     });
 
-    const matchedTransactions = await Transaction.findByIds(allPairIds);
-    const transfers = await Promise.all(
-      pairs.map(async (pair) => {
-        let t = {
-          from: matchedTransactions.find((t) => t.id === pair.from),
-          to: matchedTransactions.find((t) => t.id === pair.to),
-        };
-
-        return await Transfer.create({
-          ...t,
-          fromAccount: await t.from?.account,
-          toAccount: await t.to?.account,
-          date: t.from?.date,
-        }).save();
-      })
-    );
-
+    await Promise.all(updateTransactionsPromises);
     return transfers;
   }
 
@@ -196,8 +190,26 @@ export class AccountResolver {
   async getTransfers(
     @Arg("accountIds", () => [Int]) accountIds: Array<number>
   ) {
-    return await Transfer.find({
-      where: [{ toAccount: In(accountIds) }, { fromAccount: In(accountIds) }],
+    const transferTransactions = await Transaction.find({
+      transferPairId: Not(IsNull()),
+      accountId: In(accountIds),
+    });
+
+    const pairs = transferTransactions.reduce(
+      (memo: { [key: number]: number }, transaction) => {
+        if (transaction.amountCents < 0) {
+          memo[transaction.id] = transaction.transferPairId;
+        }
+        return memo;
+      },
+      {}
+    );
+
+    return Object.keys(pairs).map((fromId) => {
+      return {
+        to: transferTransactions.find((t) => t.id === pairs[Number(fromId)]),
+        from: transferTransactions.find((t) => t.id === Number(fromId)),
+      };
     });
   }
 

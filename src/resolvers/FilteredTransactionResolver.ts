@@ -1,10 +1,8 @@
-import { Transaction, Transfer } from "@entities";
+import { Transaction } from "@entities";
 import {
   Between,
   MoreThan,
   LessThan,
-  Not,
-  In,
   FindConditions,
   Raw,
   MoreThanOrEqual,
@@ -271,10 +269,11 @@ export class FilteredTransactionResolver {
     }
 
     if (options.where.excludeTransfers) {
+      /* TODO
       const transfers = await Transfer.find();
       searchOptions.id = Not(
         In(transfers.map((t) => [t.to.id, t.from.id]).flat())
-      );
+      ); */
     }
 
     let transactions = await Transaction.find({
