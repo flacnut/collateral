@@ -12,7 +12,6 @@ import {
 import { Tag } from "./Tag";
 import { Source } from "./Source";
 import { Account } from "./Account";
-import { Transfer } from "./Transfer";
 import { Field, ObjectType, Int } from "type-graphql";
 
 @Entity()
@@ -59,7 +58,13 @@ export class Transaction extends BaseEntity {
   @Column()
   accountId: number;
 
-  @Field(() => Transfer, { nullable: true })
-  @OneToOne(() => Transfer)
-  transferPair: Transfer | null;
+  @Field(() => Transaction, { nullable: true })
+  @OneToOne(() => Transaction, (transaction) => transaction.transferPair, {
+    lazy: true,
+  })
+  @JoinColumn({ name: "transferPairId" })
+  transferPair: Promise<Transaction | null>;
+
+  @Column({ nullable: true })
+  transferPairId: number;
 }

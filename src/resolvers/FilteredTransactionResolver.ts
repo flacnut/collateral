@@ -1,14 +1,13 @@
-import { Transaction, Transfer } from "@entities";
+import { Transaction } from "@entities";
 import {
   Between,
   MoreThan,
   LessThan,
-  Not,
-  In,
   FindConditions,
   Raw,
   MoreThanOrEqual,
   LessThanOrEqual,
+  IsNull,
 } from "typeorm";
 import {
   Arg,
@@ -271,10 +270,7 @@ export class FilteredTransactionResolver {
     }
 
     if (options.where.excludeTransfers) {
-      const transfers = await Transfer.find();
-      searchOptions.id = Not(
-        In(transfers.map((t) => [t.to.id, t.from.id]).flat())
-      );
+      searchOptions.transferPairId = IsNull();
     }
 
     let transactions = await Transaction.find({

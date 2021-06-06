@@ -53,11 +53,11 @@ export class Account extends BaseEntity {
   })
   transactions: Promise<Transaction[]>;
 
+  // Not stored in ORM, must be generated manually
+
   @Field(() => [Transfer], { nullable: false })
-  @OneToMany(() => Transfer, (transfer) => transfer.toAccount)
   incomingTransfers: Transfer[];
 
   @Field(() => [Transfer], { nullable: false })
-  @OneToMany(() => Transfer, (transfer) => transfer.toAccount)
   outgoingTransfers: Transfer[];
 }
