@@ -1,4 +1,5 @@
 import { Transaction } from "../entity";
+import { createHash } from "crypto";
 
 export type DateAmountTuple = { date: Date; amountCents: number };
 export type DateAmountAccountTuple = DateAmountTuple & {
@@ -10,6 +11,40 @@ export type MatchedPair = {
   to: number;
   amountCents: number;
 };
+
+type BaseTransaction = {
+  amountCents: number;
+  date: Date;
+  originalDescription: string;
+};
+
+export function DetectDuplicateTransactions<T extends BaseTransaction>(
+  transactions: T[]
+): [T[], T[]] {
+  const duplicates: T[] = [];
+  const hashMappedTransactions = transactions.reduce(
+    (memo: { [key: string]: T }, x: T) => {
+      let hash = createHash("sha256");
+      let shaSum = hash
+        .update(
+          `${x.amountCents}__${x.date.toLocaleString()}__${
+            x.originalDescription
+          }`
+        )
+        .digest("hex");
+
+      if (memo[shaSum] && memo[shaSum].amountCents === x.amountCents) {
+        duplicates.push(x);
+      }
+
+      memo[shaSum] = x;
+      return memo;
+    },
+    {}
+  );
+
+  return [Object.values(hashMappedTransactions), duplicates];
+}
 
 export function CalculateBalance(
   transactions: DateAmountTuple[] | Transaction[],

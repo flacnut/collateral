@@ -1,4 +1,8 @@
-import { CalculateBalance, MatchTransfers } from "../AccountUtils";
+import {
+  CalculateBalance,
+  MatchTransfers,
+  DetectDuplicateTransactions,
+} from "../AccountUtils";
 
 test("Calculates accout balance with offset", () => {
   expect(
@@ -28,6 +32,68 @@ test("Calculates accout balance with offset", () => {
     { date: new Date("2018-01-03"), amountCents: 0 },
     { date: new Date("2018-01-04"), amountCents: 5400 },
     { date: new Date("2018-01-05"), amountCents: 6000 },
+  ]);
+});
+
+test("Deduplicate transactions", () => {
+  expect(
+    DetectDuplicateTransactions([
+      {
+        date: new Date("2017-12-23"),
+        amountCents: -1000,
+        originalDescription: "AMZN BUY SOCKS",
+      },
+      {
+        date: new Date("2017-12-23"),
+        amountCents: -1432,
+        originalDescription: "AMZN BUY SOCKS",
+      },
+      {
+        date: new Date("2017-11-14"),
+        amountCents: -1000,
+        originalDescription: "AMZN BUY CHEESE",
+      },
+      {
+        date: new Date("2017-12-18"),
+        amountCents: 1000,
+        originalDescription: "PAYMENT THANK YOU",
+      },
+      {
+        date: new Date("2017-12-23"),
+        amountCents: -1000,
+        originalDescription: "AMZN BUY SOCKS",
+      },
+    ])
+  ).toEqual([
+    [
+      {
+        amountCents: -1000,
+        date: new Date("2017-12-23"),
+        originalDescription: "AMZN BUY SOCKS",
+      },
+      {
+        amountCents: -1432,
+        date: new Date("2017-12-23"),
+        originalDescription: "AMZN BUY SOCKS",
+      },
+      {
+        amountCents: -1000,
+        date: new Date("2017-11-14"),
+        originalDescription: "AMZN BUY CHEESE",
+      },
+      {
+        amountCents: 1000,
+        date: new Date("2017-12-18"),
+        originalDescription: "PAYMENT THANK YOU",
+      },
+    ],
+    [
+      {
+        amountCents: -1000,
+        date: new Date("2017-12-23"),
+        originalDescription: "AMZN BUY SOCKS",
+      },
+    ],
   ]);
 });
 
