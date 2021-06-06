@@ -59,9 +59,11 @@ export class Transaction extends BaseEntity {
   accountId: number;
 
   @Field(() => Transaction, { nullable: true })
-  @OneToOne(() => Transaction)
+  @OneToOne(() => Transaction, (transaction) => transaction.transferPair, {
+    lazy: true,
+  })
   @JoinColumn({ name: "transferPairId" })
-  transferPair: Transaction | null;
+  transferPair: Promise<Transaction | null>;
 
   @Column({ nullable: true })
   transferPairId: number;

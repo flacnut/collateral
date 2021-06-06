@@ -7,6 +7,7 @@ import {
   Raw,
   MoreThanOrEqual,
   LessThanOrEqual,
+  IsNull,
 } from "typeorm";
 import {
   Arg,
@@ -269,11 +270,7 @@ export class FilteredTransactionResolver {
     }
 
     if (options.where.excludeTransfers) {
-      /* TODO
-      const transfers = await Transfer.find();
-      searchOptions.id = Not(
-        In(transfers.map((t) => [t.to.id, t.from.id]).flat())
-      ); */
+      searchOptions.transferPairId = IsNull();
     }
 
     let transactions = await Transaction.find({

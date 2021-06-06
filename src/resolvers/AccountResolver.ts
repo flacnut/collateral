@@ -145,6 +145,7 @@ export class AccountResolver {
     @Arg("accountIds", () => [Int]) accountIds: Array<number>
   ) {
     const transactions = await Transaction.find({
+      transferPairId: IsNull(),
       transferPair: IsNull(),
       accountId: In(accountIds),
     });
@@ -172,8 +173,8 @@ export class AccountResolver {
         fromT?.amountCents + toT?.amountCents === 0 &&
         fromT.amountCents < 0
       ) {
-        fromT.transferPair = toT;
-        toT.transferPair = fromT;
+        fromT.transferPairId = toT.id;
+        toT.transferPairId = fromT.id;
       }
 
       transfers.push({
@@ -205,12 +206,14 @@ export class AccountResolver {
       {}
     );
 
-    return Object.keys(pairs).map((fromId) => {
-      return {
-        to: transferTransactions.find((t) => t.id === pairs[Number(fromId)]),
-        from: transferTransactions.find((t) => t.id === Number(fromId)),
-      };
-    });
+    return Object.keys(pairs)
+      .map((fromId) => {
+        return {
+          to: transferTransactions.find((t) => t.id === pairs[Number(fromId)]),
+          from: transferTransactions.find((t) => t.id === Number(fromId)),
+        };
+      })
+      .filter((transfer) => transfer.to != null && transfer.from != null);
   }
 
   @Query(() => [AccountBalance])
