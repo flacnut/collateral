@@ -10,6 +10,9 @@ type Props = {
   initialValue: Tag[];
   options: Tag[];
   onChange: (newValue: Tag[]) => void;
+  variant: "outlined" | "standard";
+  className?: string | undefined;
+  disabled?: boolean;
 };
 
 export default function TagAutoComplete(props: Props) {
@@ -35,8 +38,10 @@ export default function TagAutoComplete(props: Props) {
   return (
     <Autocomplete
       multiple
+      className={props.className}
       id="fixed-tags-demo"
       value={value}
+      disabled={props.disabled}
       onChange={(event, newValue) => {
         setValue([
           ...fixedOptions,
@@ -51,15 +56,20 @@ export default function TagAutoComplete(props: Props) {
           <Chip
             label={option.tag}
             {...getTagProps({ index })}
-            disabled={fixedOptions.indexOf(option) !== -1}
+            disabled={fixedOptions.indexOf(option) !== -1 || props.disabled}
             variant={isUnsavedTag(option) ? "outlined" : "default"}
             {...(isFixedTag(option) ? { onDelete: undefined } : {})}
           />
         ))
       }
-      style={{ width: 500 }}
       renderInput={(params) => (
-        <TextField {...params} label="" variant="standard" placeholder="" />
+        <TextField
+          {...params}
+          label=""
+          variant={props.variant}
+          placeholder=""
+          className={props.className}
+        />
       )}
     />
   );

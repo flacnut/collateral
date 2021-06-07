@@ -85,6 +85,7 @@ export function TransactionGrid(props: {
                     options={tagOptionsResult.data?.tags ?? []}
                     onChange={(t) => console.dir(t)}
                     initialValue={row.tags ?? []}
+                    variant="standard"
                   />
                 </StyledTableCell>
               ) : null}

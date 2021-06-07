@@ -3,6 +3,8 @@ import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
 import Paper from "@material-ui/core/Paper";
 import Grid from "@material-ui/core/Grid";
 import TagAutoComplete from "../components/input/TagAutoComplete";
+import FilterTransactionsView from "../components/views/FilterTransactionsView";
+import { Account } from "../common/types";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -44,6 +46,58 @@ const exampleTags = [
   { id: 21, tag: "cc-payment" },
 ];
 
+enum Institutions {
+  FIRST_TECH_FEDERAL = "First Tech Federal CU",
+  FIDELITY = "Fidelity",
+  CITIBANK = "Citi",
+  CHASE = "Chase Bank",
+  CAPITOL_ONE = "Capitol One",
+}
+
+// example accounts
+const exampleAccounts: Account[] = [
+  {
+    id: 1,
+    accountName: "Adam Checking",
+    accountNumber: "*2612",
+    institution: Institutions.FIRST_TECH_FEDERAL,
+    latestBalance: null,
+    latestTransaction: null,
+  },
+  {
+    id: 2,
+    accountName: "Adam Checking (new)",
+    accountNumber: "*4508",
+    institution: Institutions.FIRST_TECH_FEDERAL,
+    latestBalance: null,
+    latestTransaction: null,
+  },
+  {
+    id: 3,
+    accountName: "Adam Savings",
+    accountNumber: "*2609",
+    institution: Institutions.FIRST_TECH_FEDERAL,
+    latestBalance: null,
+    latestTransaction: null,
+  },
+  {
+    id: 4,
+    accountName: "Odessy Credit Card",
+    accountNumber: "*8052",
+    institution: Institutions.FIRST_TECH_FEDERAL,
+    latestBalance: null,
+    latestTransaction: null,
+  },
+  {
+    id: 5,
+    accountName: "Fidelity JWROS",
+    accountNumber: "Z06297743",
+    institution: Institutions.FIDELITY,
+    latestBalance: null,
+    latestTransaction: null,
+  },
+];
+
 export default function Library() {
   const classes = useStyles();
 
@@ -60,25 +114,16 @@ export default function Library() {
               { id: 19, tag: "Adam" },
               { id: 20, tag: "Costco" },
             ]}
+            variant="standard"
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
-          <Paper className={classes.paper}>xs=12 sm=6</Paper>
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <Paper className={classes.paper}>xs=12 sm=6</Paper>
-        </Grid>
-        <Grid item xs={6} sm={3}>
-          <Paper className={classes.paper}>xs=6 sm=3</Paper>
-        </Grid>
-        <Grid item xs={6} sm={3}>
-          <Paper className={classes.paper}>xs=6 sm=3</Paper>
-        </Grid>
-        <Grid item xs={6} sm={3}>
-          <Paper className={classes.paper}>xs=6 sm=3</Paper>
-        </Grid>
-        <Grid item xs={6} sm={3}>
-          <Paper className={classes.paper}>xs=6 sm=3</Paper>
+        <Grid item xs={12} sm={12}>
+          <Paper className={classes.paper}>
+            <FilterTransactionsView
+              tagOptions={exampleTags}
+              accountOptions={exampleAccounts}
+            />
+          </Paper>
         </Grid>
       </Grid>
     </div>
