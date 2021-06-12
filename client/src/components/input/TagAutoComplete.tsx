@@ -1,5 +1,5 @@
 /* eslint-disable no-use-before-define */
-import React from "react";
+import React, { useEffect } from "react";
 import Chip from "@material-ui/core/Chip";
 import TextField from "@material-ui/core/TextField";
 import Autocomplete from "@material-ui/lab/Autocomplete";
@@ -11,6 +11,7 @@ type Props = {
   options: Tag[];
   onChange: (newValue: Tag[]) => void;
   variant: "outlined" | "standard";
+  mode: "select" | "edit";
   className?: string | undefined;
   disabled?: boolean;
 };
@@ -35,6 +36,10 @@ export default function TagAutoComplete(props: Props) {
     ...props.initialValue.filter((tag) => !isFixedTag(tag)),
   ]);
 
+  useEffect(() => {
+    props.onChange(value);
+  }, [props, value]);
+
   return (
     <Autocomplete
       multiple
@@ -57,7 +62,11 @@ export default function TagAutoComplete(props: Props) {
             label={option.tag}
             {...getTagProps({ index })}
             disabled={fixedOptions.indexOf(option) !== -1 || props.disabled}
-            variant={isUnsavedTag(option) ? "outlined" : "default"}
+            variant={
+              isUnsavedTag(option) && props.mode === "edit"
+                ? "outlined"
+                : "default"
+            }
             {...(isFixedTag(option) ? { onDelete: undefined } : {})}
           />
         ))

@@ -1,5 +1,5 @@
 /* eslint-disable no-use-before-define */
-import React from "react";
+import React, { useEffect } from "react";
 import Chip from "@material-ui/core/Chip";
 import TextField from "@material-ui/core/TextField";
 import Autocomplete from "@material-ui/lab/Autocomplete";
@@ -17,6 +17,10 @@ type Props = {
 
 export default function AccountAutoComplete(props: Props) {
   const [value, setValue] = React.useState(props.initialValue);
+
+  useEffect(() => {
+    props.onChange(value);
+  }, [props, value]);
 
   return (
     <Autocomplete

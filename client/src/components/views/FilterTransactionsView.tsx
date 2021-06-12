@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
 import {
   FormControl,
@@ -13,7 +13,12 @@ import {
 import { Tag, Account } from "../../common/types";
 import TagAutoComplete from "../input/TagAutoComplete";
 import AccountAutoComplete from "../input/AccountAutoComplete";
-//import Queries from "../../graphql/Queries";
+import {
+  ListOptions,
+  NumberCompareOptions,
+  RichQueryFilter,
+  TextMatchOptions,
+} from "../../graphql/graphql-global-types";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -30,6 +35,7 @@ const useStyles = makeStyles((theme: Theme) =>
 type Props = {
   tagOptions: Tag[];
   accountOptions: Account[];
+  onChange: (filterOptions: RichQueryFilter) => void;
 };
 
 export default function FilterTransactionsView(props: Props) {
@@ -51,6 +57,64 @@ export default function FilterTransactionsView(props: Props) {
   const [date, setDate] = useState("");
   const [dateOther, setDateOther] = useState("");
   const [dateMatch, setDateMatch] = useState("EQUALS");
+
+  useEffect(() => {
+    console.dir(accounts);
+    props.onChange({
+      amount:
+        amount !== ""
+          ? {
+              amountCents: Number(amount),
+              secondAmountCents: Number(amountOther),
+              compare: (NumberCompareOptions as any)[amountMatch],
+            }
+          : null,
+      description:
+        description !== ""
+          ? {
+              text: [description],
+              match: (TextMatchOptions as any)[descriptionMatch],
+            }
+          : null,
+      date:
+        date !== ""
+          ? {
+              value: date,
+              secondValue: dateOther,
+              compare: (NumberCompareOptions as any)[dateMatch],
+            }
+          : null,
+      tags:
+        tags.length > 0
+          ? {
+              itemIds: tags.map((t) => t.id),
+              queryBy: (ListOptions as any)[tagMatch],
+            }
+          : null,
+      accounts:
+        accounts.length > 0
+          ? {
+              itemIds: accounts.map((a) => a.id),
+              queryBy: (ListOptions as any)[accountMatch],
+            }
+          : null,
+      excludeTransfers: false,
+    });
+  }, [
+    props,
+    description,
+    descriptionMatch,
+    amount,
+    amountOther,
+    amountMatch,
+    tags,
+    tagMatch,
+    accounts,
+    accountMatch,
+    date,
+    dateOther,
+    dateMatch,
+  ]);
 
   return (
     <Grid item>
@@ -102,8 +166,8 @@ export default function FilterTransactionsView(props: Props) {
             >
               <MenuItem value="BETWEEN">Between</MenuItem>
               <MenuItem value="EQUALS">=</MenuItem>
-              <MenuItem value={"GREATHER_THAN"}>&gt;</MenuItem>
-              <MenuItem value={"GREATHER_THAN_OET"}>&gt;=</MenuItem>
+              <MenuItem value={"GREATER_THAN"}>&gt;</MenuItem>
+              <MenuItem value={"GREATER_THAN_OET"}>&gt;=</MenuItem>
               <MenuItem value={"LESS_THAN"}>&lt;</MenuItem>
               <MenuItem value={"LESS_THAN_OET"}>&lt;=</MenuItem>
             </Select>
@@ -158,6 +222,7 @@ export default function FilterTransactionsView(props: Props) {
             onChange={(_tags: Tag[]) => setTags(_tags)}
             initialValue={tags}
             variant="outlined"
+            mode="select"
             disabled={tagMatch === "EMPTY" || tagMatch === "NOT_EMPTY"}
           />
         </Grid>
@@ -179,10 +244,10 @@ export default function FilterTransactionsView(props: Props) {
             >
               <MenuItem value="BETWEEN">Between</MenuItem>
               <MenuItem value="EQUALS">On</MenuItem>
-              <MenuItem value={"GREATHER_THAN"}>After</MenuItem>
-              <MenuItem value={"GREATHER_THAN_OET"}>On or After</MenuItem>
-              <MenuItem value={"LESS_THAN"}>Before</MenuItem>
-              <MenuItem value={"LESS_THAN_OET"}>Before or On</MenuItem>
+              <MenuItem value="GREATER_THAN">After</MenuItem>
+              <MenuItem value="GREATER_THAN_OET">On or After</MenuItem>
+              <MenuItem value="LESS_THAN">Before</MenuItem>
+              <MenuItem value="LESS_THAN_OET">Before or On</MenuItem>
             </Select>
           </FormControl>
         </Grid>

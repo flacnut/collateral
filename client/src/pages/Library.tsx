@@ -115,6 +115,7 @@ export default function Library() {
               { id: 20, tag: "Costco" },
             ]}
             variant="standard"
+            mode="edit"
           />
         </Grid>
         <Grid item xs={12} sm={12}>
@@ -122,6 +123,7 @@ export default function Library() {
             <FilterTransactionsView
               tagOptions={exampleTags}
               accountOptions={exampleAccounts}
+              onChange={(filterOptions) => console.dir(filterOptions)}
             />
           </Paper>
         </Grid>
