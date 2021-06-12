@@ -12,6 +12,7 @@ import {
 } from "@material-ui/core";
 import { Tag, Account } from "../../common/types";
 import TagAutoComplete from "../input/TagAutoComplete";
+import AccountAutoComplete from "../input/AccountAutoComplete";
 //import Queries from "../../graphql/Queries";
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -44,7 +45,7 @@ export default function FilterTransactionsView(props: Props) {
   const [tags, setTags] = useState<Tag[]>([]);
   const [tagMatch, setTagMatch] = useState("ALL_OF");
 
-  //const [accounts, setAccounts] = useState<Tag[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [accountMatch, setAccountMatch] = useState("ALL_OF");
 
   const [date, setDate] = useState("");
@@ -215,7 +216,7 @@ export default function FilterTransactionsView(props: Props) {
         </Grid>
       </Grid>
 
-      {/* TAGS */}
+      {/* ACCOUNTS */}
       <Grid container direction="row" spacing={2}>
         <Grid container item xs={2}>
           <div className={classes.label}>
@@ -238,16 +239,15 @@ export default function FilterTransactionsView(props: Props) {
           </FormControl>
         </Grid>
         <Grid item xs={8}>
-          {/* TODO build this for accounts
-          <TagAutoComplete
+          <AccountAutoComplete
             id="tagsAutoComplete_n"
             className={classes.input}
-            options={props.tagOptions}
-            onChange={(_tags: Tag[]) => setTags(_tags)}
-            initialValue={tags}
+            options={props.accountOptions}
+            onChange={(_accounts: Account[]) => setAccounts(_accounts)}
+            initialValue={accounts}
             variant="outlined"
             disabled={tagMatch === "EMPTY" || tagMatch === "NOT_EMPTY"}
-            /> */}
+          />
         </Grid>
       </Grid>
     </Grid>
