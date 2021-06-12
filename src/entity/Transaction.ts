@@ -22,7 +22,7 @@ export class Transaction extends BaseEntity {
   id: number;
 
   @Field(() => String)
-  @Column("date")
+  @Column("datetime")
   date: Date;
 
   @Field()

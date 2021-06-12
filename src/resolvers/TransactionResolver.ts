@@ -11,6 +11,10 @@ import {
   registerEnumType,
   ObjectType,
 } from "type-graphql";
+import {
+  BaseTransaction,
+  DetectDuplicateTransactions,
+} from "../utils/AccountUtils";
 
 enum GroupByOption {
   originalDescription = "originalDescription",
@@ -113,18 +117,33 @@ export class TransactionResolver {
       );
     }
 
-    const insertTransactions = transactions.map((transaction) => {
+    const existingTransactions = await Transaction.find({
+      accountId,
+    });
+
+    const maybeInsertTransactions = transactions.map((transaction) => {
       return {
+        id: undefined,
         ...transaction,
         sourceId: sourceId,
         accountId: accountId,
       };
     });
 
-    await Transaction.createQueryBuilder()
-      .insert()
-      .values(insertTransactions)
-      .execute();
+    const { unique, duplicates } = DetectDuplicateTransactions(
+      existingTransactions,
+      maybeInsertTransactions as BaseTransaction[]
+    );
+
+    console.dir(
+      `${duplicates.length} duplicates of ${transactions.length} found. Will insert ${unique.length} new transactions.`
+    );
+
+    if (unique.length === 0) {
+      return true;
+    }
+
+    await Transaction.createQueryBuilder().insert().values(unique).execute();
 
     return true;
   }
