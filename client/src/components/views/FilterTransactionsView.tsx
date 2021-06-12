@@ -59,7 +59,6 @@ export default function FilterTransactionsView(props: Props) {
   const [dateMatch, setDateMatch] = useState("EQUALS");
 
   useEffect(() => {
-    console.dir(accounts);
     props.onChange({
       amount:
         amount !== ""
