@@ -37,64 +37,61 @@ test("Calculates accout balance with offset", () => {
 
 test("Deduplicate transactions", () => {
   expect(
-    DetectDuplicateTransactions([
+    DetectDuplicateTransactions(
+      [
+        {
+          id: 1,
+          date: new Date("2017-12-23"),
+          amountCents: -1000,
+          originalDescription: "AMZN BUY SOCKS",
+        },
+        {
+          id: 2,
+          date: new Date("2017-11-14"),
+          amountCents: -1000,
+          originalDescription: "AMZN BUY CHEESE",
+        },
+        {
+          id: 3,
+          date: new Date("2017-12-23"),
+          amountCents: -1432,
+          originalDescription: "AMZN BUY SOCKS",
+        },
+      ],
+      [
+        {
+          id: undefined,
+          date: new Date("2017-12-18"),
+          amountCents: 1000,
+          originalDescription: "PAYMENT THANK YOU",
+        },
+
+        {
+          id: undefined,
+          date: new Date("2017-12-23"),
+          amountCents: -1000,
+          originalDescription: "AMZN BUY SOCKS",
+        },
+      ]
+    )
+  ).toEqual({
+    unique: [
       {
-        date: new Date("2017-12-23"),
-        amountCents: -1000,
-        originalDescription: "AMZN BUY SOCKS",
-      },
-      {
-        date: new Date("2017-12-23"),
-        amountCents: -1432,
-        originalDescription: "AMZN BUY SOCKS",
-      },
-      {
-        date: new Date("2017-11-14"),
-        amountCents: -1000,
-        originalDescription: "AMZN BUY CHEESE",
-      },
-      {
-        date: new Date("2017-12-18"),
-        amountCents: 1000,
-        originalDescription: "PAYMENT THANK YOU",
-      },
-      {
-        date: new Date("2017-12-23"),
-        amountCents: -1000,
-        originalDescription: "AMZN BUY SOCKS",
-      },
-    ])
-  ).toEqual([
-    [
-      {
-        amountCents: -1000,
-        date: new Date("2017-12-23"),
-        originalDescription: "AMZN BUY SOCKS",
-      },
-      {
-        amountCents: -1432,
-        date: new Date("2017-12-23"),
-        originalDescription: "AMZN BUY SOCKS",
-      },
-      {
-        amountCents: -1000,
-        date: new Date("2017-11-14"),
-        originalDescription: "AMZN BUY CHEESE",
-      },
-      {
+        id: undefined,
         amountCents: 1000,
         date: new Date("2017-12-18"),
         originalDescription: "PAYMENT THANK YOU",
       },
     ],
-    [
+    duplicates: [
       {
+        id: undefined,
         amountCents: -1000,
         date: new Date("2017-12-23"),
         originalDescription: "AMZN BUY SOCKS",
       },
     ],
-  ]);
+  });
 });
 
 test("Detect transfers between accounts", () => {

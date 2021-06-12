@@ -12,38 +12,62 @@ export type MatchedPair = {
   amountCents: number;
 };
 
-type BaseTransaction = {
+export type BaseTransaction = {
+  id: number | undefined;
   amountCents: number;
   date: Date;
   originalDescription: string;
 };
 
 export function DetectDuplicateTransactions<T extends BaseTransaction>(
-  transactions: T[]
-): [T[], T[]] {
+  existingTransactions: T[],
+  newTransactions: T[]
+): { unique: T[]; duplicates: T[] } {
   const duplicates: T[] = [];
-  const hashMappedTransactions = transactions.reduce(
-    (memo: { [key: string]: T }, x: T) => {
-      let hash = createHash("sha256");
-      let shaSum = hash
-        .update(
-          `${x.amountCents}__${x.date.toLocaleString()}__${
-            x.originalDescription
-          }`
-        )
-        .digest("hex");
+  const reducer = (memo: { [key: string]: T }, x: T) => {
+    let hash = createHash("sha256");
+    let shaSum = hash
+      .update(
+        `${
+          x.amountCents
+        }__${x.date.toLocaleDateString()}__${x.originalDescription
+          .toLocaleLowerCase()
+          .trim()}`
+      )
+      .digest("hex");
 
-      if (memo[shaSum] && memo[shaSum].amountCents === x.amountCents) {
-        duplicates.push(x);
-      }
-
+    if (memo[shaSum] && memo[shaSum].amountCents === x.amountCents) {
+      duplicates.push(x);
+    } else {
       memo[shaSum] = x;
-      return memo;
-    },
+    }
+
+    return memo;
+  };
+
+  const existingHashMappedTransactions = existingTransactions.reduce(
+    reducer,
     {}
   );
 
-  return [Object.values(hashMappedTransactions), duplicates];
+  if (duplicates.length > 0) {
+    console.warn(
+      "Found duplicates in existing transactions!",
+      duplicates.map((d) => d.id)
+    );
+  }
+
+  const existingAndNewHashMappedTransactions = newTransactions.reduce(
+    reducer,
+    existingHashMappedTransactions
+  );
+
+  return {
+    unique: Object.values(existingAndNewHashMappedTransactions).filter(
+      (t) => t.id == null
+    ),
+    duplicates: duplicates,
+  };
 }
 
 export function CalculateBalance(
