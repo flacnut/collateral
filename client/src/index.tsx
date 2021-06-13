@@ -16,6 +16,24 @@ const theme = createMuiTheme({
   palette: {
     type: "dark",
   },
+  overrides: {
+    MuiInput: {
+      underline: {
+        "&&:before": {
+          border: "none",
+        },
+        "&&:after": {
+          border: "none",
+        },
+        "&&:hover:not(.Mui-disabled):before": {
+          border: "none",
+        },
+        "&&:focus:not(.Mui-disabled):before": {
+          border: "none",
+        },
+      },
+    },
+  },
 });
 
 ReactDOM.render(
