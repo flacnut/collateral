@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Banner from "./components/Banner";
 import Library from "./pages/Library";
-import Transactions from "./pages/Transactions";
+import Transactions from "./pages/TransactionsV2";
 import Charts from "./pages/Charts";
 import Upload from "./pages/Upload";
 import Accounts from "./pages/Accounts";

@@ -32,7 +32,7 @@ export type Source = {
 export type Transaction = {
   id: number;
   originalDescription: string;
-  friendlyDescription: string;
+  friendlyDescription: string | null;
   amountCents: number;
   date: Date;
   tags: Tag[];

@@ -70,7 +70,7 @@ export function TransactionGrid(props: {
           {props?.transactions?.map((row, index) => (
             <StyledTableRow key={row.id}>
               <StyledTableCell component="th" scope="row">
-                {row.date}
+                {row.date.toLocaleDateString()}
               </StyledTableCell>
               <StyledTableCell align="right">
                 {row.originalDescription}

@@ -52,55 +52,56 @@ export default function FilterTransactionsView(props: Props) {
   const [tagMatch, setTagMatch] = useState("ALL_OF");
 
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [accountMatch, setAccountMatch] = useState("ALL_OF");
+  const [accountMatch, setAccountMatch] = useState("ANY_OF");
 
   const [date, setDate] = useState("");
   const [dateOther, setDateOther] = useState("");
   const [dateMatch, setDateMatch] = useState("EQUALS");
 
   useEffect(() => {
-    props.onChange({
-      amount:
-        amount !== ""
-          ? {
-              amountCents: Number(amount),
-              secondAmountCents: Number(amountOther),
-              compare: (NumberCompareOptions as any)[amountMatch],
-            }
-          : null,
-      description:
-        description !== ""
-          ? {
-              text: [description],
-              match: (TextMatchOptions as any)[descriptionMatch],
-            }
-          : null,
-      date:
-        date !== ""
-          ? {
-              value: date,
-              secondValue: dateOther,
-              compare: (NumberCompareOptions as any)[dateMatch],
-            }
-          : null,
-      tags:
-        tags.length > 0
-          ? {
-              itemIds: tags.map((t) => t.id),
-              queryBy: (ListOptions as any)[tagMatch],
-            }
-          : null,
-      accounts:
-        accounts.length > 0
-          ? {
-              itemIds: accounts.map((a) => a.id),
-              queryBy: (ListOptions as any)[accountMatch],
-            }
-          : null,
-      excludeTransfers: false,
-    });
+    const options: RichQueryFilter = {
+      excludeTransfers: true,
+    };
+
+    if (amount !== "") {
+      options.amount = {
+        amountCents: Number(amount) * 100,
+        secondAmountCents: Number(amountOther) * 100,
+        compare: (NumberCompareOptions as any)[amountMatch],
+      };
+    }
+
+    if (description !== "") {
+      options.description = {
+        text: [description],
+        match: (TextMatchOptions as any)[descriptionMatch],
+      };
+    }
+
+    if (date !== "") {
+      options.date = {
+        value: date,
+        secondValue: dateOther,
+        compare: (NumberCompareOptions as any)[dateMatch],
+      };
+    }
+
+    if (tags.length > 0) {
+      options.tags = {
+        itemIds: tags.map((t) => t.id),
+        queryBy: (ListOptions as any)[tagMatch],
+      };
+    }
+
+    if (accounts.length > 0) {
+      options.accounts = {
+        itemIds: accounts.map((a) => a.id),
+        queryBy: (ListOptions as any)[accountMatch],
+      };
+    }
+
+    props.onChange(options);
   }, [
-    props,
     description,
     descriptionMatch,
     amount,
@@ -294,7 +295,6 @@ export default function FilterTransactionsView(props: Props) {
               value={accountMatch}
               onChange={(e) => setAccountMatch(e.target.value as string)}
             >
-              <MenuItem value="ALL_OF">Contains All Of</MenuItem>
               <MenuItem value="ANY_OF">Contains Any Of</MenuItem>
               <MenuItem value="NONE_OF">Contains None Of</MenuItem>
               <MenuItem value="EMPTY">Is Empty</MenuItem>
