@@ -67,7 +67,7 @@ export default function TransactionsTwo() {
                 return { ...ft, date: new Date(Number(ft.date)) };
               }) ?? []
             }
-            showTags={false}
+            showTags={true}
           />
         </Grid>
       </Grid>

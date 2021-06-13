@@ -44,6 +44,9 @@ const useStyles = makeStyles({
   table: {
     minWidth: 700,
   },
+  tagsColumn: {
+    minWidth: 200,
+  },
 });
 
 export function TransactionGrid(props: {
@@ -67,7 +70,9 @@ export function TransactionGrid(props: {
             <StyledTableCell align="right">Description</StyledTableCell>
             <StyledTableCell align="right">Amount</StyledTableCell>
             {props.showTags ? (
-              <StyledTableCell align="right">Tags</StyledTableCell>
+              <StyledTableCell align="right" className={classes.tagsColumn}>
+                Tags
+              </StyledTableCell>
             ) : null}
           </TableRow>
         </TableHead>
@@ -84,7 +89,7 @@ export function TransactionGrid(props: {
                 {formatter.format(row.amountCents / 100)}
               </StyledTableCell>
               {props.showTags ? (
-                <StyledTableCell align="right">
+                <StyledTableCell align="right" className={classes.tagsColumn}>
                   <TagAutoComplete
                     id={"tag-auto-complete-" + index}
                     options={tagOptionsResult.data?.tags ?? []}

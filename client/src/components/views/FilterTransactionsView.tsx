@@ -100,7 +100,10 @@ export default function FilterTransactionsView(props: Props) {
       };
     }
 
+    // Adding props as a dependency causes an infinite render loop.
+    // Needs useRef but this is a cheaper fix.
     props.onChange(options);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     description,
     descriptionMatch,
