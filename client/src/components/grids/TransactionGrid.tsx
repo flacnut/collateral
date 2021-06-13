@@ -53,6 +53,11 @@ export function TransactionGrid(props: {
   const classes = useStyles();
   const tagOptionsResult = useQuery<getAllTags>(Queries.GET_ALL_TAGS);
 
+  var formatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  });
+
   return (
     <TableContainer component={Paper}>
       <Table className={classes.table} aria-label="customized table">
@@ -76,7 +81,7 @@ export function TransactionGrid(props: {
                 {row.originalDescription}
               </StyledTableCell>
               <StyledTableCell align="right">
-                {row.amountCents / 100}
+                {formatter.format(row.amountCents / 100)}
               </StyledTableCell>
               {props.showTags ? (
                 <StyledTableCell align="right">
