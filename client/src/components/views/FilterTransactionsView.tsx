@@ -209,9 +209,9 @@ export default function FilterTransactionsView(props: Props) {
               value={tagMatch}
               onChange={(e) => setTagMatch(e.target.value as string)}
             >
-              <MenuItem value="ALL_OF">Contains All Of</MenuItem>
-              <MenuItem value="ANY_OF">Contains Any Of</MenuItem>
-              <MenuItem value="NONE_OF">Contains None Of</MenuItem>
+              <MenuItem value="ALL_OF">All Of</MenuItem>
+              <MenuItem value="ANY_OF">Any Of</MenuItem>
+              <MenuItem value="NONE_OF">None Of</MenuItem>
               <MenuItem value="EMPTY">Is Empty</MenuItem>
               <MenuItem value="NOT_EMPTY">Is Not Empty</MenuItem>
             </Select>
@@ -288,7 +288,7 @@ export default function FilterTransactionsView(props: Props) {
       <Grid container direction="row" spacing={2}>
         <Grid container item xs={2}>
           <div className={classes.label}>
-            <Typography>Accounts</Typography>
+            <Typography>Account</Typography>
           </div>
         </Grid>
         <Grid item xs={2}>
@@ -298,8 +298,8 @@ export default function FilterTransactionsView(props: Props) {
               value={accountMatch}
               onChange={(e) => setAccountMatch(e.target.value as string)}
             >
-              <MenuItem value="ANY_OF">Contains Any Of</MenuItem>
-              <MenuItem value="NONE_OF">Contains None Of</MenuItem>
+              <MenuItem value="ANY_OF">Is Any Of</MenuItem>
+              <MenuItem value="NONE_OF">Is None Of</MenuItem>
               <MenuItem value="EMPTY">Is Empty</MenuItem>
               <MenuItem value="NOT_EMPTY">Is Not Empty</MenuItem>
             </Select>
