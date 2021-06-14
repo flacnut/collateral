@@ -255,6 +255,10 @@ export class FilteredTransactionResolver {
     // is very flexible in future.
     const searchOptions: FindConditions<Transaction> = {};
 
+    if (Object.keys(options.where).length === 1) {
+      return [];
+    }
+
     if (options.where.amount) {
       searchOptions.amountCents = getAmountFilter(options.where.amount);
     }
