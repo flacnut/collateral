@@ -61,6 +61,8 @@ export function TransactionGrid(props: {
     currency: "USD",
   });
 
+  console.dir(JSON.stringify(props.transactions));
+
   return (
     <TableContainer component={Paper}>
       <Table className={classes.table} aria-label="customized table">
@@ -96,7 +98,8 @@ export function TransactionGrid(props: {
                     onChange={(t) => console.dir(t)}
                     initialValue={row.tags ?? []}
                     variant="standard"
-                    mode="edit"
+                    mode="select"
+                    disabled={true}
                   />
                 </StyledTableCell>
               ) : null}

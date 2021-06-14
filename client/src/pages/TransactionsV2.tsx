@@ -35,7 +35,7 @@ export default function TransactionsTwo() {
 
   const tagsResult = useQuery<getAllTags>(Queries.GET_ALL_TAGS);
   const accountsResult = useQuery<getAllAccounts>(Queries.GET_ALL_ACCOUNTS);
-  const { data, refetch } = useQuery<getFilteredTransactions>(
+  const { data, loading } = useQuery<getFilteredTransactions>(
     Queries.GET_FILTERED_TRANSACTIONS,
     {
       variables: {

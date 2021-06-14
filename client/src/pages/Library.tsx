@@ -4,7 +4,8 @@ import Paper from "@material-ui/core/Paper";
 import Grid from "@material-ui/core/Grid";
 import TagAutoComplete from "../components/input/TagAutoComplete";
 import FilterTransactionsView from "../components/views/FilterTransactionsView";
-import { Account } from "../common/types";
+import { Account, Transaction } from "../common/types";
+import { TransactionGrid } from "../components/grids";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -98,6 +99,53 @@ const exampleAccounts: Account[] = [
   },
 ];
 
+const exampleTransactions: Transaction[] = [
+  {
+    id: 45,
+    date: new Date("2020-03-11T08:00:00.000Z"),
+    amountCents: 800000,
+    originalDescription: "Deposit Transfer From 12345",
+    friendlyDescription: null,
+    tags: [
+      { id: 11, tag: "Transfer" },
+      { id: 54, tag: "Deposit" },
+    ],
+  },
+  {
+    id: 47,
+    date: new Date("2020-02-27T08:00:00.000Z"),
+    amountCents: 192374,
+    originalDescription:
+      "Deposit Shared Branch Mobile Deposit          First Tech FC CA",
+    friendlyDescription: null,
+    tags: [{ id: 54, tag: "Deposit" }],
+  },
+  {
+    id: 48,
+    date: new Date("2020-01-31T08:00:00.000Z"),
+    amountCents: 1,
+    originalDescription: "Credit Dividend",
+    friendlyDescription: null,
+    tags: [],
+  },
+  {
+    id: 49,
+    date: new Date("2020-01-30T08:00:00.000Z"),
+    amountCents: -954850,
+    originalDescription: "REI",
+    friendlyDescription: null,
+    tags: [{ id: 32, tag: "Outdoors" }],
+  },
+  {
+    id: 50,
+    date: new Date("2020-01-29T08:00:00.000Z"),
+    amountCents: 1000000,
+    originalDescription: "Deposit Transfer From 5678",
+    friendlyDescription: null,
+    tags: [],
+  },
+];
+
 export default function Library() {
   const classes = useStyles();
 
@@ -114,7 +162,7 @@ export default function Library() {
               { id: 19, tag: "Adam" },
               { id: 20, tag: "Costco" },
             ]}
-            variant="standard"
+            variant="outlined"
             mode="edit"
           />
         </Grid>
@@ -126,6 +174,9 @@ export default function Library() {
               onChange={(filterOptions) => console.dir(filterOptions)}
             />
           </Paper>
+        </Grid>
+        <Grid item xs={12} sm={12}>
+          <TransactionGrid transactions={exampleTransactions} showTags={true} />
         </Grid>
       </Grid>
     </div>
