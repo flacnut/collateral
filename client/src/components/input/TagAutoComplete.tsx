@@ -61,13 +61,15 @@ export default function TagAutoComplete(props: Props) {
           <Chip
             label={option.tag}
             {...getTagProps({ index })}
-            disabled={fixedOptions.indexOf(option) !== -1 || props.disabled}
+            disabled={false}
             variant={
               isUnsavedTag(option) && props.mode === "edit"
                 ? "outlined"
                 : "default"
             }
-            {...(isFixedTag(option) ? { onDelete: undefined } : {})}
+            {...(isFixedTag(option) || props.disabled
+              ? { onDelete: undefined }
+              : {})}
           />
         ))
       }
