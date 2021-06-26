@@ -61,8 +61,6 @@ export function TransactionGrid(props: {
     currency: "USD",
   });
 
-  console.dir(JSON.stringify(props.transactions));
-
   return (
     <TableContainer component={Paper}>
       <Table className={classes.table} aria-label="customized table">
