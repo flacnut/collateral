@@ -5,7 +5,7 @@ import Grid from "@material-ui/core/Grid";
 import TagAutoComplete from "../components/input/TagAutoComplete";
 import FilterTransactionsView from "../components/views/FilterTransactionsView";
 import { Account, Transaction } from "../common/types";
-import { TransactionGrid } from "../components/grids";
+import { TransactionDataGrid, TransactionGrid } from "../components/grids";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -177,6 +177,13 @@ export default function Library() {
         </Grid>
         <Grid item xs={12} sm={12}>
           <TransactionGrid transactions={exampleTransactions} showTags={true} />
+        </Grid>
+        <Grid item xs={12} sm={12}>
+          <TransactionDataGrid
+            transactions={exampleTransactions}
+            tags={exampleTags}
+            allowEdits={false}
+          />
         </Grid>
       </Grid>
     </div>
