@@ -17,7 +17,7 @@ const formatter = new Intl.NumberFormat("en-US", {
 type Props = {
   transactions: Transaction[];
   tags: Tag[];
-  allowEdits: boolean;
+  allowEdits?: boolean;
 };
 
 const useStyles = makeStyles({
@@ -85,18 +85,28 @@ export function TransactionDataGrid(props: Props) {
   ];
 
   const classes = useStyles();
+  // Controls:
+  //   - Hide Cents
+  //   - Group By
+  //   - Lock / enable edits (inc. selection)
+  //   - Friendly / Original Desc.
+  //   - ??
+
   return (
     <DataGrid
-      autoHeight={true}
       className={classes.grid}
       rows={props.transactions}
       columns={columns}
+      autoHeight
+      checkboxSelection
+      disableSelectionOnClick
       getCellClassName={(params: GridCellParams) => {
         if (params.field === "amountCents") {
           return Number(params.value) >= 0 ? "deposit" : "expense";
         }
         return "";
       }}
+      onSelectionModelChange={(m) => console.dir(m)}
     />
   );
 }

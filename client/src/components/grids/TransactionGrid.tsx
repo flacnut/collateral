@@ -93,7 +93,7 @@ export function TransactionGrid(props: {
                   <TagAutoComplete
                     id={"tag-auto-complete-" + index}
                     options={tagOptionsResult.data?.tags ?? []}
-                    onChange={(t) => console.dir(t)}
+                    onChange={(t) => {}}
                     initialValue={row.tags ?? []}
                     variant="standard"
                     mode="select"

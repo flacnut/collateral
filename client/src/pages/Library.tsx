@@ -107,8 +107,8 @@ const exampleTransactions: Transaction[] = [
     originalDescription: "Deposit Transfer From 12345",
     friendlyDescription: null,
     tags: [
-      { id: 11, tag: "Transfer" },
-      { id: 54, tag: "Deposit" },
+      { id: 10, tag: "transfer" },
+      { id: 21, tag: "cc-payment" },
     ],
   },
   {
@@ -118,7 +118,7 @@ const exampleTransactions: Transaction[] = [
     originalDescription:
       "Deposit Shared Branch Mobile Deposit          First Tech FC CA",
     friendlyDescription: null,
-    tags: [{ id: 54, tag: "Deposit" }],
+    tags: [{ id: 10, tag: "transfer" }],
   },
   {
     id: 48,
@@ -134,7 +134,7 @@ const exampleTransactions: Transaction[] = [
     amountCents: -954850,
     originalDescription: "REI",
     friendlyDescription: null,
-    tags: [{ id: 32, tag: "Outdoors" }],
+    tags: [{ id: 4, tag: "expense" }],
   },
   {
     id: 50,
