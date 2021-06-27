@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
 import Paper from "@material-ui/core/Paper";
 import Grid from "@material-ui/core/Grid";
@@ -148,6 +148,13 @@ const exampleTransactions: Transaction[] = [
 
 export default function Library() {
   const classes = useStyles();
+  const [selection, setSelection] = useState<{
+    transactions: number[];
+    allRowsSelected: boolean;
+  }>({
+    transactions: [],
+    allRowsSelected: false,
+  });
 
   return (
     <div className={classes.root}>
@@ -183,7 +190,11 @@ export default function Library() {
             transactions={exampleTransactions}
             tags={exampleTags}
             allowEdits={false}
+            onSelectionChanged={setSelection}
           />
+        </Grid>
+        <Grid item xs={12} sm={12}>
+          <pre>{JSON.stringify(selection, null, 2)}</pre>
         </Grid>
       </Grid>
     </div>

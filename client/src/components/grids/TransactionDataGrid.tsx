@@ -3,6 +3,7 @@ import {
   DataGrid,
   GridCellParams,
   GridColumns,
+  GridSelectionModelChangeParams,
   GridValueFormatterParams,
 } from "@material-ui/data-grid";
 import { Tag, Transaction } from "../../common/types";
@@ -18,6 +19,10 @@ type Props = {
   transactions: Transaction[];
   tags: Tag[];
   allowEdits?: boolean;
+  onSelectionChanged?: (opts: {
+    transactions: number[];
+    allRowsSelected: boolean;
+  }) => void;
 };
 
 const useStyles = makeStyles({
@@ -106,7 +111,15 @@ export function TransactionDataGrid(props: Props) {
         }
         return "";
       }}
-      onSelectionModelChange={(m) => console.dir(m)}
+      onSelectionModelChange={(params: GridSelectionModelChangeParams) => {
+        if (props.onSelectionChanged) {
+          props.onSelectionChanged({
+            transactions: params.selectionModel as number[],
+            allRowsSelected:
+              params.selectionModel.length === props.transactions.length,
+          });
+        }
+      }}
     />
   );
 }
