@@ -10,7 +10,7 @@ import Queries from "../graphql/Queries";
 import { getAllAccounts } from "../graphql/types/getAllAccounts";
 import { RichQueryFilter } from "../graphql/graphql-global-types";
 import { getFilteredTransactions } from "../graphql/types/getFilteredTransactions";
-import { TransactionGrid } from "../components/grids";
+import { TransactionDataGrid } from "../components/grids";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -61,13 +61,14 @@ export default function TransactionsTwo() {
           </Paper>
         </Grid>
         <Grid item xs={12} sm={12}>
-          <TransactionGrid
+          <TransactionDataGrid
             transactions={
               data?.getFilteredTransactions.map((ft) => {
                 return { ...ft, date: new Date(Number(ft.date)) };
               }) ?? []
             }
-            showTags={true}
+            tags={tagsResult?.data?.tags ?? []}
+            allowEdits={false}
           />
         </Grid>
       </Grid>
