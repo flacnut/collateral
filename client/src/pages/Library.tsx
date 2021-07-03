@@ -170,7 +170,33 @@ export default function Library() {
         <Grid item xs={12} sm={12}>
           <Paper className={classes.paper}>
             <PieChart
-              series={{}}
+              series={[
+                {
+                  name: "amazon",
+                  amountCents: 23142,
+                  transactionCount: 3,
+                },
+                {
+                  name: "haggen",
+                  amountCents: 46683,
+                  transactionCount: 4,
+                },
+                {
+                  name: "apple",
+                  amountCents: 10899,
+                  transactionCount: 12,
+                },
+                {
+                  name: "pse",
+                  amountCents: 10823,
+                  transactionCount: 7,
+                },
+                {
+                  name: "pcc",
+                  amountCents: 32688,
+                  transactionCount: 2,
+                },
+              ]}
               backgroundColor={theme.palette.background.paper}
             />
           </Paper>
@@ -179,7 +205,7 @@ export default function Library() {
           <TagAutoComplete
             id="tags-autocomplete-example"
             options={exampleTags}
-            onChange={(t) => console.dir(t)}
+            onChange={(t) => {}}
             initialValue={[
               { id: 4, tag: "expense" },
               { id: 19, tag: "Adam" },
@@ -194,7 +220,7 @@ export default function Library() {
             <FilterTransactionsView
               tagOptions={exampleTags}
               accountOptions={exampleAccounts}
-              onChange={(filterOptions) => console.dir(filterOptions)}
+              onChange={(filterOptions) => {}}
             />
           </Paper>
         </Grid>
