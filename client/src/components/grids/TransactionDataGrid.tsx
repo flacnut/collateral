@@ -16,6 +16,7 @@ const formatter = new Intl.NumberFormat("en-US", {
 });
 
 type Props = {
+  loading?: boolean;
   transactions: Transaction[];
   tags: Tag[];
   allowEdits?: boolean;
@@ -99,6 +100,7 @@ export function TransactionDataGrid(props: Props) {
 
   return (
     <DataGrid
+      loading={props.loading}
       className={classes.grid}
       rows={props.transactions}
       columns={columns}
