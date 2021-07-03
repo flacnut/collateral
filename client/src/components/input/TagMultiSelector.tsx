@@ -28,6 +28,8 @@ function TagMultiSelector(props: Props) {
         const matches = match(option.tag, inputValue);
         const parts = parse(option.tag, matches);
 
+        console.dir(parts);
+
         return (
           <div>
             {parts.map((part, index) => (
