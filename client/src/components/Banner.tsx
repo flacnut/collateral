@@ -9,10 +9,8 @@ import AppBar from "@material-ui/core/AppBar";
 import Toolbar from "@material-ui/core/Toolbar";
 import IconButton from "@material-ui/core/IconButton";
 import Typography from "@material-ui/core/Typography";
-import InputBase from "@material-ui/core/InputBase";
 import Badge from "@material-ui/core/Badge";
 import LocalAtm from "@material-ui/icons/LocalAtm";
-import SearchIcon from "@material-ui/icons/Search";
 import CloudUploadIcon from "@material-ui/icons/CloudUpload";
 import MenuBook from "@material-ui/icons/MenuBook";
 import EqualizerIcon from "@material-ui/icons/Equalizer";
@@ -92,20 +90,6 @@ export default function Banner(props: {
           <Typography className={classes.title} variant="h5" noWrap>
             Collateral
           </Typography>
-          <div className={classes.grow} />
-          <div className={classes.search}>
-            <div className={classes.searchIcon}>
-              <SearchIcon />
-            </div>
-            <InputBase
-              placeholder="Search Transactions…"
-              classes={{
-                root: classes.inputRoot,
-                input: classes.inputInput,
-              }}
-              inputProps={{ "aria-label": "search" }}
-            />
-          </div>
           <div className={classes.grow} />
           <div className={classes.sectionDesktop}>
             <IconButton
