@@ -28,7 +28,7 @@ function getView(viewName: string) {
 }
 
 function App() {
-  const [selectedView, setSelectedView] = useState("Accounts");
+  const [selectedView, setSelectedView] = useState("Library");
 
   return (
     <>

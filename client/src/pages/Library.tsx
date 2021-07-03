@@ -1,11 +1,17 @@
 import React, { useState } from "react";
-import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
+import {
+  makeStyles,
+  createStyles,
+  Theme,
+  useTheme,
+} from "@material-ui/core/styles";
 import Paper from "@material-ui/core/Paper";
 import Grid from "@material-ui/core/Grid";
 import TagAutoComplete from "../components/input/TagAutoComplete";
 import FilterTransactionsView from "../components/views/FilterTransactionsView";
 import { Account, Transaction } from "../common/types";
 import { TransactionDataGrid, TransactionGrid } from "../components/grids";
+import { PieChart } from "../components/charts";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -156,9 +162,19 @@ export default function Library() {
     allRowsSelected: false,
   });
 
+  const theme = useTheme();
+
   return (
     <div className={classes.root}>
       <Grid container spacing={2}>
+        <Grid item xs={12} sm={12}>
+          <Paper className={classes.paper}>
+            <PieChart
+              series={{}}
+              backgroundColor={theme.palette.background.paper}
+            />
+          </Paper>
+        </Grid>
         <Grid item xs={12}>
           <TagAutoComplete
             id="tags-autocomplete-example"
