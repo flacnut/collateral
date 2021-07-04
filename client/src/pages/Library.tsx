@@ -12,6 +12,11 @@ import FilterTransactionsView from "../components/views/FilterTransactionsView";
 import { Account, Transaction } from "../common/types";
 import { TransactionDataGrid, TransactionGrid } from "../components/grids";
 import { PieChart } from "../components/charts";
+import CreateSeriesView from "../components/views/CreateSeriesView";
+import { getAllTags } from "../graphql/types/getAllTags";
+import Queries from "../graphql/Queries";
+import { useQuery } from "@apollo/client";
+import { getAllAccounts } from "../graphql/types/getAllAccounts";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -269,6 +274,8 @@ export default function Library() {
   });
 
   const theme = useTheme();
+  const tagsResult = useQuery<getAllTags>(Queries.GET_ALL_TAGS);
+  const accountsResult = useQuery<getAllAccounts>(Queries.GET_ALL_ACCOUNTS);
 
   return (
     <div className={classes.root}>
@@ -321,6 +328,18 @@ export default function Library() {
         </Grid>
         <Grid item xs={12} sm={12}>
           <pre>{JSON.stringify(selection, null, 2)}</pre>
+        </Grid>
+
+        {/* TODO: NOOOOOOOO - NO SAMPLE DATA!*/}
+        <Grid item xs={12} sm={12}>
+          <Paper className={classes.paper}>
+            <CreateSeriesView
+              tagOptions={tagsResult.data?.tags ?? []}
+              accountOptions={
+                (accountsResult.data?.allAccounts as Account[]) ?? []
+              }
+            />
+          </Paper>
         </Grid>
       </Grid>
     </div>
