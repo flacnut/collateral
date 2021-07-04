@@ -86,7 +86,7 @@ export default function FilterTransactionsView(props: Props) {
       };
     }
 
-    if (tags.length > 0) {
+    if (tags.length > 0 || tagMatch === "EMPTY" || tagMatch === "NOT_EMPTY") {
       options.tags = {
         itemIds: tags.map((t) => t.id),
         queryBy: (ListOptions as any)[tagMatch],
@@ -300,8 +300,6 @@ export default function FilterTransactionsView(props: Props) {
             >
               <MenuItem value="ANY_OF">Is Any Of</MenuItem>
               <MenuItem value="NONE_OF">Is None Of</MenuItem>
-              <MenuItem value="EMPTY">Is Empty</MenuItem>
-              <MenuItem value="NOT_EMPTY">Is Not Empty</MenuItem>
             </Select>
           </FormControl>
         </Grid>
