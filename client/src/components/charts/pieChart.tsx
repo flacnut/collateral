@@ -18,36 +18,43 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 type Props = {
-  series: SeriesData[];
+  series?: SeriesData[];
+  groupedSeries?: Array<{
+    groupName: string;
+    series: SeriesData[];
+  }>;
   backgroundColor: string;
-};
-
-const seriesDefaults = {
-  minPointSize: 10,
-  innerSize: "20%",
-  zMin: 0,
 };
 
 VariablePie(Highcharts);
 
 export default function Pie(props: Props) {
-  const classes = useStyles();
+  const seriesToHighchartsData = (series: SeriesData) => {
+    return {
+      name: series.name,
+      color: series.color,
+      y: series.amountCents,
+      z: series.transactionCount,
+    };
+  };
 
+  const classes = useStyles();
   const data = useMemo(() => {
     return [
       {
         innerSize: "40%",
-        data: props.series.map((series) => {
-          return {
-            name: series.name,
-            color: series.color,
-            y: series.amountCents,
-            z: series.transactionCount,
-          };
-        }),
+        data: props.series
+          ? props.series.map(seriesToHighchartsData)
+          : props.groupedSeries
+              ?.map((gs) => gs.series.map(seriesToHighchartsData))
+              .flat(),
       },
     ];
-  }, [props.series]);
+  }, [props.series, props.groupedSeries]);
+
+  if (!props.series && !props.groupedSeries) {
+    return null;
+  }
 
   const options = {
     chart: {

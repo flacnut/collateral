@@ -152,6 +152,112 @@ const exampleTransactions: Transaction[] = [
   },
 ];
 
+const twoDeePiechartData = [
+  {
+    name: "amazon",
+    amountCents: 23142,
+    transactionCount: 3,
+  },
+  {
+    name: "haggen",
+    amountCents: 46683,
+    transactionCount: 4,
+  },
+  {
+    name: "apple",
+    amountCents: 10899,
+    transactionCount: 12,
+  },
+  {
+    name: "pse",
+    amountCents: 10823,
+    transactionCount: 7,
+  },
+  {
+    name: "pcc",
+    amountCents: 32688,
+    transactionCount: 2,
+  },
+];
+
+const groupedSeriesData = [
+  {
+    groupName: "groceries",
+    series: [
+      {
+        name: "Haggen",
+        amountCents: 4683,
+        color: "#44E668",
+      },
+      {
+        name: "PCC",
+        amountCents: 12688,
+        color: "#00C98A",
+      },
+      {
+        name: "QFC",
+        amountCents: 11888,
+        color: "#00A99A",
+      },
+    ],
+  },
+  {
+    groupName: "bills",
+    series: [
+      {
+        name: "PSE",
+        amountCents: 13102,
+        color: "#0e87fa",
+      },
+      {
+        name: "Ziply",
+        amountCents: 8000,
+        color: "#3f52b1",
+      },
+      {
+        name: "Water",
+        amountCents: 4550,
+        color: "#37216b",
+      },
+      {
+        name: "HOA",
+        amountCents: 3000,
+        color: "#2c094b",
+      },
+    ],
+  },
+  {
+    groupName: "subscriptions",
+    series: [
+      {
+        name: "Spotify",
+        amountCents: 1550,
+        color: "#fcfe64",
+      },
+      {
+        name: "Netflix",
+        amountCents: 1700,
+        color: "#f7e14a",
+      },
+      {
+        name: "HBO",
+        amountCents: 2099,
+        color: "#f0c533",
+      },
+      {
+        name: "iCloud",
+        amountCents: 1299,
+        color: "#e8a91f",
+      },
+      {
+        name: "News",
+        amountCents: 399,
+        color: "#dd8d0c",
+      },
+    ],
+  },
+];
+
 export default function Library() {
   const classes = useStyles();
   const [selection, setSelection] = useState<{
@@ -170,33 +276,11 @@ export default function Library() {
         <Grid item xs={12} sm={12}>
           <Paper className={classes.paper}>
             <PieChart
-              series={[
-                {
-                  name: "amazon",
-                  amountCents: 23142,
-                  transactionCount: 3,
-                },
-                {
-                  name: "haggen",
-                  amountCents: 46683,
-                  transactionCount: 4,
-                },
-                {
-                  name: "apple",
-                  amountCents: 10899,
-                  transactionCount: 12,
-                },
-                {
-                  name: "pse",
-                  amountCents: 10823,
-                  transactionCount: 7,
-                },
-                {
-                  name: "pcc",
-                  amountCents: 32688,
-                  transactionCount: 2,
-                },
-              ]}
+              series={twoDeePiechartData}
+              backgroundColor={theme.palette.background.paper}
+            />
+            <PieChart
+              groupedSeries={groupedSeriesData}
               backgroundColor={theme.palette.background.paper}
             />
           </Paper>
