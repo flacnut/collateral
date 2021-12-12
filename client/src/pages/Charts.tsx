@@ -50,7 +50,7 @@ function groupDataByMonth(
   transactions
     .map((t) => {
       return {
-        time: new Date(t.date),
+        time: new Date(Number(t.date)),
         amountCents: t.amountCents,
       };
     })
@@ -70,7 +70,9 @@ function groupDataByMonth(
       return { time: new Date(key).getTime(), amount: monthData[key] / 100 };
     })
     .sort((a, b) => a.time - b.time)
-    .map((t) => [t.time, t.amount]);
+    .map((t) => {
+      return [t.time, t.amount];
+    });
 }
 
 export default function Charts() {
@@ -160,7 +162,7 @@ export default function Charts() {
                 .map((serie) => serie.transactions)
                 .flat()
                 .map((t) => {
-                  return { ...t, date: new Date(t.date) };
+                  return { ...t, date: new Date(Number(t.date)) };
                 }) as Transaction[]) ?? []
             }
           />

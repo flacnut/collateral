@@ -24,6 +24,14 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
+function getDate(dateStr: string | null | undefined): string {
+  if (dateStr == null) {
+    return "";
+  }
+
+  return new Date(Number(dateStr)).toLocaleDateString();
+}
+
 export default function AccountView(props: Props) {
   const classes = useStyles();
 
@@ -66,7 +74,7 @@ export default function AccountView(props: Props) {
                 id="account-transaction-group"
               >
                 <div className={classes.option}>
-                  {props.account?.latestTransaction?.date ?? "unknown"}
+                  {getDate(props.account?.latestTransaction?.date)}
                 </div>
               </OutlinedGroup>
             </Grid>
