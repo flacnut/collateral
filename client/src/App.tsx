@@ -4,7 +4,7 @@ import Library from "./pages/Library";
 import Transactions from "./pages/TransactionsV2";
 import Charts from "./pages/Charts";
 import Upload from "./pages/Upload";
-import Accounts from "./pages/Accounts";
+import Accounts from "./pages/AccountsV2";
 
 function getView(viewName: string) {
   switch (viewName) {
