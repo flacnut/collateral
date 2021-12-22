@@ -171,6 +171,13 @@ const queries = {
     }
   `,
 
+  GENERATE_BALANCES_FOR_ACCOUNT: gql`
+  mutation generateBalancesForAccount($accountId: Int!, $knownBalance: KnownBalance!) {
+    generateBalancesForAccount(accountId: $accountId, knownBalance: $knownBalance) {
+      id,
+    }
+  }`,
+
   GET_ALL_ACCOUNTS: gql`
     query getAllAccounts {
       allAccounts {

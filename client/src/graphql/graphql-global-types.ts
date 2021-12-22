@@ -59,6 +59,11 @@ export interface DateFilter {
   compare: NumberCompareOptions;
 }
 
+export interface KnownBalance {
+  date: any;
+  amountCents: number;
+}
+
 export interface ListFilter {
   itemIds: number[];
   queryBy: ListOptions;
