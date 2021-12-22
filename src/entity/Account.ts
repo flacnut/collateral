@@ -53,6 +53,14 @@ export class Account extends BaseEntity {
   })
   transactions: Promise<Transaction[]>;
 
+  @Field({ nullable: true })
+  @Column("date", { nullable: true })
+  knownBalanceDate: Date;
+
+  @Field({ nullable: true })
+  @Column("int", { nullable: true })
+  knownBalanceAmountCents: Number;
+
   // Not stored in ORM, must be generated manually
 
   @Field(() => [Transfer], { nullable: false })

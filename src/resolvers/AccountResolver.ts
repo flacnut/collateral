@@ -126,18 +126,24 @@ export class AccountResolver {
     );
 
     await AccountBalance.delete({ account: account });
+    account.knownBalanceAmountCents = knownBalance.amountCents;
+    account.knownBalanceDate = knownBalance.date;
+    await account.save();
 
-    const inserts = balances.map(
-      async (bal) =>
-        await AccountBalance.create({
-          account: account,
-          balanceCents: bal.amountCents,
-          date: bal.date,
-        }).save()
-    );
+    let toInsert = balances.map(bal => {
+      return {
+        accountId: account.id,
+        balanceCents: bal.amountCents,
+        date: bal.date,
+      };
+    });
 
-    await Promise.all(inserts);
-    return (await Account.findByIds([id])).pop();
+    while (toInsert.length) {
+      let thisInsert = toInsert.slice(0, 50);
+      toInsert = toInsert.slice(50);
+      await AccountBalance.createQueryBuilder().insert().values(thisInsert).execute();
+    }
+    return (await Account.findOne(id));
   }
 
   @Mutation(() => [Transfer])

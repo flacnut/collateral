@@ -23,6 +23,9 @@ export class AccountBalance extends BaseEntity {
   @Column({ type: "int", nullable: false })
   balanceCents: Number;
 
+  @Column()
+  accountId: Number;
+
   @Field(() => Account, { nullable: false })
   @ManyToOne(() => Account, (account) => account.balances, { nullable: false })
   account: Account;
