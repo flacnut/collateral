@@ -13,16 +13,53 @@ import Paper from '@material-ui/core/Paper';
 import KeyboardArrowDownIcon from '@material-ui/icons/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@material-ui/icons/KeyboardArrowUp';
 import { getAllAccounts_allAccounts } from '../../graphql/types/getAllAccounts';
+import Queries from '../../graphql/Queries';
+import { useMutation } from '@apollo/client';
+import { generateBalancesForAccount } from '../../graphql/types/generateBalancesForAccount';
+import { makeStyles } from "@material-ui/core/styles";
 
 
 type Props = {
   accounts: getAllAccounts_allAccounts[],
 };
 
+const useStyles = makeStyles({
+  expense: {
+    color: "#F23753",
+  },
+  deposit: {
+    color: "#3CF237",
+  }
+});
+
 function Row(props: { account: getAllAccounts_allAccounts }) {
   const { account } = props;
   const [open, setOpen] = React.useState(false);
 
+  const [generateBalances] = useMutation<generateBalancesForAccount>(
+    Queries.GENERATE_BALANCES_FOR_ACCOUNT
+  );
+
+  const genBalances = async (id: Number, date: Date, amountCents: Number) => {
+    await generateBalances({
+      variables: {
+        accountId: id,
+        knownBalance: {
+          date: date,
+          amountCents: amountCents,
+        }
+      },
+      refetchQueries: [{ query: Queries.GET_ALL_ACCOUNTS }],
+    });
+  };
+
+  const formatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  });
+
+  const formattedAmount = account.latestBalance ? formatter.format(Number(account.latestBalance?.balanceCents) * 0.01) : null;
+  const classes = useStyles();
   return (
     <React.Fragment>
       <TableRow>
@@ -40,7 +77,7 @@ function Row(props: { account: getAllAccounts_allAccounts }) {
         </TableCell>
         <TableCell align="right">{account.accountName}</TableCell>
         <TableCell align="right">{account.accountNumber}</TableCell>
-        <TableCell align="right">{account.latestBalance?.balanceCents}</TableCell>
+        <TableCell align="right" className={Number(account.latestBalance?.balanceCents) < 0 ? classes.expense : classes.deposit}>{formattedAmount}</TableCell>
         <TableCell align="right">{account.latestTransaction?.date}</TableCell>
       </TableRow>
       <TableRow>
