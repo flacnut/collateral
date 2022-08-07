@@ -185,6 +185,8 @@ const queries = {
         accountName
         accountNumber
         institution
+        knownBalanceDate
+        knownBalanceAmountCents
         latestBalance {
           id
           balanceCents

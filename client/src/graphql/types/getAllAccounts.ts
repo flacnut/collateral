@@ -26,6 +26,8 @@ export interface getAllAccounts_allAccounts {
   accountName: string;
   accountNumber: string;
   institution: string;
+  knownBalanceDate: any | null;
+  knownBalanceAmountCents: number | null;
   latestBalance: getAllAccounts_allAccounts_latestBalance | null;
   latestTransaction: getAllAccounts_allAccounts_latestTransaction | null;
 }

@@ -19,7 +19,7 @@ function TagMultiSelector(props: Props) {
     <Autocomplete
       multiple
       id="tags-outlined"
-      options={props.tags ?? []}
+      options={props.tags?.sort((t1, t2) => t1.id - t2.id) ?? []}
       getOptionLabel={(option) => option.tag}
       onChange={(_, value, reason) => {
         props.onChange && props.onChange(value as Tag[]);

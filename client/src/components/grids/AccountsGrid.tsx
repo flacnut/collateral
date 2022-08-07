@@ -17,7 +17,8 @@ import Queries from '../../graphql/Queries';
 import { useMutation } from '@apollo/client';
 import { generateBalancesForAccount } from '../../graphql/types/generateBalancesForAccount';
 import { makeStyles } from "@material-ui/core/styles";
-
+import { Button, InputAdornment, OutlinedInput, TextField } from '@material-ui/core';
+import SwapHorizIcon from "@material-ui/icons/SwapHoriz";
 
 type Props = {
   accounts: getAllAccounts_allAccounts[],
@@ -84,9 +85,32 @@ function Row(props: { account: getAllAccounts_allAccounts }) {
         <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box>
-              <Typography variant="h6" gutterBottom component="div">
-                Expand
-              </Typography>
+              <TextField
+                id="date1"
+                type="date"
+                variant="outlined"
+                disabled={true}
+                value={(new Date(account.knownBalanceDate)).toISOString().split('T')[0]}
+                onChange={(e: any) => console.dir("DO LATER")}
+                InputLabelProps={{
+                  shrink: true,
+                }}
+              />
+              <OutlinedInput
+                disabled={true}
+                value={account.knownBalanceAmountCents}
+                onChange={(e) => console.dir("DO LATER")}
+                startAdornment={<InputAdornment position="start">$</InputAdornment>}
+              />
+              <Button
+                disabled={true}
+                variant="contained"
+                color="primary"
+                onClick={() => genBalances(account.id, account.knownBalanceDate, account.knownBalanceAmountCents ?? 0)}
+                startIcon={<SwapHorizIcon />}
+              >
+                Calculate Balance
+              </Button>
             </Box>
           </Collapse>
         </TableCell>
