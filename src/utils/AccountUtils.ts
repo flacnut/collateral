@@ -28,8 +28,7 @@ export function DetectDuplicateTransactions<T extends BaseTransaction>(
     let hash = createHash("sha256");
     let shaSum = hash
       .update(
-        `${
-          x.amountCents
+        `${x.amountCents
         }__${x.date.toLocaleDateString()}__${x.originalDescription
           .toLocaleLowerCase()
           .trim()}`

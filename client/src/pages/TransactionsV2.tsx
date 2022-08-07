@@ -3,7 +3,7 @@ import { makeStyles, createStyles, Theme } from "@material-ui/core/styles";
 import Paper from "@material-ui/core/Paper";
 import Grid from "@material-ui/core/Grid";
 import FilterTransactionsView from "../components/views/FilterTransactionsView";
-import { Account, Tag } from "../common/types";
+import { Account, Tag, Transaction } from "../common/types";
 import { useMutation, useQuery } from "@apollo/client";
 import { getAllTags } from "../graphql/types/getAllTags";
 import { updateTransactionTags } from "../graphql/types/updateTransactionTags";
@@ -14,7 +14,7 @@ import {
   RichQueryFilter,
   TransactionUpdateTagsInput,
 } from "../graphql/graphql-global-types";
-import { getFilteredTransactions } from "../graphql/types/getFilteredTransactions";
+import { getFilteredTransactions, getFilteredTransactions_getFilteredTransactions } from "../graphql/types/getFilteredTransactions";
 import { TransactionDataGrid } from "../components/grids";
 import { createSingleTag } from "../graphql/types/createSingleTag";
 import TagAutoComplete from "../components/input/TagAutoComplete";
@@ -69,13 +69,28 @@ export default function TransactionsTwo() {
   );
 
   const transactionData = useMemo(() => {
-    console.dir("RECOMPUTED DATA");
     return (
       data?.getFilteredTransactions.map((ft) => {
         return { ...ft, date: new Date(Number(ft.date)) };
       }) ?? []
     );
   }, [data]);
+
+  const groupedTransactionData = useMemo(() => {
+    let groupedTransactions: { [key: string]: Transaction } = {};
+    data?.getFilteredTransactions.forEach((ft) => {
+      let key = ft.tags.map(t => t.id).sort().join('_');
+      if (groupedTransactions[key]) {
+        groupedTransactions[key].originalDescription = Number(groupedTransactions[key].originalDescription) + 1 + '';
+        groupedTransactions[key].amountCents = groupedTransactions[key].amountCents + ft.amountCents;
+      } else {
+        groupedTransactions[key] = Object.assign({}, ft, { date: new Date(Number(ft.date)), originalDescription: 1 });
+      }
+    });
+    console.dir(groupedTransactions);
+    return groupedTransactions;
+  }, [data]);
+
 
   const performSave = useCallback(async () => {
     const createdTags = (await Promise.all(
@@ -122,6 +137,12 @@ export default function TransactionsTwo() {
     updateTransactionTags,
   ]);
 
+
+  const formatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  });
+
   return (
     <div className={classes.root}>
       <Grid container spacing={2}>
@@ -150,6 +171,18 @@ export default function TransactionsTwo() {
               Save
             </Button>
           </Paper>
+        </Grid>
+        <Grid item xs={12} sm={12}>
+          <Paper className={classes.paper}>{formatter.format(transactionData.reduce((prev: number, current: { amountCents: number }) => { return prev + current.amountCents; }, 0) * 0.01)}</Paper>
+        </Grid>
+        <Grid item xs={12} sm={12}>
+          <TransactionDataGrid
+            loading={loading}
+            transactions={Object.values(groupedTransactionData)}
+            onSelectionChanged={setSelection}
+            tags={tagsResult?.data?.tags ?? []}
+            allowEdits={false}
+          />
         </Grid>
         <Grid item xs={12} sm={12}>
           <TransactionDataGrid

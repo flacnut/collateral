@@ -50,10 +50,10 @@ function calculateTransactionAmountDollars(
   columnMap: ColumnMap
 ): number {
   return (
-    (Number(row[columnMap.Amount]) ?? 0) * columnMap.AmountModifier +
+    (Number(row[columnMap.Amount]?.replace(',', '')) ?? 0) * columnMap.AmountModifier +
     (columnMap.SecondaryAmount
       ? Number(row[columnMap.SecondaryAmount]) *
-          columnMap.SecondaryAmountModifier ?? 0
+      columnMap.SecondaryAmountModifier ?? 0
       : 0)
   );
 }
@@ -143,9 +143,10 @@ export default function PendingFileUploadView(props: Props) {
 
   useEffect(() => {
     async function saveSomeTransactions() {
+
       if (unsavedTransactions.length > 0) {
         const nextTransactions = unsavedTransactions.slice(0, 20);
-        await createTransactions({
+        const results = await createTransactions({
           variables: {
             transactions: nextTransactions.map((t) => {
               return {
@@ -186,7 +187,7 @@ export default function PendingFileUploadView(props: Props) {
   };
 
   const generateTransactions = (sourceId: number) => {
-    return props.file.data
+    const rows = props.file.data
       .map((row) => {
         return {
           date: row[props.columnMap.Date],
@@ -200,8 +201,14 @@ export default function PendingFileUploadView(props: Props) {
           sourceId: sourceId,
           accountId: props.accountId,
         } as TransactionCreateInput;
-      })
-      .filter((t) => !isNaN(t.amountCents) && t.date != null);
+      });
+
+    const filteredRows = rows.filter((t) => !isNaN(t.amountCents) && t.date != null);
+    if (rows.length !== filteredRows.length) {
+      console.warn(`${rows.length - filteredRows.length} rows filtered out.`);
+    }
+
+    return filteredRows;
   };
 
   const totalTransactionsCount = props.file.data.length;
@@ -229,7 +236,7 @@ export default function PendingFileUploadView(props: Props) {
             <CircularProgressWithLabel
               value={Math.round(
                 ((totalTransactionsCount - unsavedTransactionsCount) * 100) /
-                  totalTransactionsCount
+                totalTransactionsCount
               )}
             />
           ) : (

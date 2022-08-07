@@ -82,12 +82,13 @@ export class AccountResolver {
       return accounts;
     }
 
-    return await Promise.all(
+    const data = await Promise.all(
       accounts.map(async (account) => {
         const transactions = await account.transactions;
         const balances = await account.balances;
         return {
           ...account,
+          knownBalanceDate: new Date(account.knownBalanceDate),
           latestTransaction: transactions
             .sort(
               (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
@@ -101,6 +102,8 @@ export class AccountResolver {
         } as AccountWithState;
       })
     );
+    console.dir(data);
+    return data;
   }
 
   @Mutation(() => Account)
