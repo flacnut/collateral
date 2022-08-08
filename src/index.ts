@@ -1,28 +1,25 @@
 import "module-alias/register";
-import yargs from "yargs";
-
 import startServer from "./server";
-import { BasicCSVParser } from "./cli/parser/BasicCSVParser";
-import { IngestUtils } from "./utils/IngestUtils";
-import { readdirSync } from "fs";
-import path from "path";
 
+startServer();
+
+/*
 yargs(process.argv.slice(2))
   .scriptName("collateral-cli")
   .usage("$0 <cmd> [args]")
   .command(
     "start-server",
     "Starts the graphQL and Web server",
-    (_) => {},
+    (_) => { },
     (_) => {
-      startServer();
+
     }
   )
   .command(
     "import",
     "Imports a file into the database",
-    (yargs) => {
-      yargs
+    (yrgs: any) => {
+      yrgs
         .usage(
           `Example:\nimport --file testFile.csv --parser csv -d "Posting Date" -a "Amount" --desc "Extended Description"`
         )
@@ -104,3 +101,4 @@ yargs(process.argv.slice(2))
   )
   .demandCommand(1)
   .help().argv;
+*/
