@@ -1,7 +1,7 @@
-node_modules
-dist
-database.sqlite
+server/node_modules
+server/dist
+server/database.sqlite
 data
 *.sqlite
-
-src/utils/DBInit_NO_COMMIT.ts
+client2
+server/src/utils/DBInit_NO_COMMIT.ts
