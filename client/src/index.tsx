@@ -4,7 +4,7 @@ import "./index.css";
 import App from "./App";
 import * as serviceWorker from "./serviceWorker";
 import { ApolloClient, ApolloProvider, InMemoryCache } from "@apollo/client";
-import { ThemeProvider, createMuiTheme } from "@material-ui/core/styles";
+import { ThemeProvider, createTheme } from "@material-ui/core/styles";
 import CssBaseline from "@material-ui/core/CssBaseline";
 
 const client = new ApolloClient({
@@ -12,7 +12,7 @@ const client = new ApolloClient({
   cache: new InMemoryCache(),
 });
 
-const theme = createMuiTheme({
+const theme = createTheme({
   palette: {
     type: "dark",
   },
