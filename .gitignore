@@ -5,3 +5,4 @@ data
 *.sqlite
 client2
 server/src/utils/DBInit_NO_COMMIT.ts
+server/plaidconfig.json
