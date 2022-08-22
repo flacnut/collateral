@@ -11,7 +11,7 @@ import {
   TagResolver,
   FilteredTransactionResolver,
   PlaidResolver
-} from "@resolvers";
+} from "./resolvers";
 
 export default async function StartServer() {
   const app = express();
