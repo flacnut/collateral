@@ -1,26 +1,67 @@
-import './App.css';
-import { AppBar, Box, CssBaseline, Toolbar, Typography, IconButton } from '@mui/material';
-import { Menu } from '@mui/icons-material';
-import { Routes, Route } from 'react-router';
-import { BrowserRouter } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import "./App.css";
+import {
+  AppBar,
+  Box,
+  CssBaseline,
+  Toolbar,
+  Typography,
+  IconButton,
+  Button,
+} from "@mui/material";
+import { Menu } from "@mui/icons-material";
+import { Routes, Route } from "react-router";
+import { BrowserRouter } from "react-router-dom";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
+import { useLazyQuery } from "@apollo/client";
+import Queries from "./graphql/queries";
+import { ApolloClient, InMemoryCache, ApolloProvider } from "@apollo/client";
+import { useEffect } from "react";
+import { usePlaidLink } from "react-plaid-link";
 
 function ThemedApp() {
   const darkTheme = createTheme({
     palette: {
-      mode: 'dark',
+      mode: "dark",
     },
   });
 
+  const client = new ApolloClient({
+    uri: "http://localhost:4000/graphql",
+    cache: new InMemoryCache(),
+  });
+
   return (
-    <ThemeProvider theme={darkTheme}>
-      <CssBaseline />
-      <App />
-    </ThemeProvider>
+    <ApolloProvider client={client}>
+      <ThemeProvider theme={darkTheme}>
+        <CssBaseline />
+        <App />
+      </ThemeProvider>
+    </ApolloProvider>
   );
 }
 
 function App() {
+  const [getLinkToken, { error, data }] = useLazyQuery(Queries.GET_LINK_TOKEN);
+
+  useEffect(() => {
+    console.dir(data);
+    console.dir(error);
+  }, [data, error]);
+
+  const { open, ready } = usePlaidLink({
+    token: data?.getLinkToken?.token,
+    onSuccess: (public_token, metadata) => {
+      console.dir(public_token);
+      console.dir(metadata);
+      // send public_token to server
+    },
+  });
+
+  useEffect(() => {
+    if (ready) {
+      open();
+    }
+  }, [ready, open]);
 
   return (
     <>
@@ -48,6 +89,21 @@ function App() {
             <Route path="/" element={<div>home</div>} />
             <Route path="transactions" element={<div>transactions</div>} />
             <Route path="accounts" element={<div>accounts</div>} />
+            <Route
+              path="link"
+              element={
+                <div>
+                  <Button
+                    variant="contained"
+                    onClick={() => {
+                      getLinkToken();
+                    }}
+                  >
+                    Link
+                  </Button>
+                </div>
+              }
+            />
           </Routes>
         </BrowserRouter>
       </Box>

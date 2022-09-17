@@ -10,7 +10,7 @@ import {
   TransactionResolver,
   TagResolver,
   FilteredTransactionResolver,
-  PlaidResolver
+  PlaidResolver,
 } from "./resolvers";
 
 export default async function StartServer() {
@@ -31,14 +31,14 @@ export default async function StartServer() {
           TransactionResolver,
           TagResolver,
           FilteredTransactionResolver,
-          PlaidResolver
+          PlaidResolver,
         ],
         validate: true,
       }),
       context: ({ req, res }) => ({ req, res }),
     });
 
-    apolloServer.applyMiddleware({ app, cors: false });
+    apolloServer.applyMiddleware({ app, cors: true });
   } catch (err) {
     console.error(err);
     console.dir(JSON.stringify(err));
