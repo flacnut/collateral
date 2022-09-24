@@ -12,6 +12,14 @@ const queries = {
       }
     }
   `,
+
+  SET_PLAID_LINK_RESPONSE: gql`
+  mutation setPlaidLinkResponse($plaidLinkResponse: PlaidLinkResponse!) {
+    setPlaidLinkResponse(plaidLinkResponse: $plaidLinkResponse) {
+    	id 
+      institutionId
+    }
+  }`
 };
 
 export default queries;

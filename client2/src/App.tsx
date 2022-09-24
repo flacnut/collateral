@@ -12,11 +12,12 @@ import { Menu } from "@mui/icons-material";
 import { Routes, Route } from "react-router";
 import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
-import { useLazyQuery } from "@apollo/client";
+import { useLazyQuery, useMutation } from "@apollo/client";
 import Queries from "./graphql/queries";
 import { ApolloClient, InMemoryCache, ApolloProvider } from "@apollo/client";
 import { useEffect } from "react";
 import { usePlaidLink } from "react-plaid-link";
+import { PlaidLinkResponse } from "./graphql/graphql-global-types";
 
 function ThemedApp() {
   const darkTheme = createTheme({
@@ -42,6 +43,7 @@ function ThemedApp() {
 
 function App() {
   const [getLinkToken, { error, data }] = useLazyQuery(Queries.GET_LINK_TOKEN);
+  const [setPlaidLinkResponse] = useMutation<PlaidLinkResponse>(Queries.SET_PLAID_LINK_RESPONSE);
 
   useEffect(() => {
     console.dir(data);
@@ -53,7 +55,15 @@ function App() {
     onSuccess: (public_token, metadata) => {
       console.dir(public_token);
       console.dir(metadata);
-      // send public_token to server
+      setPlaidLinkResponse({
+        variables: {
+          plaidLinkResponse: {
+            publicToken: public_token,
+            linkSessionId: metadata.link_session_id,
+            institutionId: metadata.institution?.institution_id
+          }
+        }
+      });
     },
   });
 

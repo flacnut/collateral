@@ -7,8 +7,12 @@
 // START Enums and Input Objects
 //==============================================================
 
+export interface PlaidLinkResponse {
+  publicToken: string;
+  linkSessionId: string;
+  institutionId: string;
+}
+
 //==============================================================
 // END Enums and Input Objects
 //==============================================================
-
-export {};
