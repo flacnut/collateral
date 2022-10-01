@@ -5,4 +5,4 @@ data
 *.sqlite
 client2/node_modules
 server/src/utils/DBInit_NO_COMMIT.ts
-server/plaidconfig.json
+server/plaidConfig.json

@@ -14,12 +14,26 @@ const queries = {
   `,
 
   SET_PLAID_LINK_RESPONSE: gql`
-  mutation setPlaidLinkResponse($plaidLinkResponse: PlaidLinkResponse!) {
-    setPlaidLinkResponse(plaidLinkResponse: $plaidLinkResponse) {
-    	id 
-      institutionId
+    mutation setPlaidLinkResponse($plaidLinkResponse: PlaidLinkResponse!) {
+      setPlaidLinkResponse(plaidLinkResponse: $plaidLinkResponse) {
+        id 
+        institutionId
+      }
     }
-  }`
+  `,
+
+  GET_PLAID_INSTITUTION: gql`
+    query getInstitution($plaidInstitutionId: String!) {
+      getInstitution(institutionId: $plaidInstitutionId) {
+        id
+        url
+        logo
+        products
+        primaryColor
+        name
+        countryCodes
+      }
+    }`
 };
 
 export default queries;
