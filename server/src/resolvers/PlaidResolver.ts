@@ -8,7 +8,8 @@ import {
   TransactionsGetRequest,
 } from "plaid";
 import { client_id, dev_secret } from "../../plaidConfig.json";
-import { PlaidTransaction, PlaidItem, PlaidInstitution, PlaidAccount, } from "../../src/entity/plaid";
+import { PlaidTransaction, PlaidItem, PlaidInstitution } from "../../src/entity/plaid";
+import { createAccount, createInstitution, createItem, createTransaction } from "../../src/utils/PlaidEntityHelper";
 
 const configuration = new Configuration({
   basePath: PlaidEnvironments.development,
@@ -83,11 +84,11 @@ export class PlaidResolver {
       });
 
       if (response.data != null) {
-        item = new PlaidItem();
-        item.id = response.data.item_id;
-        item.accessToken = response.data.access_token;
-        item.institutionId = linkResponse.institutionId;
-        await item.save();
+        item = await createItem(
+          response.data.item_id,
+          response.data.access_token,
+          linkResponse.institutionId,
+        );
       }
     } catch (error) {
       console.error(error);
@@ -103,14 +104,7 @@ export class PlaidResolver {
       });
 
       if (response.data != null) {
-        let institution = new PlaidInstitution();
-        institution.id = item.institutionId;
-        institution.name = response.data.institution.name;
-        institution.logo = response.data.institution.logo ?? null;
-        institution.primaryColor = response.data.institution.primary_color ?? null;
-        institution.products = response.data.institution.products.join(':');
-        institution.countryCodes = response.data.institution.country_codes.join(':');
-        await institution.save();
+        await createInstitution(response.data.institution);
       }
     }
 
@@ -125,17 +119,7 @@ export class PlaidResolver {
           if (item == null) {
             return;
           }
-          let account = new PlaidAccount();
-          account.id = acc.account_id;
-          account.itemId = item.id;
-          account.institutionId = item.institutionId;
-          account.mask = acc.mask;
-          account.name = acc.name;
-          account.officialName = acc.official_name;
-          account.type = acc.type;
-          account.subtype = acc.subtype;
-          account.currency = acc.balances.iso_currency_code;
-          return account.save();
+          return createAccount(item, acc);
         }));
       }
     }
@@ -174,25 +158,7 @@ export class PlaidResolver {
     }
 
     return await Promise.resolve(transactions.map(async (t) => {
-      let transaction = new PlaidTransaction();
-      transaction.id = t.transaction_id;
-      transaction.accountId = t.account_id;
-      transaction.amountCents = Math.floor(t.amount * 100);
-      transaction.category = t.category?.join(',') ?? '';
-      transaction.categoryId = t.category_id ?? '';
-      transaction.currency = t.iso_currency_code;
-      transaction.date = t.date;
-      transaction.dateTime = t.datetime ?? '';
-      transaction.authorizedDate = t.authorized_date ?? '';
-      transaction.authorizedDateTime = t.authorized_datetime ?? '';
-      transaction.locationJson = JSON.stringify(t.location);
-      transaction.paymentChannel = t.payment_channel;
-      transaction.paymentMetaJson = JSON.stringify(t.payment_meta);
-      transaction.description = t.name;
-      transaction.originalDescription = t.original_description ?? t.name;
-      transaction.merchant = t.merchant_name ?? '';
-      transaction.transactionCode = t.transaction_code ?? '';
-      return transaction.save();
+      return createTransaction(t);
     }));
   }
 
@@ -247,16 +213,7 @@ export class PlaidResolver {
       });
 
       if (response.data != null) {
-        console.dir(response.data);
-        institution = new PlaidInstitution();
-        institution.id = institutionId;
-        institution.name = response.data.institution.name;
-        institution.logo = response.data.institution.logo ?? null;
-        institution.primaryColor = response.data.institution.primary_color ?? null;
-        institution.products = response.data.institution.products.join(':');
-        institution.countryCodes = response.data.institution.country_codes.join(':');
-        await institution.save();
-        return institution;
+        return await createInstitution(response.data.institution);
       }
     } catch (error) {
       console.error(error);

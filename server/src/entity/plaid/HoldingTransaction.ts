@@ -1,24 +1,37 @@
 import { Field, Float, Int, ObjectType } from "type-graphql";
 import { Entity, BaseEntity, Column, PrimaryColumn } from "typeorm";
 
-@Entity("plaid_investment_holding")
+@Entity("plaid_holding_transaction")
 @ObjectType()
-export class PlaidInvestmentHolding extends BaseEntity {
-  @Field()
-  @PrimaryColumn("text", { nullable: false, unique: true })
-  accountId: string;
+export class PlaidHoldingTransaction extends BaseEntity {
 
   @Field()
   @PrimaryColumn("text", { nullable: false, unique: true })
+  id: string;
+
+  @Field()
+  @Column("text")
+  accountId: string;
+
+  @Field()
+  @Column("text")
   securityId: string;
 
   @Field()
   @Column("text")
-  name: string;
+  description: string;
 
   @Field(() => Int)
   @Column("int")
-  costBasisCents: number;
+  amountCents: number;
+
+  @Field(() => Int)
+  @Column("int")
+  feesCents: number;
+
+  @Field(() => Int)
+  @Column("int")
+  unitPriceCents: number;
 
   @Field(() => Float)
   @Column("float")
@@ -26,17 +39,17 @@ export class PlaidInvestmentHolding extends BaseEntity {
 
   @Field()
   @Column("text")
-  institutionPrice: string;
-
-  @Field(() => Int)
-  @Column("int")
-  institutionValueCents: number;
-
-  @Field(() => String, { nullable: true })
-  @Column("text", { nullable: true })
-  institutionPriceAsOfDate: string;
+  date: string;
 
   @Field(() => String, { nullable: true })
   @Column("text", { nullable: true })
   currency: string | null;
+
+  @Field()
+  @Column("text")
+  type: string;
+
+  @Field()
+  @Column("text")
+  subType: string;
 }
