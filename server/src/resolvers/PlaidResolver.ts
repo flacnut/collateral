@@ -8,10 +8,7 @@ import {
   TransactionsGetRequest,
 } from "plaid";
 import { client_id, dev_secret } from "../../plaidConfig.json";
-import { Item } from "../../src/entity/plaid/Item";
-import { Institution } from "../../src/entity/plaid/Institution";
-import { Account } from "../../src/entity/plaid/Account";
-import { PlaidTransaction } from "../../src/entity/plaid/Transaction";
+import { PlaidTransaction, PlaidItem, PlaidInstitution, PlaidAccount, } from "../../src/entity/plaid";
 
 const configuration = new Configuration({
   basePath: PlaidEnvironments.development,
@@ -75,18 +72,18 @@ export class PlaidResolver {
       });
   }
 
-  @Mutation(() => Item)
+  @Mutation(() => PlaidItem)
   async setPlaidLinkResponse(
     @Arg("plaidLinkResponse", () => PlaidLinkResponse) linkResponse: PlaidLinkResponse
   ) {
-    let item: Item | null = null;
+    let item: PlaidItem | null = null;
     try {
       const response = await client.itemPublicTokenExchange({
         public_token: linkResponse.publicToken,
       });
 
       if (response.data != null) {
-        item = new Item();
+        item = new PlaidItem();
         item.id = response.data.item_id;
         item.accessToken = response.data.access_token;
         item.institutionId = linkResponse.institutionId;
@@ -106,7 +103,7 @@ export class PlaidResolver {
       });
 
       if (response.data != null) {
-        let institution = new Institution();
+        let institution = new PlaidInstitution();
         institution.id = item.institutionId;
         institution.name = response.data.institution.name;
         institution.logo = response.data.institution.logo ?? null;
@@ -128,7 +125,7 @@ export class PlaidResolver {
           if (item == null) {
             return;
           }
-          let account = new Account();
+          let account = new PlaidAccount();
           account.id = acc.account_id;
           account.itemId = item.id;
           account.institutionId = item.institutionId;
@@ -150,7 +147,7 @@ export class PlaidResolver {
   async fetchPlaidTransactions(
     @Arg("itemId") itemId: string
   ) {
-    const item = await Item.findOneOrFail(itemId);
+    const item = await PlaidItem.findOneOrFail(itemId);
 
     const response = await client.transactionsGet({
       access_token: item.accessToken,
@@ -203,7 +200,7 @@ export class PlaidResolver {
   async fetchInvestmentHoldings(
     @Arg("itemId") itemId: string
   ) {
-    const item = await Item.findOneOrFail(itemId);
+    const item = await PlaidItem.findOneOrFail(itemId);
 
     const response = await client.investmentsHoldingsGet({
       access_token: item.accessToken,
@@ -214,12 +211,28 @@ export class PlaidResolver {
     return [];
   }
 
-  @Query(() => Institution)
+  @Query(() => [PlaidTransaction])
+  async fetchInvestmentTransactions(
+    @Arg("itemId") itemId: string
+  ) {
+    const item = await PlaidItem.findOneOrFail(itemId);
+
+    const response = await client.investmentsTransactionsGet({
+      access_token: item.accessToken,
+      start_date: '2020-01-01',
+      end_date: '2022-09-30',
+    });
+
+    console.dir(response.data.investment_transactions);
+    return [];
+  }
+
+  @Query(() => PlaidInstitution)
   async getInstitution(
     @Arg("institutionId") institutionId: string
   ) {
     try {
-      let institution = await Institution.findOne(institutionId);
+      let institution = await PlaidInstitution.findOne(institutionId);
 
       if (institution) {
         return institution;
@@ -235,7 +248,7 @@ export class PlaidResolver {
 
       if (response.data != null) {
         console.dir(response.data);
-        institution = new Institution();
+        institution = new PlaidInstitution();
         institution.id = institutionId;
         institution.name = response.data.institution.name;
         institution.logo = response.data.institution.logo ?? null;

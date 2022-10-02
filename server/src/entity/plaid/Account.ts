@@ -3,7 +3,7 @@ import { Entity, BaseEntity, Column, PrimaryColumn } from "typeorm";
 
 @Entity("plaid_account")
 @ObjectType()
-export class Account extends BaseEntity {
+export class PlaidAccount extends BaseEntity {
 
   @Field()
   @PrimaryColumn("text", { nullable: false, unique: true })
