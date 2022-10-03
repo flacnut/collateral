@@ -8,8 +8,8 @@ import {
   TransactionsGetRequest,
 } from "plaid";
 import { client_id, dev_secret } from "../../plaidConfig.json";
-import { PlaidTransaction, PlaidItem, PlaidInstitution } from "../../src/entity/plaid";
-import { createAccount, createInstitution, createItem, createTransaction } from "../../src/utils/PlaidEntityHelper";
+import { PlaidTransaction, PlaidItem, PlaidInstitution, PlaidInvestmentHolding, PlaidHoldingTransaction } from "../../src/entity/plaid";
+import { createAccount, createHoldingTransaction, createInstitution, createInvestmentHolding, createItem, createSecurity, createTransaction } from "../../src/utils/PlaidEntityHelper";
 
 const configuration = new Configuration({
   basePath: PlaidEnvironments.development,
@@ -157,12 +157,10 @@ export class PlaidResolver {
       );
     }
 
-    return await Promise.resolve(transactions.map(async (t) => {
-      return createTransaction(t);
-    }));
+    return await Promise.all(transactions.map(createTransaction));
   }
 
-  @Query(() => [PlaidTransaction])
+  @Query(() => [PlaidInvestmentHolding])
   async fetchInvestmentHoldings(
     @Arg("itemId") itemId: string
   ) {
@@ -172,12 +170,15 @@ export class PlaidResolver {
       access_token: item.accessToken,
     });
 
-    console.dir(response.data.holdings);
-    console.dir(response.data.securities);
-    return [];
+    const allItems = await Promise.all([
+      ...response.data.holdings.map(createInvestmentHolding),
+      ...response.data.securities.map(createSecurity),
+    ]);
+
+    return allItems.filter(item => item instanceof PlaidInvestmentHolding);
   }
 
-  @Query(() => [PlaidTransaction])
+  @Query(() => [PlaidHoldingTransaction])
   async fetchInvestmentTransactions(
     @Arg("itemId") itemId: string
   ) {
@@ -189,8 +190,12 @@ export class PlaidResolver {
       end_date: '2022-09-30',
     });
 
-    console.dir(response.data.investment_transactions);
-    return [];
+    const allItems = await Promise.all([
+      ...response.data.investment_transactions.map(createHoldingTransaction),
+      ...response.data.securities.map(createSecurity),
+    ]);
+
+    return allItems.filter(item => item instanceof PlaidHoldingTransaction);
   }
 
   @Query(() => PlaidInstitution)

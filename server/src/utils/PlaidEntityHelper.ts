@@ -1,5 +1,5 @@
-import { Institution, AccountBase, Transaction, Holding, Security, InvestmentTransaction } from "plaid";
-import { PlaidAccount, PlaidHoldingTransaction, PlaidInstitution, PlaidInvestmentHolding, PlaidItem, PlaidSecurity, PlaidTransaction } from "../../src/entity/plaid";
+import { Institution, AccountBase, Transaction, Holding, Security, InvestmentTransaction, AccountBalance } from "plaid";
+import { PlaidAccount, PlaidAccountBalance, PlaidHoldingTransaction, PlaidInstitution, PlaidInvestmentHolding, PlaidItem, PlaidSecurity, PlaidTransaction } from "../../src/entity/plaid";
 
 export async function createItem(
   itemId: string,
@@ -40,7 +40,26 @@ export async function createAccount(
   account.type = rawAccount.type;
   account.subtype = rawAccount.subtype;
   account.currency = rawAccount.balances.iso_currency_code;
-  return await account.save();
+
+  await Promise.all([
+    account.save(),
+    createBalance(account, rawAccount.balances)
+  ]);
+
+  return account;
+}
+
+export async function createBalance(
+  account: PlaidAccount,
+  rawBalance: AccountBalance,
+): Promise<PlaidAccountBalance> {
+  const balance = new PlaidAccountBalance();
+  balance.accountId = account.id;
+  balance.availableCents = Math.floor(rawBalance.available ?? 0 * 100);
+  balance.balanceCents = Math.floor(rawBalance.current ?? 0 * 100);
+  balance.limitCents = Math.floor(rawBalance.limit ?? 0 * 100);
+  balance.currency = rawBalance.iso_currency_code;
+  return await balance.save();
 }
 
 export async function createTransaction(
