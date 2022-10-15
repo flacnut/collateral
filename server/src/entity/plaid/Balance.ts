@@ -7,14 +7,10 @@ export class PlaidAccountBalance extends BaseEntity {
 
   @Field()
   @PrimaryColumn("text")
-  id: string;
-
-  @Field()
-  @PrimaryColumn("text")
   lastUpdateDate: string;
 
   @Field()
-  @Column("text")
+  @PrimaryColumn("text")
   accountId: string;
 
   @Field(() => Int)

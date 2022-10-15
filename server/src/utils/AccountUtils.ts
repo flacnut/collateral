@@ -3,12 +3,12 @@ import { createHash } from "crypto";
 
 export type DateAmountTuple = { date: Date; amountCents: number };
 export type DateAmountAccountTuple = DateAmountTuple & {
-  transactionId: number;
-  accountId: number;
+  transactionId: number | string;
+  accountId: number | string;
 };
 export type MatchedPair = {
-  from: number;
-  to: number;
+  from: number | string;
+  to: number | string;
   amountCents: number;
 };
 
@@ -130,13 +130,17 @@ function checkMatch(
 
 export function MatchTransfers(
   transactions: DateAmountAccountTuple[],
-  distance = 14
+  distance = 7
 ): Array<MatchedPair> {
   transactions.sort((a, b) => a.date.getTime() - b.date.getTime());
+
+  console.dir(transactions);
+
   const possiblePairs: Array<MatchedPair> = [];
-  const isAlreadyMatched = (id: number) =>
+  const isAlreadyMatched = (id: number | string) =>
     possiblePairs.find((p) => p.from === id || p.to === id) != null;
 
+  // compare each transaction with earlier transactions that are within the time window.
   transactions.forEach((transaction, index) => {
     let windex = index;
     while (--windex >= 0) {

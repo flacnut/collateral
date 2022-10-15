@@ -1,29 +1,14 @@
 import { Field, Float, Int, ObjectType } from "type-graphql";
-import { Entity, BaseEntity, Column, PrimaryColumn } from "typeorm";
+import { Column, ChildEntity } from "typeorm";
+import { CoreTransaction } from "./CoreTransaction";
 
-@Entity("plaid_holding_transaction")
+@ChildEntity()
 @ObjectType()
-export class PlaidHoldingTransaction extends BaseEntity {
-
-  @Field()
-  @PrimaryColumn("text", { nullable: false, unique: true })
-  id: string;
-
-  @Field()
-  @Column("text")
-  accountId: string;
+export class PlaidHoldingTransaction extends CoreTransaction {
 
   @Field()
   @Column("text")
   securityId: string;
-
-  @Field()
-  @Column("text")
-  description: string;
-
-  @Field(() => Int)
-  @Column("int")
-  amountCents: number;
 
   @Field(() => Int)
   @Column("int")
@@ -36,14 +21,6 @@ export class PlaidHoldingTransaction extends BaseEntity {
   @Field(() => Float)
   @Column("float")
   quantity: number;
-
-  @Field()
-  @Column("text")
-  date: string;
-
-  @Field(() => String, { nullable: true })
-  @Column("text", { nullable: true })
-  currency: string | null;
 
   @Field()
   @Column("text")

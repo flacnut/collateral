@@ -1,27 +1,11 @@
-import { Field, Int, ObjectType } from "type-graphql";
-import { Entity, BaseEntity, Column, PrimaryColumn } from "typeorm";
+import { Field, ObjectType } from "type-graphql";
+import { ChildEntity, Column } from "typeorm";
+import { CoreTransaction } from "./CoreTransaction";
 
-@Entity("plaid_transaction")
+@ChildEntity()
 @ObjectType()
-export class PlaidTransaction extends BaseEntity {
+export class PlaidTransaction extends CoreTransaction {
 
-  @Field()
-  @PrimaryColumn("text", { nullable: false, unique: true })
-  id: string;
-
-  @Field()
-  @Column("text")
-  accountId: string;
-
-  @Field(() => Int)
-  @Column("int")
-  amountCents: number;
-
-  @Field(() => String, { nullable: true })
-  @Column("text", { nullable: true })
-  currency: string | null;
-
-  // array
   @Field()
   @Column("text")
   category: string;
@@ -29,10 +13,6 @@ export class PlaidTransaction extends BaseEntity {
   @Field()
   @Column("text")
   categoryId: string;
-
-  @Field()
-  @Column("text")
-  date: string;
 
   @Field()
   @Column("text")
@@ -53,10 +33,6 @@ export class PlaidTransaction extends BaseEntity {
   @Field()
   @Column("text")
   paymentMetaJson: string;
-
-  @Field()
-  @Column("text")
-  description: string;
 
   @Field()
   @Column("text")

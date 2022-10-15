@@ -12,7 +12,7 @@ import { Menu } from "@mui/icons-material";
 import { Routes, Route } from "react-router";
 import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
-import { useLazyQuery, useMutation } from "@apollo/client";
+import { useMutation, useQuery } from "@apollo/client";
 import Queries from "./graphql/queries";
 import { ApolloClient, InMemoryCache, ApolloProvider } from "@apollo/client";
 import { useEffect } from "react";
@@ -42,7 +42,7 @@ function ThemedApp() {
 }
 
 function App() {
-  const [getLinkToken, { error, data }] = useLazyQuery(Queries.GET_LINK_TOKEN);
+  const { error, data, refetch } = useQuery(Queries.GET_LINK_TOKEN);
   const [setPlaidLinkResponse] = useMutation<PlaidLinkResponse>(Queries.SET_PLAID_LINK_RESPONSE);
 
   useEffect(() => {
@@ -106,7 +106,7 @@ function App() {
                   <Button
                     variant="contained"
                     onClick={() => {
-                      getLinkToken();
+                      refetch();
                     }}
                   >
                     Link

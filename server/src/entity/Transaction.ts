@@ -14,7 +14,7 @@ import { Source } from "./Source";
 import { Account } from "./Account";
 import { Field, ObjectType, Int } from "type-graphql";
 
-@Entity()
+@Entity("old_transaction")
 @ObjectType()
 export class Transaction extends BaseEntity {
   @Field(() => Int)

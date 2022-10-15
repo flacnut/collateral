@@ -17,7 +17,7 @@ export async function createInstitution(
   rawInstitution: Institution,
 ): Promise<PlaidInstitution> {
   const institution = new PlaidInstitution();
-  institution.id = rawInstitution.institutionId;
+  institution.id = rawInstitution.institution_id;
   institution.name = rawInstitution.name;
   institution.logo = rawInstitution.logo ?? null;
   institution.primaryColor = rawInstitution.primary_color ?? null;
@@ -40,11 +40,8 @@ export async function createAccount(
   account.type = rawAccount.type;
   account.subtype = rawAccount.subtype;
   account.currency = rawAccount.balances.iso_currency_code;
-
-  await Promise.all([
-    account.save(),
-    createBalance(account, rawAccount.balances)
-  ]);
+  await account.save();
+  await createBalance(account, rawAccount.balances)
 
   return account;
 }
@@ -59,6 +56,7 @@ export async function createBalance(
   balance.balanceCents = Math.floor(rawBalance.current ?? 0 * 100);
   balance.limitCents = Math.floor(rawBalance.limit ?? 0 * 100);
   balance.currency = rawBalance.iso_currency_code;
+  balance.lastUpdateDate = rawBalance.last_updated_datetime ?? (new Date()).toLocaleDateString();
   return await balance.save();
 }
 

@@ -1,4 +1,4 @@
-import { Arg, Field, InputType, Mutation, ObjectType, Query, Resolver } from "type-graphql";
+import { Arg, Field, InputType, Int, Mutation, ObjectType, Query, Resolver } from "type-graphql";
 import {
   Configuration,
   PlaidApi,
@@ -8,8 +8,10 @@ import {
   TransactionsGetRequest,
 } from "plaid";
 import { client_id, dev_secret } from "../../plaidConfig.json";
-import { PlaidTransaction, PlaidItem, PlaidInstitution, PlaidInvestmentHolding, PlaidHoldingTransaction } from "../../src/entity/plaid";
+import { PlaidTransaction, PlaidItem, PlaidInstitution, PlaidInvestmentHolding, PlaidHoldingTransaction, PlaidAccount } from "../../src/entity/plaid";
 import { createAccount, createHoldingTransaction, createInstitution, createInvestmentHolding, createItem, createSecurity, createTransaction } from "../../src/utils/PlaidEntityHelper";
+import { DateAmountAccountTuple, MatchTransfers } from "../../src/utils/AccountUtils";
+import { CoreTransaction } from "../../src/entity/plaid/CoreTransaction";
 
 const configuration = new Configuration({
   basePath: PlaidEnvironments.development,
@@ -30,6 +32,21 @@ export class LinkTokenResult {
 
   @Field(() => String, { nullable: true })
   error: string;
+}
+
+@ObjectType()
+export class CoreTransfer {
+  @Field(() => CoreTransaction)
+  to: CoreTransaction;
+
+  @Field(() => CoreTransaction)
+  from: CoreTransaction;
+
+  @Field(() => String)
+  date: string;
+
+  @Field(() => Int)
+  amountCents: number;
 }
 
 @InputType()
@@ -115,7 +132,7 @@ export class PlaidResolver {
 
 
       if (response.data != null) {
-        await Promise.resolve(response.data.accounts.map(async (acc) => {
+        await Promise.all(response.data.accounts.map(async (acc) => {
           if (item == null) {
             return;
           }
@@ -125,6 +142,27 @@ export class PlaidResolver {
     }
 
     return item;
+  }
+
+  @Query(() => [PlaidAccount])
+  async fetchAccounts(
+    @Arg("itemId") itemId: string
+  ) {
+    const item = await PlaidItem.findOneOrFail(itemId);
+
+    if (item != null) {
+      const response = await client.accountsGet({
+        access_token: item.accessToken,
+      });
+
+
+      if (response.data != null) {
+        return await Promise.all(response.data.accounts.map(
+          async (acc) => createAccount(item, acc)
+        ));
+      }
+    }
+    return [];
   }
 
   @Query(() => [PlaidTransaction])
@@ -195,6 +233,8 @@ export class PlaidResolver {
       ...response.data.securities.map(createSecurity),
     ]);
 
+    console.dir(allItems);
+
     return allItems.filter(item => item instanceof PlaidHoldingTransaction);
   }
 
@@ -217,6 +257,9 @@ export class PlaidResolver {
         }
       });
 
+
+      console.dir(response.data?.institution);
+
       if (response.data != null) {
         return await createInstitution(response.data.institution);
       }
@@ -226,4 +269,41 @@ export class PlaidResolver {
 
     return null;
   }
+
+  @Query(() => [PlaidInstitution])
+  async getAllInstitutions() {
+    return await PlaidInstitution.find();
+  }
+
+  @Query(() => [CoreTransfer])
+  async getPlaidTransfers() {
+    const transactions = await CoreTransaction.find();
+
+    const transfers = MatchTransfers(
+      transactions.filter(t => t.accountId === '4xxRwNw5kJsqmNa79L56uXndYr4zy9fnz6ebP' || t.accountId === 'v66xPOPYXysML5A4e0b6ivOgadmQpAU0PJX3N').map(t => {
+        return {
+          date: new Date(t.date),
+          amountCents: t.amountCents,
+          accountId: t.accountId,
+          transactionId: t.id,
+        } as DateAmountAccountTuple;
+      }));
+
+    let coreTransfers = transfers.map(transfer => {
+      let to = transactions.filter(t => t.id === transfer.to)[0];
+      let from = transactions.filter(t => t.id === transfer.from)[0];
+
+      return {
+        from,
+        to,
+        date: from.date,
+        amountCents: transfer.amountCents,
+      } as CoreTransfer;
+    });
+
+    return coreTransfers
+  }
 }
+
+
+//TODO: Make investment transaction and normal transaction extend some core trasaction class, otherwise its hard to do transfers.
