@@ -6,6 +6,7 @@ import {
   CountryCode,
   Products,
   TransactionsGetRequest,
+  InvestmentsTransactionsGetRequest,
 } from "plaid";
 import { client_id, dev_secret } from "../../plaidConfig.json";
 import {
@@ -166,8 +167,12 @@ export class PlaidResolver {
 
     const response = await client.transactionsGet({
       access_token: item.accessToken,
-      start_date: '2020-01-01',
-      end_date: '2022-09-30',
+      start_date: '2022-01-01',
+      end_date: '2022-12-31',
+      options: {
+        include_original_description: true,
+        include_personal_finance_category: true,
+      }
     });
 
     let transactions = response.data.transactions;
@@ -176,8 +181,8 @@ export class PlaidResolver {
     while (transactions.length < total_transactions) {
       const paginatedRequest: TransactionsGetRequest = {
         access_token: item.accessToken,
-        start_date: '2020-01-01',
-        end_date: '2022-09-30',
+        start_date: '2022-01-01',
+        end_date: '2022-12-31',
         options: {
           offset: transactions.length,
         },
@@ -217,9 +222,28 @@ export class PlaidResolver {
 
     const response = await client.investmentsTransactionsGet({
       access_token: item.accessToken,
-      start_date: '2020-01-01',
-      end_date: '2022-09-30',
+      start_date: '2022-01-01',
+      end_date: '2022-12-31',
+
     });
+
+    let investment_transactions = response.data.investment_transactions;
+    const total_transactions = response.data.total_investment_transactions;
+
+    while (investment_transactions.length < total_transactions) {
+      const paginatedRequest: InvestmentsTransactionsGetRequest = {
+        access_token: item.accessToken,
+        start_date: '2022-01-01',
+        end_date: '2022-12-31',
+        options: {
+          offset: investment_transactions.length,
+        },
+      };
+      const paginatedResponse = await client.investmentsTransactionsGet(paginatedRequest);
+      investment_transactions = investment_transactions.concat(
+        paginatedResponse.data.investment_transactions,
+      );
+    }
 
     const allItems = await Promise.all([
       ...response.data.investment_transactions.map(createHoldingTransaction),
@@ -247,9 +271,6 @@ export class PlaidResolver {
           include_optional_metadata: true,
         }
       });
-
-
-      console.dir(response.data?.institution);
 
       if (response.data != null) {
         return await createInstitution(response.data.institution);
