@@ -35,7 +35,7 @@
     "test": "jest"
   },
   "_moduleAliases": {
-    "@entities": "src/entity",
-    "@resolvers": "src/resolvers"
+    "@entities": "src/entity/",
+    "@resolvers": "src/resolvers/"
   }
 }

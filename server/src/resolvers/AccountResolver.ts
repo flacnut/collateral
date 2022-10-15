@@ -13,8 +13,6 @@ import {
 import { In, IsNull, Not } from "typeorm";
 import {
   CalculateBalance,
-  DateAmountAccountTuple,
-  MatchTransfers,
 } from "../utils/AccountUtils";
 
 @InputType()
@@ -147,53 +145,6 @@ export class AccountResolver {
       await AccountBalance.createQueryBuilder().insert().values(thisInsert).execute();
     }
     return (await Account.findOne(id));
-  }
-
-  @Mutation(() => [Transfer])
-  async generateTransfers(
-    @Arg("accountIds", () => [Int]) accountIds: Array<number>
-  ) {
-    const transactions = await Transaction.find({
-      transferPairId: IsNull(),
-      transferPair: IsNull(),
-      accountId: In(accountIds),
-    });
-    const pairs = MatchTransfers(
-      transactions.map((t) => {
-        return {
-          date: new Date(t.date),
-          amountCents: t.amountCents,
-          transactionId: t.id,
-          accountId: t.accountId,
-        } as DateAmountAccountTuple;
-      })
-    );
-
-    const transfers: Transfer[] = [];
-    const updateTransactionsPromises = pairs.map(async (p) => {
-      let fromT = transactions.find((t) => t.id === p.from);
-      let toT = transactions.find((t) => t.id === p.to);
-
-      if (fromT == null || toT == null) {
-        throw new Error("???");
-      }
-
-      if (
-        fromT?.amountCents + toT?.amountCents === 0 &&
-        fromT.amountCents < 0
-      ) {
-        fromT.transferPairId = toT.id;
-        toT.transferPairId = fromT.id;
-      }
-
-      transfers.push({
-        from: await fromT.save(),
-        to: await toT.save(),
-      });
-    });
-
-    await Promise.all(updateTransactionsPromises);
-    return transfers;
   }
 
   @Query(() => [Transfer])

@@ -1,11 +1,38 @@
-import { Field, ObjectType } from "type-graphql";
-import { Transaction } from "@entities";
+import { Field, InputType, Int, ObjectType } from "type-graphql";
+import { BaseEntity, Column, Entity, JoinColumn, OneToOne, PrimaryColumn } from "typeorm";
+import { CoreTransaction } from "./plaid/CoreTransaction";
 
 @ObjectType()
-export class Transfer {
-  @Field(() => Transaction)
-  from: Transaction;
+@Entity()
+export class Transfer extends BaseEntity {
 
-  @Field(() => Transaction)
-  to: Transaction;
+  @PrimaryColumn("text", { nullable: false, unique: true })
+  id: string;
+
+  @Field(() => CoreTransaction)
+  @OneToOne(() => CoreTransaction)
+  @JoinColumn()
+  to: CoreTransaction;
+
+  @Field(() => CoreTransaction)
+  @OneToOne(() => CoreTransaction)
+  @JoinColumn()
+  from: CoreTransaction;
+
+  @Field(() => String)
+  @Column()
+  date: string;
+
+  @Field(() => Int)
+  @Column()
+  amountCents: number;
+}
+
+@InputType()
+export class UnsavedTransfer {
+  @Field(() => String, { nullable: false })
+  toId: string;
+
+  @Field(() => String, { nullable: false })
+  fromId: string;
 }

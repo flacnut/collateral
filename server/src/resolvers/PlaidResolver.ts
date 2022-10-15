@@ -1,4 +1,4 @@
-import { Arg, Field, InputType, Int, Mutation, ObjectType, Query, Resolver } from "type-graphql";
+import { Arg, Field, InputType, Mutation, ObjectType, Query, Resolver } from "type-graphql";
 import {
   Configuration,
   PlaidApi,
@@ -8,10 +8,18 @@ import {
   TransactionsGetRequest,
 } from "plaid";
 import { client_id, dev_secret } from "../../plaidConfig.json";
-import { PlaidTransaction, PlaidItem, PlaidInstitution, PlaidInvestmentHolding, PlaidHoldingTransaction, PlaidAccount } from "../../src/entity/plaid";
-import { createAccount, createHoldingTransaction, createInstitution, createInvestmentHolding, createItem, createSecurity, createTransaction } from "../../src/utils/PlaidEntityHelper";
+import {
+  PlaidTransaction, PlaidItem, PlaidInstitution, PlaidInvestmentHolding,
+  PlaidHoldingTransaction, PlaidAccount
+} from "../../src/entity/plaid";
+import {
+  createAccount, createHoldingTransaction, createInstitution,
+  createInvestmentHolding, createItem, createSecurity, createTransaction
+} from "../../src/utils/PlaidEntityHelper";
 import { DateAmountAccountTuple, MatchTransfers } from "../../src/utils/AccountUtils";
 import { CoreTransaction } from "../../src/entity/plaid/CoreTransaction";
+import { Transfer } from "@entities";
+import { UnsavedTransfer } from "../../src/entity/Transfer";
 
 const configuration = new Configuration({
   basePath: PlaidEnvironments.development,
@@ -32,21 +40,6 @@ export class LinkTokenResult {
 
   @Field(() => String, { nullable: true })
   error: string;
-}
-
-@ObjectType()
-export class CoreTransfer {
-  @Field(() => CoreTransaction)
-  to: CoreTransaction;
-
-  @Field(() => CoreTransaction)
-  from: CoreTransaction;
-
-  @Field(() => String)
-  date: string;
-
-  @Field(() => Int)
-  amountCents: number;
 }
 
 @InputType()
@@ -233,8 +226,6 @@ export class PlaidResolver {
       ...response.data.securities.map(createSecurity),
     ]);
 
-    console.dir(allItems);
-
     return allItems.filter(item => item instanceof PlaidHoldingTransaction);
   }
 
@@ -275,12 +266,12 @@ export class PlaidResolver {
     return await PlaidInstitution.find();
   }
 
-  @Query(() => [CoreTransfer])
-  async getPlaidTransfers() {
+  @Query(() => [Transfer])
+  async getPossibleTransfers() {
     const transactions = await CoreTransaction.find();
 
-    const transfers = MatchTransfers(
-      transactions.filter(t => t.accountId === '4xxRwNw5kJsqmNa79L56uXndYr4zy9fnz6ebP' || t.accountId === 'v66xPOPYXysML5A4e0b6ivOgadmQpAU0PJX3N').map(t => {
+    const rawTransfers = MatchTransfers(
+      transactions.map(t => {
         return {
           date: new Date(t.date),
           amountCents: t.amountCents,
@@ -289,7 +280,7 @@ export class PlaidResolver {
         } as DateAmountAccountTuple;
       }));
 
-    let coreTransfers = transfers.map(transfer => {
+    let transfers = rawTransfers.map(transfer => {
       let to = transactions.filter(t => t.id === transfer.to)[0];
       let from = transactions.filter(t => t.id === transfer.from)[0];
 
@@ -298,12 +289,40 @@ export class PlaidResolver {
         to,
         date: from.date,
         amountCents: transfer.amountCents,
-      } as CoreTransfer;
+      } as Transfer;
     });
 
-    return coreTransfers
+    return transfers
+  }
+
+  @Mutation(() => [Transfer])
+  async saveTransfers(
+    @Arg("transfers", () => [UnsavedTransfer]) transfers: UnsavedTransfer[]
+  ) {
+    let transactionIds = transfers.map(transfer => { return [transfer.toId, transfer.fromId] }).flat()
+    let transactions = await CoreTransaction.findByIds(transactionIds);
+
+    if (transactions.length !== 2 * transfers.length) {
+      console.error("Should be unreachable.");
+    }
+
+    let transferWrites = transfers.map(_transfer => {
+      let from = transactions.find(t => t.id === _transfer.fromId);
+      let to = transactions.find(t => t.id === _transfer.toId);
+      if (from == null || to == null) {
+        return null;
+      }
+
+      let transfer = new Transfer();
+      transfer.id = _transfer.fromId;
+      transfer.from = from;
+      transfer.to = to;
+      transfer.amountCents = to.amountCents;
+      transfer.date = from.date;
+      return transfer;
+    }).filter(t => t != null) as Transfer[];
+
+    await Transfer.getRepository().save(transferWrites);
+    return transferWrites;
   }
 }
-
-
-//TODO: Make investment transaction and normal transaction extend some core trasaction class, otherwise its hard to do transfers.
