@@ -14,6 +14,7 @@ const ICONS = {
   ecommerce: icon('ic_ecommerce'),
   analytics: icon('ic_analytics'),
   dashboard: icon('ic_dashboard'),
+  banking: icon('ic_banking'),
 };
 
 const navConfig = [
@@ -22,8 +23,8 @@ const navConfig = [
   {
     subheader: 'general v4.0.0',
     items: [
-      { title: 'One', path: PATH_DASHBOARD.one, icon: ICONS.dashboard },
-      { title: 'Two', path: PATH_DASHBOARD.two, icon: ICONS.ecommerce },
+      { title: 'Dashboard', path: PATH_DASHBOARD.one, icon: ICONS.dashboard },
+      { title: 'Items', path: PATH_DASHBOARD.two, icon: ICONS.banking },
       { title: 'Three', path: PATH_DASHBOARD.three, icon: ICONS.analytics },
     ],
   },
