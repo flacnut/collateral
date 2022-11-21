@@ -41,23 +41,23 @@ export async function createAccount(
   account.subtype = rawAccount.subtype;
   account.currency = rawAccount.balances.iso_currency_code;
   await account.save();
-  await createBalance(account, rawAccount.balances)
+  await createBalance(account.id, rawAccount.balances)
 
   return account;
 }
 
 export async function createBalance(
-  account: PlaidAccount,
+  accountId: string,
   rawBalance: AccountBalance,
 ): Promise<PlaidAccountBalance> {
   const balance = new PlaidAccountBalance();
-  balance.accountId = account.id;
+  balance.accountId = accountId;
   balance.availableCents = Math.floor(rawBalance.available ?? 0 * 100);
   balance.balanceCents = Math.floor(rawBalance.current ?? 0 * 100);
   balance.limitCents = Math.floor(rawBalance.limit ?? 0 * 100);
   balance.currency = rawBalance.iso_currency_code;
   balance.lastUpdateDate = rawBalance.last_updated_datetime ?? (new Date()).toLocaleDateString();
-  return await balance.save();
+  return balance.save();
 }
 
 export async function createTransaction(

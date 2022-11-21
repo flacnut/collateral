@@ -14,13 +14,14 @@ import {
   PlaidHoldingTransaction, PlaidAccount
 } from "../../src/entity/plaid";
 import {
-  createAccount, createHoldingTransaction, createInstitution,
+  createAccount, createBalance, createHoldingTransaction, createInstitution,
   createInvestmentHolding, createItem, createSecurity, createTransaction
 } from "../../src/utils/PlaidEntityHelper";
 import { DateAmountAccountTuple, MatchTransfers } from "../../src/utils/AccountUtils";
 import { CoreTransaction } from "../../src/entity/plaid/CoreTransaction";
 import { Transfer } from "@entities";
 import { UnsavedTransfer } from "../../src/entity/Transfer";
+import moment from "moment";
 
 const configuration = new Configuration({
   basePath: PlaidEnvironments.development,
@@ -138,9 +139,103 @@ export class PlaidResolver {
     return item;
   }
 
+  @Query(() => Boolean)
+  async refreshPlaidItems() {
+    const allItems = await PlaidItem.find();
+    const allAccounts = await PlaidAccount.find();
+    const allTransactions = await CoreTransaction.find();
+
+    const accountDates = allAccounts.reduce((a, acc: PlaidAccount) => {
+      return {
+        ...a, [acc.id]: '2020-01-01',
+      };
+    }, {} as { [accountId: string]: string });
+
+    allTransactions.forEach(transaction => {
+      if (transaction.date > accountDates[transaction.accountId]) {
+        accountDates[transaction.accountId] = transaction.date;
+      }
+    });
+
+    // We don't use accountDates to get just the most recent, but we should.
+
+    await Promise.all(allItems.map(async (item: PlaidItem) => {
+      const accountResponse = await client.accountsGet({
+        access_token: item.accessToken,
+      });
+
+      // balances
+      await Promise.all(accountResponse.data?.accounts?.map((acc) => createBalance(acc.account_id, acc.balances)));
+
+      // transactions
+      const options = {
+        access_token: item.accessToken,
+        start_date: moment().subtract(2, 'months').format('YYYY-MM-DD'),
+        end_date: moment().add(3, 'days').format('YYYY-MM-DD'),
+        options: {
+          include_original_description: true,
+          include_personal_finance_category: true,
+          offset: 0,
+        }
+      };
+
+      const tResponse = await client.transactionsGet(options);
+      let transactions = tResponse.data.transactions;
+      const total_transactions = tResponse.data.total_transactions;
+
+      while (transactions.length < total_transactions) {
+        options.options.offset = transactions.length;
+        const paginatedResponse = await client.transactionsGet(options);
+        transactions = transactions.concat(
+          paginatedResponse.data.transactions,
+        );
+      }
+
+      await Promise.all(transactions.map(createTransaction));
+
+      // holding transactions & securities
+      try {
+        const h_options = {
+          access_token: item.accessToken,
+          start_date: moment().subtract(2, 'years').format('YYYY-MM-DD'),
+          end_date: moment().add(3, 'days').format('YYYY-MM-DD'),
+          options: {
+            offset: 0,
+          }
+        };
+        const hResponse = await client.investmentsTransactionsGet(h_options);
+
+        let investment_transactions = hResponse.data.investment_transactions;
+        let investment_securities = hResponse.data.securities;
+        const total_h_transactions = hResponse.data.total_investment_transactions;
+
+        while (investment_transactions.length < total_h_transactions) {
+          h_options.options.offset = investment_transactions.length;
+          const paginatedResponse = await client.investmentsTransactionsGet(h_options);
+          investment_transactions = investment_transactions.concat(
+            paginatedResponse.data.investment_transactions,
+          );
+          investment_securities = investment_securities.concat(
+            paginatedResponse.data.securities,
+          );
+        }
+
+        await Promise.all([
+          ...investment_transactions.map(createHoldingTransaction),
+          ...investment_securities.map(createSecurity),
+        ]);
+      } catch (_ignore) {
+        // happens because some items don't have investment accounts.
+        console.error(_ignore);
+      }
+    }));
+
+    return true;
+  }
+
   @Query(() => [PlaidAccount])
   async fetchAccounts(
-    @Arg("itemId") itemId: string
+    @Arg("itemId") itemId: string,
   ) {
     const item = await PlaidItem.findOneOrFail(itemId);
 
@@ -152,7 +247,7 @@ export class PlaidResolver {
 
       if (response.data != null) {
         return await Promise.all(response.data.accounts.map(
-          async (acc) => createAccount(item, acc)
+          async (acc) => createAccount(item, acc),
         ));
       }
     }
@@ -161,7 +256,7 @@ export class PlaidResolver {
 
   @Query(() => [PlaidTransaction])
   async fetchPlaidTransactions(
-    @Arg("itemId") itemId: string
+    @Arg("itemId") itemId: string,
   ) {
     const item = await PlaidItem.findOneOrFail(itemId);
 
@@ -185,6 +280,8 @@ export class PlaidResolver {
         end_date: '2022-12-31',
         options: {
           offset: transactions.length,
+          include_original_description: true,
+          include_personal_finance_category: true,
         },
       };
       const paginatedResponse = await client.transactionsGet(paginatedRequest);
@@ -224,7 +321,6 @@ export class PlaidResolver {
       access_token: item.accessToken,
       start_date: '2022-01-01',
       end_date: '2022-12-31',
-
     });
 
     let investment_transactions = response.data.investment_transactions;
