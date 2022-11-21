@@ -6,3 +6,5 @@ data
 client2/node_modules
 server/src/utils/DBInit_NO_COMMIT.ts
 server/plaidConfig.json
+/.DS_Store
+/**/.DS_Store
