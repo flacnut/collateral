@@ -442,4 +442,9 @@ export class PlaidResolver {
     await Transfer.getRepository().save(transferWrites);
     return transferWrites;
   }
+
+  @Query(() => [PlaidItem])
+  async getItems() {
+    return await PlaidItem.find();
+  }
 }

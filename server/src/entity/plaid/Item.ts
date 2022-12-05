@@ -1,5 +1,6 @@
 import { Field, ObjectType } from "type-graphql";
-import { Entity, BaseEntity, Column, PrimaryColumn } from "typeorm";
+import { Entity, BaseEntity, Column, PrimaryColumn, OneToMany } from "typeorm";
+import { PlaidAccount } from "./Account";
 
 @Entity()
 @ObjectType()
@@ -9,11 +10,15 @@ export class PlaidItem extends BaseEntity {
   @PrimaryColumn("text", { nullable: false, unique: true })
   id: string;
 
-  @Field()
+  // not a field to be accessed 
   @Column("text")
   accessToken: string;
 
   @Field()
   @Column("text")
   institutionId: string;
+
+  @Field(() => [PlaidAccount])
+  @OneToMany(() => PlaidAccount, (account) => account.item, { eager: true})
+  accounts: PlaidAccount[];
 }
