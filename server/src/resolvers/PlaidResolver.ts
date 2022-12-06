@@ -476,4 +476,15 @@ export class PlaidResolver {
   async getItems() {
     return await PlaidItem.find();
   }
+
+  @Query(() => [PlaidAccount])
+  async getAccounts(
+    @Arg("accountIds", () => [String], { nullable: true }) accountIds: string[]
+  ) {
+    if (accountIds && accountIds.length > 0) {
+      return await PlaidAccount.findByIds(accountIds);
+    }
+
+    return await PlaidAccount.find();
+  }
 }

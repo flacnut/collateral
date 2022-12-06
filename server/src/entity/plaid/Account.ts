@@ -2,6 +2,7 @@ import { Arg, Field, Int, ObjectType } from "type-graphql";
 import { Entity, BaseEntity, Column, PrimaryColumn, ManyToOne } from "typeorm";
 import { PlaidAccountBalance } from "./Balance";
 import { CoreTransaction } from "./CoreTransaction";
+import { PlaidInstitution } from "./Institution";
 import { PlaidItem } from "./Item";
 
 @Entity("plaid_account")
@@ -94,5 +95,12 @@ export class PlaidAccount extends BaseEntity {
       );
       return t as CoreTransaction;
     });
+  }
+
+  @Field(() => PlaidInstitution)
+  async institution() {
+    return (
+      (await PlaidInstitution.findByIds([this.institutionId])).pop() ?? null
+    );
   }
 }
