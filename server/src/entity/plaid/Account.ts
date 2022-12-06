@@ -79,21 +79,13 @@ export class PlaidAccount extends BaseEntity {
   async transactions(
     @Arg("after", { nullable: true }) after: number
   ): Promise<CoreTransaction[]> {
-    const results = await CoreTransaction.getRepository()
-      .createQueryBuilder("")
-      .where("accountId = :id", { id: this.id })
-      .orderBy("date", "DESC")
-      .offset(after)
-      .limit(10)
-      .execute();
-
-    return results.map((result: { [key: string]: any }) => {
-      let t = {} as { [key: string]: any };
-      // Remove CoreTransaction_ prefix to cast
-      Object.keys(result).forEach(
-        (key) => (t[key.split("_")[1]] = result[key])
-      );
-      return t as CoreTransaction;
+    return await CoreTransaction.getRepository().find({
+      where: {
+        accountId: this.id,
+      },
+      order: { date: "DESC" },
+      skip: after,
+      take: 50,
     });
   }
 
