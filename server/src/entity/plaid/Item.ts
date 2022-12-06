@@ -6,12 +6,11 @@ import { PlaidInstitution } from "./Institution";
 @Entity()
 @ObjectType()
 export class PlaidItem extends BaseEntity {
-
   @Field()
   @PrimaryColumn("text", { nullable: false, unique: true })
   id: string;
 
-  // not a field to be accessed 
+  // not a field to be accessed
   @Column("text")
   accessToken: string;
 
@@ -25,6 +24,8 @@ export class PlaidItem extends BaseEntity {
 
   @Field(() => PlaidInstitution)
   async institution() {
-    return (await PlaidInstitution.findByIds([this.institutionId])).pop() ?? null;
+    return (
+      (await PlaidInstitution.findByIds([this.institutionId])).pop() ?? null
+    );
   }
 }

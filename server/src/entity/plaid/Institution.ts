@@ -4,7 +4,6 @@ import { Entity, BaseEntity, Column, PrimaryColumn } from "typeorm";
 @Entity()
 @ObjectType()
 export class PlaidInstitution extends BaseEntity {
-
   @Field()
   @PrimaryColumn("text", { nullable: false, unique: true })
   id: string;

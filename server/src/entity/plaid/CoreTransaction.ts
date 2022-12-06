@@ -1,11 +1,16 @@
 import { Field, Int, ObjectType } from "type-graphql";
-import { Entity, BaseEntity, Column, PrimaryColumn, TableInheritance } from "typeorm";
+import {
+  Entity,
+  BaseEntity,
+  Column,
+  PrimaryColumn,
+  TableInheritance,
+} from "typeorm";
 
 @ObjectType()
 @Entity("transaction")
 @TableInheritance({ column: { type: "varchar", name: "type" } })
 export class CoreTransaction extends BaseEntity {
-
   @Field()
   @PrimaryColumn("text", { nullable: false, unique: true })
   id: string;

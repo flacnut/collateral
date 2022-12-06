@@ -53,22 +53,33 @@ export class PlaidAccount extends BaseEntity {
   @Field(() => PlaidAccountBalance)
   async latestBalance() {
     const balances = await PlaidAccountBalance.find({
-      accountId: this.id
+      accountId: this.id,
     });
-    return balances
-      .sort((a, b) => (new Date(a.lastUpdateDate)).getTime() - (new Date(b.lastUpdateDate)).getTime())
-      .pop() ?? null;
+    return (
+      balances
+        .sort(
+          (a, b) =>
+            new Date(a.lastUpdateDate).getTime() -
+            new Date(b.lastUpdateDate).getTime()
+        )
+        .pop() ?? null
+    );
   }
 
   @Field(() => Int)
   async totalTransactions(): Promise<number> {
-    const [_, count] = await CoreTransaction.findAndCount({ accountId: this.id });
+    const [_, count] = await CoreTransaction.findAndCount({
+      accountId: this.id,
+    });
     return count;
   }
 
   @Field(() => [CoreTransaction])
-  async transactions(@Arg("after", { nullable: true }) after: number): Promise<CoreTransaction[]> {
-    const results = await CoreTransaction.getRepository().createQueryBuilder("")
+  async transactions(
+    @Arg("after", { nullable: true }) after: number
+  ): Promise<CoreTransaction[]> {
+    const results = await CoreTransaction.getRepository()
+      .createQueryBuilder("")
       .where("accountId = :id", { id: this.id })
       .orderBy("date", "DESC")
       .offset(after)
@@ -78,8 +89,10 @@ export class PlaidAccount extends BaseEntity {
     return results.map((result: { [key: string]: any }) => {
       let t = {} as { [key: string]: any };
       // Remove CoreTransaction_ prefix to cast
-      Object.keys(result).forEach(key => t[key.split('_')[1]] = result[key]);
+      Object.keys(result).forEach(
+        (key) => (t[key.split("_")[1]] = result[key])
+      );
       return t as CoreTransaction;
-    })
+    });
   }
 }

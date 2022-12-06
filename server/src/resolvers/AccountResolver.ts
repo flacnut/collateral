@@ -11,9 +11,7 @@ import {
   Info,
 } from "type-graphql";
 import { In, IsNull, Not } from "typeorm";
-import {
-  CalculateBalance,
-} from "../utils/AccountUtils";
+import { CalculateBalance } from "../utils/AccountUtils";
 
 @InputType()
 class AccountCreateInput {
@@ -131,7 +129,7 @@ export class AccountResolver {
     account.knownBalanceDate = knownBalance.date;
     await account.save();
 
-    let toInsert = balances.map(bal => {
+    let toInsert = balances.map((bal) => {
       return {
         accountId: account.id,
         balanceCents: bal.amountCents,
@@ -142,9 +140,12 @@ export class AccountResolver {
     while (toInsert.length) {
       let thisInsert = toInsert.slice(0, 50);
       toInsert = toInsert.slice(50);
-      await AccountBalance.createQueryBuilder().insert().values(thisInsert).execute();
+      await AccountBalance.createQueryBuilder()
+        .insert()
+        .values(thisInsert)
+        .execute();
     }
-    return (await Account.findOne(id));
+    return await Account.findOne(id);
   }
 
   @Query(() => [Transfer])
