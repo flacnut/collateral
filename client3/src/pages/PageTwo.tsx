@@ -77,7 +77,6 @@ const TABLE_HEAD = [
   { id: '' },
 ];
 
-
 type IInvoiceAddress = {
   id: string;
   name: string;
@@ -111,7 +110,7 @@ type IInvoice = {
   createDate: Date | number;
   dueDate: Date | number;
   items: IInvoiceItem[];
-}
+};
 
 // ----------------------------------------------------------------------
 
@@ -183,11 +182,11 @@ export default function PageTwo() {
     (!dataFiltered.length && !!filterStartDate);
 
   const getLengthByStatus = (status: string) =>
-    tableData.filter((item: { status: string; }) => item.status === status).length;
+    tableData.filter((item: { status: string }) => item.status === status).length;
 
   const getTotalPriceByStatus = (status: string) =>
     sumBy(
-      tableData.filter((item: { status: string; }) => item.status === status),
+      tableData.filter((item: { status: string }) => item.status === status),
       'totalPrice'
     );
 
@@ -226,7 +225,7 @@ export default function PageTwo() {
   };
 
   const handleDeleteRow = (id: string) => {
-    const deleteRow = tableData.filter((row: { id: string; }) => row.id !== id);
+    const deleteRow = tableData.filter((row: { id: string }) => row.id !== id);
     setSelected([]);
     setTableData(deleteRow);
 
@@ -238,7 +237,7 @@ export default function PageTwo() {
   };
 
   const handleDeleteRows = (selected: string[]) => {
-    const deleteRows = tableData.filter((row: { id: string; }) => !selected.includes(row.id));
+    const deleteRows = tableData.filter((row: { id: string }) => !selected.includes(row.id));
     setSelected([]);
     setTableData(deleteRows);
 
@@ -277,7 +276,6 @@ export default function PageTwo() {
       </Helmet>
 
       <Container maxWidth={themeStretch ? false : 'lg'}>
-
         <Card>
           <InvoiceTableToolbar
             isFiltered={isFiltered}
@@ -305,7 +303,7 @@ export default function PageTwo() {
               onSelectAllRows={(checked: any) =>
                 onSelectAllRows(
                   checked,
-                  tableData.map((row: { id: any; }) => row.id)
+                  tableData.map((row: { id: any }) => row.id)
                 )
               }
               action={
@@ -349,7 +347,7 @@ export default function PageTwo() {
                   onSelectAllRows={(checked: any) =>
                     onSelectAllRows(
                       checked,
-                      tableData.map((row: { id: any; }) => row.id)
+                      tableData.map((row: { id: any }) => row.id)
                     )
                   }
                 />
@@ -462,7 +460,7 @@ function applyFilter({
 
   if (filterService !== 'all') {
     inputData = inputData.filter((invoice) =>
-      invoice.items.some((c: { service: string; }) => c.service === filterService)
+      invoice.items.some((c: { service: string }) => c.service === filterService)
     );
   }
 
@@ -476,7 +474,6 @@ function applyFilter({
 
   return inputData;
 }
-
 
 const INPUT_WIDTH = 160;
 

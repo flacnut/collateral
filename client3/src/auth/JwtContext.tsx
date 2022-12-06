@@ -134,7 +134,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // LOGIN
   const login = async (email: string, password: string) => {
-    const response = await axios.post('/login', { //'/api/account/login', {
+    const response = await axios.post('/login', {
+      //'/api/account/login', {
       email,
       password,
     });
@@ -184,9 +185,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         ...state,
         method: 'jwt',
         login,
-        loginWithGoogle: () => { },
-        loginWithGithub: () => { },
-        loginWithTwitter: () => { },
+        loginWithGoogle: () => {},
+        loginWithGithub: () => {},
+        loginWithTwitter: () => {},
         logout,
         register,
       }}

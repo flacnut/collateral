@@ -77,7 +77,6 @@ const TABLE_HEAD = [
   { id: '' },
 ];
 
-
 type IInvoiceAddress = {
   id: string;
   name: string;
@@ -111,7 +110,7 @@ type IInvoice = {
   createDate: Date | number;
   dueDate: Date | number;
   items: IInvoiceItem[];
-}
+};
 
 // ----------------------------------------------------------------------
 
@@ -183,11 +182,11 @@ export default function PageOne() {
     (!dataFiltered.length && !!filterStartDate);
 
   const getLengthByStatus = (status: string) =>
-    tableData.filter((item: { status: string; }) => item.status === status).length;
+    tableData.filter((item: { status: string }) => item.status === status).length;
 
   const getTotalPriceByStatus = (status: string) =>
     sumBy(
-      tableData.filter((item: { status: string; }) => item.status === status),
+      tableData.filter((item: { status: string }) => item.status === status),
       'totalPrice'
     );
 
@@ -226,7 +225,7 @@ export default function PageOne() {
   };
 
   const handleDeleteRow = (id: string) => {
-    const deleteRow = tableData.filter((row: { id: string; }) => row.id !== id);
+    const deleteRow = tableData.filter((row: { id: string }) => row.id !== id);
     setSelected([]);
     setTableData(deleteRow);
 
@@ -238,7 +237,7 @@ export default function PageOne() {
   };
 
   const handleDeleteRows = (selected: string[]) => {
-    const deleteRows = tableData.filter((row: { id: string; }) => !selected.includes(row.id));
+    const deleteRows = tableData.filter((row: { id: string }) => !selected.includes(row.id));
     setSelected([]);
     setTableData(deleteRows);
 
@@ -286,7 +285,7 @@ export default function PageOne() {
             },
             {
               name: 'Invoices',
-              href: '',//PATH_DASHBOARD.invoice.root,
+              href: '', //PATH_DASHBOARD.invoice.root,
             },
             {
               name: 'List',
@@ -294,7 +293,7 @@ export default function PageOne() {
           ]}
           action={
             <Button
-              to={PATH_DASHBOARD.one/*.invoice.new*/}
+              to={PATH_DASHBOARD.one /*.invoice.new*/}
               component={RouterLink}
               variant="contained"
               startIcon={<Iconify icon="eva:plus-fill" />}
@@ -355,7 +354,7 @@ export default function PageOne() {
               onSelectAllRows={(checked: any) =>
                 onSelectAllRows(
                   checked,
-                  tableData.map((row: { id: any; }) => row.id)
+                  tableData.map((row: { id: any }) => row.id)
                 )
               }
               action={
@@ -399,7 +398,7 @@ export default function PageOne() {
                   onSelectAllRows={(checked: any) =>
                     onSelectAllRows(
                       checked,
-                      tableData.map((row: { id: any; }) => row.id)
+                      tableData.map((row: { id: any }) => row.id)
                     )
                   }
                 />
@@ -512,7 +511,7 @@ function applyFilter({
 
   if (filterService !== 'all') {
     inputData = inputData.filter((invoice) =>
-      invoice.items.some((c: { service: string; }) => c.service === filterService)
+      invoice.items.some((c: { service: string }) => c.service === filterService)
     );
   }
 
@@ -526,7 +525,6 @@ function applyFilter({
 
   return inputData;
 }
-
 
 const INPUT_WIDTH = 160;
 
