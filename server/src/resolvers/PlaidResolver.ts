@@ -1,5 +1,6 @@
 import {
   Arg,
+  createUnionType,
   Field,
   InputType,
   Mutation,
@@ -43,6 +44,7 @@ import { CoreTransaction } from "../../src/entity/plaid/CoreTransaction";
 import { Transfer } from "@entities";
 import { UnsavedTransfer } from "../../src/entity/Transfer";
 import moment from "moment";
+import { FindManyOptions } from "typeorm";
 
 const configuration = new Configuration({
   basePath: PlaidEnvironments.development,
@@ -76,6 +78,11 @@ class PlaidLinkResponse {
   @Field(() => String)
   institutionId: string;
 }
+
+const AnyTransaction = createUnionType({
+  name: "AnyTransaction",
+  types: () => [PlaidTransaction, PlaidHoldingTransaction] as const,
+});
 
 @Resolver()
 export class PlaidResolver {
@@ -171,7 +178,7 @@ export class PlaidResolver {
     const accountDates = allAccounts.reduce((a, acc: PlaidAccount) => {
       return {
         ...a,
-        [acc.id]: "2020-01-01",
+        [acc.id]: "2022-01-01",
       };
     }, {} as { [accountId: string]: string });
 
@@ -199,8 +206,8 @@ export class PlaidResolver {
         // transactions
         const options = {
           access_token: item.accessToken,
-          start_date: moment().subtract(2, "months").format("YYYY-MM-DD"),
-          end_date: moment().add(3, "days").format("YYYY-MM-DD"),
+          start_date: moment().subtract(2, "days").format("YYYY-MM-DD"),
+          end_date: moment().add(2, "days").format("YYYY-MM-DD"),
           options: {
             include_original_description: true,
             include_personal_finance_category: true,
@@ -487,4 +494,94 @@ export class PlaidResolver {
 
     return await PlaidAccount.find();
   }
+
+  @Query(() => [AnyTransaction])
+  async getTransactions(
+    @Arg("accountId", { nullable: true }) accountId: string,
+    @Arg("limit", { nullable: true, defaultValue: 100 }) limit: number,
+    @Arg("after", { nullable: true, defaultValue: 0 }) after: number
+  ) {
+    const options = {
+      where: {},
+      order: { date: "DESC" },
+      skip: after,
+      take: limit,
+    } as FindManyOptions<CoreTransaction>;
+
+    if (accountId != null) {
+      options.where = { accountId };
+    }
+
+    return await CoreTransaction.find(options);
+  }
+
+  @Query(() => [PlaidHoldingTransaction])
+  async getHoldingTransactions(
+    @Arg("accountId", { nullable: true }) accountId: string,
+    @Arg("limit", { nullable: true, defaultValue: 100 }) limit: number,
+    @Arg("after", { nullable: true, defaultValue: 0 }) after: number
+  ) {
+    const options = {
+      where: {},
+      order: { date: "DESC" },
+      skip: after,
+      take: limit,
+    } as FindManyOptions<CoreTransaction>;
+
+    if (accountId != null) {
+      options.where = { accountId };
+    }
+
+    return await PlaidHoldingTransaction.find(options);
+  }
+
+  @Query(() => [TransactionCategory])
+  async transactionDetails(
+    @Arg("accountId", { nullable: true }) accountId: string
+  ): Promise<Array<TransactionCategory>> {
+    const options = {
+      where: {},
+    } as FindManyOptions<PlaidTransaction>;
+
+    if (accountId != null) {
+      options.where = { accountId };
+    }
+
+    const transactions = await PlaidTransaction.find(options);
+    const reduced = transactions.reduce((acc, trans: PlaidTransaction) => {
+      if (acc[trans.description]) {
+        acc[trans.description].count++;
+        acc[trans.description].value += trans.amountCents;
+      } else {
+        acc[trans.description] = {
+          count: 1,
+          value: trans.amountCents,
+        };
+      }
+      return { ...acc };
+    }, {} as { [key: string]: { count: number; value: number } });
+    const results = [] as TransactionCategory[];
+
+    Object.keys(reduced).forEach((key) => {
+      results.push({
+        category: key,
+        count: reduced[key].count,
+        value: reduced[key].value,
+      });
+    });
+
+    return results.sort((a, b) => a.value - b.value);
+  }
+}
+
+@ObjectType()
+export class TransactionCategory {
+  @Field(() => String)
+  category: string;
+
+  @Field(() => Number)
+  count: number;
+
+  @Field(() => Number)
+  value: number;
 }
