@@ -7,14 +7,7 @@ import DBInit from "./utils/DBInit";
 import jwt from "jsonwebtoken";
 import cors from "cors";
 import bodyParser from "body-parser";
-import {
-  AccountResolver,
-  SourceResolver,
-  TransactionResolver,
-  TagResolver,
-  FilteredTransactionResolver,
-  PlaidResolver,
-} from "./resolvers";
+import { PlaidResolver } from "./resolvers";
 
 import crypto from "crypto";
 
@@ -64,11 +57,11 @@ export default async function StartServer() {
     const apolloServer = new ApolloServer({
       schema: await buildSchema({
         resolvers: [
-          AccountResolver,
+          /*AccountResolver,
           SourceResolver,
           TransactionResolver,
           TagResolver,
-          FilteredTransactionResolver,
+          FilteredTransactionResolver,*/
           PlaidResolver,
         ],
         validate: true,

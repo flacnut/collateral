@@ -26,21 +26,30 @@ import App from './App';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import reportWebVitals from './reportWebVitals';
 
+import { ApolloClient, InMemoryCache, ApolloProvider } from '@apollo/client';
+
 // ----------------------------------------------------------------------
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
 
+const client = new ApolloClient({
+  uri: 'http://localhost:4000/graphql',
+  cache: new InMemoryCache(),
+});
+
 root.render(
-  <AuthProvider>
-    <HelmetProvider>
-      <SettingsProvider>
-        <BrowserRouter>
-          <ScrollToTop />
-          <App />
-        </BrowserRouter>
-      </SettingsProvider>
-    </HelmetProvider>
-  </AuthProvider>
+  <ApolloProvider client={client}>
+    <AuthProvider>
+      <HelmetProvider>
+        <SettingsProvider>
+          <BrowserRouter>
+            <ScrollToTop />
+            <App />
+          </BrowserRouter>
+        </SettingsProvider>
+      </HelmetProvider>
+    </AuthProvider>
+  </ApolloProvider>
 );
 
 // If you want your app to work offline and load faster, you can change
