@@ -4,7 +4,6 @@ import { Entity, BaseEntity, Column, PrimaryColumn } from "typeorm";
 @Entity("plaid_account_balance")
 @ObjectType()
 export class PlaidAccountBalance extends BaseEntity {
-
   @Field()
   @PrimaryColumn("text")
   lastUpdateDate: string;

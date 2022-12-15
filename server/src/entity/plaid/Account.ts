@@ -1,9 +1,14 @@
-import { Field, ObjectType } from "type-graphql";
-import { Entity, BaseEntity, Column, PrimaryColumn } from "typeorm";
+import { Arg, Field, Int, ObjectType } from "type-graphql";
+import { Entity, BaseEntity, Column, PrimaryColumn, ManyToOne } from "typeorm";
+import { PlaidAccountBalance } from "./Balance";
+import { CoreTransaction } from "./CoreTransaction";
+import { PlaidInstitution } from "./Institution";
+import { PlaidItem } from "./Item";
 
 @Entity("plaid_account")
 @ObjectType()
 export class PlaidAccount extends BaseEntity {
+  // Core Plaid Fields
 
   @Field()
   @PrimaryColumn("text", { nullable: false, unique: true })
@@ -40,4 +45,79 @@ export class PlaidAccount extends BaseEntity {
   @Field(() => String, { nullable: true })
   @Column("text", { nullable: true })
   currency: string | null;
+
+  // Additional Fields
+
+  @ManyToOne(() => PlaidItem, (item) => item.accounts)
+  item: PlaidItem;
+
+  @Field(() => PlaidAccountBalance)
+  async latestBalance() {
+    const balances = await PlaidAccountBalance.find({
+      accountId: this.id,
+    });
+    return (
+      balances
+        .sort(
+          (a, b) =>
+            new Date(a.lastUpdateDate).getTime() -
+            new Date(b.lastUpdateDate).getTime()
+        )
+        .pop() ?? null
+    );
+  }
+
+  @Field(() => Int)
+  async totalTransactions(): Promise<number> {
+    const [_, count] = await CoreTransaction.findAndCount({
+      accountId: this.id,
+    });
+    return count;
+  }
+
+  @Field(() => [CoreTransaction])
+  async transactions(
+    @Arg("after", { nullable: true }) after: number
+  ): Promise<CoreTransaction[]> {
+    return await CoreTransaction.getRepository().find({
+      where: {
+        accountId: this.id,
+      },
+      order: { date: "DESC" },
+      skip: after,
+      take: 50,
+    });
+  }
+
+  @Field(() => PlaidInstitution)
+  async institution() {
+    return (
+      (await PlaidInstitution.findByIds([this.institutionId])).pop() ?? null
+    );
+  }
+
+  @Field(() => String)
+  async status() {
+    const query = CoreTransaction.createQueryBuilder("transaction");
+    query.where({ accountId: this.id });
+    query.select("MAX(transaction.date)", "max");
+    const { max } = (await query.getRawOne()) as { max: string };
+
+    switch (true) {
+      case max == null:
+        return "inactive";
+      case isOlderThanOneMonth(max):
+        return "stale";
+      default:
+        return "active";
+    }
+  }
+}
+
+function isOlderThanOneMonth(date: string): boolean {
+  const tdate = new Date(date);
+  const now = new Date();
+  const MSEC_IN_ONE_MONTH = 31 * 24 * 60 * 60 * 1000;
+
+  return now.getTime() - tdate.getTime() > MSEC_IN_ONE_MONTH;
 }

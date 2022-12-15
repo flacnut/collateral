@@ -1,11 +1,17 @@
 import { Field, InputType, Int, ObjectType } from "type-graphql";
-import { BaseEntity, Column, Entity, JoinColumn, OneToOne, PrimaryColumn } from "typeorm";
+import {
+  BaseEntity,
+  Column,
+  Entity,
+  JoinColumn,
+  OneToOne,
+  PrimaryColumn,
+} from "typeorm";
 import { CoreTransaction } from "./plaid/CoreTransaction";
 
 @ObjectType()
 @Entity()
 export class Transfer extends BaseEntity {
-
   @PrimaryColumn("text", { nullable: false, unique: true })
   id: string;
 

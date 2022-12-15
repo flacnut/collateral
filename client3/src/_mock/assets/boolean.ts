@@ -40,5 +40,5 @@ export const boolean = [
   false,
   true,
   false,
-  false
+  false,
 ];

@@ -40,5 +40,5 @@ export const company = [
   'Nikolaus - Lang',
   'Effertz, Mohr and Olson',
   'Anderson - Kris',
-  'Runolfsson Group'
+  'Runolfsson Group',
 ];

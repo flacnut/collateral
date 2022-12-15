@@ -168,11 +168,13 @@ function getDateFilter(dateFilter: DateFilter): FindOperator<string> | string {
   const firstDate = new Date(dateFilter.value);
   const secondDate = new Date(dateFilter.secondValue);
 
-  const firstDateStr = `${firstDate.getFullYear()}-${firstDate.getMonth() + 1
-    }-${firstDate.getDate()}}`;
+  const firstDateStr = `${firstDate.getFullYear()}-${
+    firstDate.getMonth() + 1
+  }-${firstDate.getDate()}}`;
 
-  const secondDateStr = `${secondDate.getFullYear()}-${secondDate.getMonth() + 1
-    }-${secondDate.getDate()}}`;
+  const secondDateStr = `${secondDate.getFullYear()}-${
+    secondDate.getMonth() + 1
+  }-${secondDate.getDate()}}`;
 
   switch (dateFilter.compare) {
     case NumberCompareOptions.GREATER_THAN:

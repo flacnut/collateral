@@ -1,12 +1,8 @@
 import { Helmet } from 'react-helmet-async';
-import { SetStateAction, useState } from 'react';
-import sumBy from 'lodash/sumBy';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { SetStateAction, useEffect, useState } from 'react';
 // @mui
 import { useTheme } from '@mui/material/styles';
 import {
-  Tab,
-  Tabs,
   Card,
   Table,
   Stack,
@@ -28,19 +24,17 @@ import {
   Checkbox,
 } from '@mui/material';
 // routes
-import { PATH_DASHBOARD } from '../routes/paths';
+//import { PATH_DASHBOARD } from '../routes/paths';
 // utils
-import { fDate, fTimestamp } from '../utils/formatTime';
+import { fDate } from '../utils/formatTime';
 
 // components
-import Label from '../components/label';
+//import Label from '../components/label';
 import Iconify from '../components/iconify';
 import Scrollbar from '../components/scrollbar';
-import ConfirmDialog from '../components/confirm-dialog';
-import CustomBreadcrumbs from '../components/custom-breadcrumbs';
+//import CustomBreadcrumbs from '../components/custom-breadcrumbs';
 import { useSettingsContext } from '../components/settings';
 import {
-  useTable,
   getComparator,
   emptyRows,
   TableNoData,
@@ -48,6 +42,7 @@ import {
   TableHeadCustom,
   TableSelectedAction,
   TablePaginationCustom,
+  useTable,
 } from '../components/table';
 // sections
 import { _invoices } from 'src/_mock/arrays/_invoice';
@@ -55,6 +50,11 @@ import DatePicker from '@mui/lab/DatePicker/DatePicker';
 import MenuPopover from 'src/components/menu-popover';
 import { CustomAvatar } from 'src/components/custom-avatar';
 import { fCurrency } from 'src/utils/formatNumber';
+import { useNavigate } from 'react-router-dom';
+import ConfirmDialog from 'src/components/confirm-dialog';
+
+import { useQuery } from '@apollo/client';
+import { gql } from 'src/__generated__/gql';
 
 // ----------------------------------------------------------------------
 
@@ -68,55 +68,102 @@ const SERVICE_OPTIONS = [
 ];
 
 const TABLE_HEAD = [
-  { id: 'invoiceNumber', label: 'Client', align: 'left' },
-  { id: 'createDate', label: 'Create', align: 'left' },
-  { id: 'dueDate', label: 'Due', align: 'left' },
-  { id: 'price', label: 'Amount', align: 'center', width: 140 },
-  { id: 'sent', label: 'Sent', align: 'center', width: 140 },
+  { id: 'accountName', label: 'Account', align: 'left' },
+  { id: 'lastUpdated', label: 'Latest Transaction', align: 'left' },
+  { id: 'balance', label: 'Balance', align: 'center', width: 140 },
   { id: 'status', label: 'Status', align: 'left' },
   { id: '' },
 ];
 
+type IItem = {
+  id: string;
+  accounts: Array<IAccount>;
+};
 
-type IInvoiceAddress = {
+type IAccount = {
   id: string;
   name: string;
-  address: string;
-  company: string;
-  email: string;
-  phone: string;
-};
-
-type IInvoiceItem = {
-  id: string;
-  title: string;
-  description: string;
-  quantity: number;
-  price: number;
-  total: number;
-  service: string;
-};
-
-type IInvoice = {
-  id: string;
-  sent: number;
+  mask: string;
+  type: string;
+  subtype: string;
   status: string;
-  totalPrice: number;
-  invoiceNumber: string;
-  subTotalPrice: number;
-  taxes: number | string;
-  discount: number | string;
-  invoiceFrom: IInvoiceAddress;
-  invoiceTo: IInvoiceAddress;
-  createDate: Date | number;
-  dueDate: Date | number;
-  items: IInvoiceItem[];
+  officialName: string;
+  currency: string;
+  totalTransactions: number;
+  latestBalance: IBalance;
+  institution: IInstitution;
+};
+
+type IBalance = {
+  balanceCents: number;
+  limitCents: number;
+  lastUpdateDate: string;
+  availableCents: number;
+};
+
+type IInstitution = {
+  id: string;
+  url: string | null;
+  name: string;
+  logo: string | null;
+  products: string;
+  countryCodes: string;
+  primaryColor: string;
+};
+
+const query = gql(`
+
+query getItems {
+  getItems {
+    id
+    accounts {
+      ...AccountParts
+      latestBalance {
+        ...BalanceParts
+      }
+      institution {
+        ...InstitutionParts
+      }
+    }
+  }
 }
+
+fragment AccountParts on PlaidAccount {
+  id
+  name
+  mask
+  type
+  subtype
+  officialName
+  status
+  currency
+  totalTransactions
+}
+
+fragment BalanceParts on PlaidAccountBalance {
+  balanceCents
+  limitCents
+  lastUpdateDate
+  availableCents
+}
+
+fragment InstitutionParts on PlaidInstitution {
+  id
+  url
+  name
+  logo
+  products
+  countryCodes
+  primaryColor
+}
+`);
 
 // ----------------------------------------------------------------------
 
 export default function PageTwo() {
   const theme = useTheme();
+
+  const { loading, data } = useQuery(query);
 
   const { themeStretch } = useSettingsContext();
 
@@ -141,7 +188,13 @@ export default function PageTwo() {
     onChangeRowsPerPage,
   } = useTable({ defaultOrderBy: 'createDate' });
 
-  const [tableData, setTableData] = useState(_invoices);
+  const [tableData, setTableData] = useState([] as IAccount[]);
+
+  useEffect(() => {
+    const maybedata = data?.getItems?.map((item) => item.accounts).flat(1);
+    console.dir(maybedata);
+    setTableData((maybedata ?? []) as IAccount[]);
+  }, [data]);
 
   const [filterName, setFilterName] = useState('');
 
@@ -181,18 +234,19 @@ export default function PageTwo() {
     (!dataFiltered.length && !!filterService) ||
     (!dataFiltered.length && !!filterEndDate) ||
     (!dataFiltered.length && !!filterStartDate);
+  /*
 
   const getLengthByStatus = (status: string) =>
-    tableData.filter((item: { status: string; }) => item.status === status).length;
+    tableData.filter((item: { status: string }) => item.status === status).length;
 
   const getTotalPriceByStatus = (status: string) =>
     sumBy(
-      tableData.filter((item: { status: string; }) => item.status === status),
+      tableData.filter((item: { status: string }) => item.status === status),
       'totalPrice'
     );
 
   const getPercentByStatus = (status: string) =>
-    (getLengthByStatus(status) / tableData.length) * 100;
+    (getLengthByStatus(status) / tableData.length) * 100; 
 
   const TABS = [
     { value: 'all', label: 'All', color: 'info', count: tableData.length },
@@ -200,7 +254,7 @@ export default function PageTwo() {
     { value: 'unpaid', label: 'Unpaid', color: 'warning', count: getLengthByStatus('unpaid') },
     { value: 'overdue', label: 'Overdue', color: 'error', count: getLengthByStatus('overdue') },
     { value: 'draft', label: 'Draft', color: 'default', count: getLengthByStatus('draft') },
-  ] as const;
+  ] as const; */
 
   const handleOpenConfirm = () => {
     setOpenConfirm(true);
@@ -226,7 +280,7 @@ export default function PageTwo() {
   };
 
   const handleDeleteRow = (id: string) => {
-    const deleteRow = tableData.filter((row: { id: string; }) => row.id !== id);
+    const deleteRow = tableData.filter((row: { id: string }) => row.id !== id);
     setSelected([]);
     setTableData(deleteRow);
 
@@ -238,7 +292,7 @@ export default function PageTwo() {
   };
 
   const handleDeleteRows = (selected: string[]) => {
-    const deleteRows = tableData.filter((row: { id: string; }) => !selected.includes(row.id));
+    const deleteRows = tableData.filter((row: { id: string }) => !selected.includes(row.id));
     setSelected([]);
     setTableData(deleteRows);
 
@@ -277,7 +331,6 @@ export default function PageTwo() {
       </Helmet>
 
       <Container maxWidth={themeStretch ? false : 'lg'}>
-
         <Card>
           <InvoiceTableToolbar
             isFiltered={isFiltered}
@@ -305,7 +358,7 @@ export default function PageTwo() {
               onSelectAllRows={(checked: any) =>
                 onSelectAllRows(
                   checked,
-                  tableData.map((row: { id: any; }) => row.id)
+                  tableData.map((row: { id: any }) => row.id)
                 )
               }
               action={
@@ -349,7 +402,7 @@ export default function PageTwo() {
                   onSelectAllRows={(checked: any) =>
                     onSelectAllRows(
                       checked,
-                      tableData.map((row: { id: any; }) => row.id)
+                      tableData.map((row: { id: any }) => row.id)
                     )
                   }
                 />
@@ -430,7 +483,7 @@ function applyFilter({
   filterStartDate,
   filterEndDate,
 }: {
-  inputData: IInvoice[];
+  inputData: IAccount[];
   comparator: (a: any, b: any) => number;
   filterName: string;
   filterStatus: string;
@@ -450,33 +503,32 @@ function applyFilter({
 
   if (filterName) {
     inputData = inputData.filter(
-      (invoice) =>
-        invoice.invoiceNumber.toLowerCase().indexOf(filterName.toLowerCase()) !== -1 ||
-        invoice.invoiceTo.name.toLowerCase().indexOf(filterName.toLowerCase()) !== -1
+      (account) =>
+        account.name.toLowerCase().indexOf(filterName.toLowerCase()) !== -1 ||
+        account.mask.toLowerCase().indexOf(filterName.toLowerCase()) !== -1
     );
   }
 
+  /*
   if (filterStatus !== 'all') {
     inputData = inputData.filter((invoice) => invoice.status === filterStatus);
-  }
+  } */
 
   if (filterService !== 'all') {
-    inputData = inputData.filter((invoice) =>
-      invoice.items.some((c: { service: string; }) => c.service === filterService)
-    );
+    inputData = inputData.filter((account) => account.type === filterService);
   }
 
+  /*
   if (filterStartDate && filterEndDate) {
     inputData = inputData.filter(
       (invoice) =>
         fTimestamp(invoice.createDate) >= fTimestamp(filterStartDate) &&
         fTimestamp(invoice.createDate) <= fTimestamp(filterEndDate)
     );
-  }
+  }*/
 
   return inputData;
 }
-
 
 const INPUT_WIDTH = 160;
 
@@ -618,15 +670,13 @@ function InvoiceTableRow({
   onEditRow,
   onDeleteRow,
 }: {
-  row: IInvoice;
+  row: IAccount;
   selected: boolean;
   onSelectRow: VoidFunction;
   onViewRow: VoidFunction;
   onEditRow: VoidFunction;
   onDeleteRow: VoidFunction;
 }) {
-  const { sent, invoiceNumber, createDate, dueDate, status, invoiceTo, totalPrice } = row;
-
   const [openConfirm, setOpenConfirm] = useState(false);
 
   const [openPopover, setOpenPopover] = useState<HTMLElement | null>(null);
@@ -656,11 +706,14 @@ function InvoiceTableRow({
 
         <TableCell>
           <Stack direction="row" alignItems="center" spacing={2}>
-            <CustomAvatar name={invoiceTo.name} />
+            <CustomAvatar
+              src={`data:image/png;base64,${row.institution.logo}`}
+              name={row.institution.name}
+            />
 
             <div>
               <Typography variant="subtitle2" noWrap>
-                {invoiceTo.name}
+                {row.name}
               </Typography>
 
               <Link
@@ -669,27 +722,24 @@ function InvoiceTableRow({
                 onClick={onViewRow}
                 sx={{ color: 'text.disabled', cursor: 'pointer' }}
               >
-                {`INV-${invoiceNumber}`}
+                {`...${row.mask}`}
               </Link>
             </div>
           </Stack>
         </TableCell>
 
-        <TableCell align="left">{fDate(createDate)}</TableCell>
+        <TableCell align="left">{fDate(row.latestBalance.lastUpdateDate)}</TableCell>
 
-        <TableCell align="left">{fDate(dueDate)}</TableCell>
+        <TableCell align="right">{fCurrency(row.latestBalance.balanceCents)}</TableCell>
 
-        <TableCell align="center">{fCurrency(totalPrice)}</TableCell>
+        <TableCell align="center">{row.status}</TableCell>
 
-        <TableCell align="center" sx={{ textTransform: 'capitalize' }}>
-          {sent}
-        </TableCell>
-
+        {/*
         <TableCell align="left">
           <Label
             variant="soft"
             color={
-              (status === 'paid' && 'success') ||
+              (row. === 'paid' && 'success') ||
               (status === 'unpaid' && 'warning') ||
               (status === 'overdue' && 'error') ||
               'default'
@@ -697,7 +747,7 @@ function InvoiceTableRow({
           >
             {status}
           </Label>
-        </TableCell>
+        </TableCell> */}
 
         <TableCell align="right">
           <IconButton color={openPopover ? 'inherit' : 'default'} onClick={handleOpenPopover}>

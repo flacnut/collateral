@@ -4,7 +4,6 @@ import { Entity, BaseEntity, Column, PrimaryColumn } from "typeorm";
 @Entity("plaid_security")
 @ObjectType()
 export class PlaidSecurity extends BaseEntity {
-
   @Field()
   @PrimaryColumn("text", { nullable: false, unique: true })
   id: string;
