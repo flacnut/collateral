@@ -95,4 +95,29 @@ export class PlaidAccount extends BaseEntity {
       (await PlaidInstitution.findByIds([this.institutionId])).pop() ?? null
     );
   }
+
+  @Field(() => String)
+  async status() {
+    const query = CoreTransaction.createQueryBuilder("transaction");
+    query.where({ accountId: this.id });
+    query.select("MAX(transaction.date)", "max");
+    const { max } = (await query.getRawOne()) as { max: string };
+
+    switch (true) {
+      case max == null:
+        return "inactive";
+      case isOlderThanOneMonth(max):
+        return "stale";
+      default:
+        return "active";
+    }
+  }
+}
+
+function isOlderThanOneMonth(date: string): boolean {
+  const tdate = new Date(date);
+  const now = new Date();
+  const MSEC_IN_ONE_MONTH = 31 * 24 * 60 * 60 * 1000;
+
+  return now.getTime() - tdate.getTime() > MSEC_IN_ONE_MONTH;
 }
