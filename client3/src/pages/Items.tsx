@@ -111,7 +111,6 @@ type IInstitution = {
 };
 
 const query = gql(`
-
 query getItems {
   getItems {
     id
@@ -162,7 +161,7 @@ fragment InstitutionParts on PlaidInstitution {
 
 // ----------------------------------------------------------------------
 
-export default function PageTwo() {
+export default function ItemsPage() {
   const theme = useTheme();
 
   const { loading, data } = useQuery(query);
