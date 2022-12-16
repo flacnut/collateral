@@ -46,6 +46,16 @@ export class PlaidAccount extends BaseEntity {
   @Column("text", { nullable: true })
   currency: string | null;
 
+  // non-plaid fields
+
+  @Field(() => Boolean)
+  @Column("boolean", { default: true })
+  invertTransactions: boolean;
+
+  @Field(() => Boolean)
+  @Column("boolean", { default: true })
+  invertBalances: boolean;
+
   // Additional Fields
 
   @ManyToOne(() => PlaidItem, (item) => item.accounts)

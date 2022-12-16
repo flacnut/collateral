@@ -5,7 +5,9 @@ import {
   Column,
   PrimaryColumn,
   TableInheritance,
+  AfterLoad,
 } from "typeorm";
+import { PlaidAccount } from "./Account";
 
 @ObjectType()
 @Entity("transaction")
@@ -40,6 +42,17 @@ export class CoreTransaction extends BaseEntity {
   @Field(() => Number)
   amount() {
     return this.amountCents / 100;
+  }
+
+  @AfterLoad()
+  async applyAmountUpdates() {
+    const account = await PlaidAccount.findOne({
+      where: { id: this.accountId },
+      cache: true,
+    });
+    if (account?.invertTransactions) {
+      this.amountCents *= -1;
+    }
   }
 
   // TODO: Balance in dollars
