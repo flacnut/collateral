@@ -55,23 +55,17 @@ import ConfirmDialog from 'src/components/confirm-dialog';
 
 import { useQuery } from '@apollo/client';
 import { gql } from 'src/__generated__/gql';
+import Label from 'src/components/label';
 
 // ----------------------------------------------------------------------
 
-const SERVICE_OPTIONS = [
-  'all',
-  'full stack development',
-  'backend development',
-  'ui design',
-  'ui/ux design',
-  'front end development',
-];
+const SERVICE_OPTIONS = ['all', 'active', 'inactive', 'stale'];
 
 const TABLE_HEAD = [
   { id: 'accountName', label: 'Account', align: 'left' },
   { id: 'lastUpdated', label: 'Latest Transaction', align: 'left' },
-  { id: 'balance', label: 'Balance', align: 'center', width: 140 },
-  { id: 'status', label: 'Status', align: 'left' },
+  { id: 'balance', label: 'Balance', align: 'right', width: 140 },
+  { id: 'status', label: 'Status', align: 'center' },
   { id: '' },
 ];
 
@@ -91,6 +85,7 @@ type IAccount = {
   currency: string;
   totalTransactions: number;
   latestBalance: IBalance;
+  latestTransaction: ITransaction | null;
   institution: IInstitution;
 };
 
@@ -99,6 +94,10 @@ type IBalance = {
   limitCents: number;
   lastUpdateDate: string;
   availableCents: number;
+};
+
+type ITransaction = {
+  date: string;
 };
 
 type IInstitution = {
@@ -120,6 +119,9 @@ query getItems {
       ...AccountParts
       latestBalance {
         ...BalanceParts
+      }
+      latestTransaction {
+        date
       }
       institution {
         ...InstitutionParts
@@ -191,8 +193,7 @@ export default function PageTwo() {
   const [tableData, setTableData] = useState([] as IAccount[]);
 
   useEffect(() => {
-    const maybedata = data?.getItems?.map((item) => item.accounts).flat(1);
-    console.dir(maybedata);
+    const maybedata = (data?.getItems as IItem[] | null)?.map((item) => item.accounts).flat(1);
     setTableData((maybedata ?? []) as IAccount[]);
   }, [data]);
 
@@ -515,7 +516,7 @@ function applyFilter({
   } */
 
   if (filterService !== 'all') {
-    inputData = inputData.filter((account) => account.type === filterService);
+    inputData = inputData.filter((account) => account.status === filterService);
   }
 
   /*
@@ -638,7 +639,7 @@ function InvoiceTableToolbar({
         fullWidth
         value={filterName}
         onChange={onFilterName}
-        placeholder="Search client or invoice number..."
+        placeholder="Search account name..."
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
@@ -728,26 +729,23 @@ function InvoiceTableRow({
           </Stack>
         </TableCell>
 
-        <TableCell align="left">{fDate(row.latestBalance.lastUpdateDate)}</TableCell>
+        <TableCell align="left">{fDate(row.latestTransaction?.date ?? '')}</TableCell>
 
         <TableCell align="right">{fCurrency(row.latestBalance.balanceCents)}</TableCell>
 
-        <TableCell align="center">{row.status}</TableCell>
-
-        {/*
         <TableCell align="left">
           <Label
             variant="soft"
             color={
-              (row. === 'paid' && 'success') ||
-              (status === 'unpaid' && 'warning') ||
-              (status === 'overdue' && 'error') ||
+              (row.status === 'active' && 'success') ||
+              (row.status === 'stale' && 'warning') ||
+              (row.status === 'inactive' && 'error') ||
               'default'
             }
           >
-            {status}
+            {row.status}
           </Label>
-        </TableCell> */}
+        </TableCell>
 
         <TableCell align="right">
           <IconButton color={openPopover ? 'inherit' : 'default'} onClick={handleOpenPopover}>

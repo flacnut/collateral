@@ -21,6 +21,7 @@ export type CoreTransaction = {
   accountId: Scalars['String'];
   amount: Scalars['Float'];
   amountCents: Scalars['Int'];
+  classification: TransactionClassification;
   currency?: Maybe<Scalars['String']>;
   date: Scalars['String'];
   description: Scalars['String'];
@@ -55,8 +56,11 @@ export type PlaidAccount = {
   id: Scalars['String'];
   institution: PlaidInstitution;
   institutionId: Scalars['String'];
+  invertBalances: Scalars['Boolean'];
+  invertTransactions: Scalars['Boolean'];
   itemId: Scalars['String'];
   latestBalance: PlaidAccountBalance;
+  latestTransaction?: Maybe<CoreTransaction>;
   mask?: Maybe<Scalars['String']>;
   name: Scalars['String'];
   officialName?: Maybe<Scalars['String']>;
@@ -87,6 +91,7 @@ export type PlaidHoldingTransaction = {
   accountId: Scalars['String'];
   amount: Scalars['Float'];
   amountCents: Scalars['Int'];
+  classification: TransactionClassification;
   currency?: Maybe<Scalars['String']>;
   date: Scalars['String'];
   description: Scalars['String'];
@@ -145,6 +150,7 @@ export type PlaidTransaction = {
   authorizedDateTime: Scalars['String'];
   category: Scalars['String'];
   categoryId: Scalars['String'];
+  classification: TransactionClassification;
   currency?: Maybe<Scalars['String']>;
   date: Scalars['String'];
   dateTime: Scalars['String'];
@@ -232,6 +238,15 @@ export type TransactionCategory = {
   value: Scalars['Float'];
 };
 
+/** Some general transaction classifications */
+export enum TransactionClassification {
+  Duplicate = 'Duplicate',
+  Expense = 'Expense',
+  Recurring = 'Recurring',
+  Salary = 'Salary',
+  Transfer = 'Transfer'
+}
+
 export type Transfer = {
   __typename?: 'Transfer';
   amountCents: Scalars['Int'];
@@ -252,7 +267,7 @@ export type GetItemsQuery = { __typename?: 'Query', getItems: Array<{ __typename
       { __typename?: 'PlaidAccount', latestBalance: (
         { __typename?: 'PlaidAccountBalance' }
         & { ' $fragmentRefs'?: { 'BalancePartsFragment': BalancePartsFragment } }
-      ), institution: (
+      ), latestTransaction?: { __typename?: 'CoreTransaction', date: string } | null, institution: (
         { __typename?: 'PlaidInstitution' }
         & { ' $fragmentRefs'?: { 'InstitutionPartsFragment': InstitutionPartsFragment } }
       ) }
@@ -268,4 +283,4 @@ export type InstitutionPartsFragment = { __typename?: 'PlaidInstitution', id: st
 export const AccountPartsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AccountParts"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PlaidAccount"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"mask"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"subtype"}},{"kind":"Field","name":{"kind":"Name","value":"officialName"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"currency"}},{"kind":"Field","name":{"kind":"Name","value":"totalTransactions"}}]}}]} as unknown as DocumentNode<AccountPartsFragment, unknown>;
 export const BalancePartsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"BalanceParts"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PlaidAccountBalance"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"balanceCents"}},{"kind":"Field","name":{"kind":"Name","value":"limitCents"}},{"kind":"Field","name":{"kind":"Name","value":"lastUpdateDate"}},{"kind":"Field","name":{"kind":"Name","value":"availableCents"}}]}}]} as unknown as DocumentNode<BalancePartsFragment, unknown>;
 export const InstitutionPartsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"InstitutionParts"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PlaidInstitution"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"logo"}},{"kind":"Field","name":{"kind":"Name","value":"products"}},{"kind":"Field","name":{"kind":"Name","value":"countryCodes"}},{"kind":"Field","name":{"kind":"Name","value":"primaryColor"}}]}}]} as unknown as DocumentNode<InstitutionPartsFragment, unknown>;
-export const GetItemsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getItems"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getItems"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"accounts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AccountParts"}},{"kind":"Field","name":{"kind":"Name","value":"latestBalance"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BalanceParts"}}]}},{"kind":"Field","name":{"kind":"Name","value":"institution"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"InstitutionParts"}}]}}]}}]}}]}},...AccountPartsFragmentDoc.definitions,...BalancePartsFragmentDoc.definitions,...InstitutionPartsFragmentDoc.definitions]} as unknown as DocumentNode<GetItemsQuery, GetItemsQueryVariables>;
+export const GetItemsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getItems"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getItems"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"accounts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AccountParts"}},{"kind":"Field","name":{"kind":"Name","value":"latestBalance"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"BalanceParts"}}]}},{"kind":"Field","name":{"kind":"Name","value":"latestTransaction"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"date"}}]}},{"kind":"Field","name":{"kind":"Name","value":"institution"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"InstitutionParts"}}]}}]}}]}}]}},...AccountPartsFragmentDoc.definitions,...BalancePartsFragmentDoc.definitions,...InstitutionPartsFragmentDoc.definitions]} as unknown as DocumentNode<GetItemsQuery, GetItemsQueryVariables>;
