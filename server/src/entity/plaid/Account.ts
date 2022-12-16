@@ -77,6 +77,16 @@ export class PlaidAccount extends BaseEntity {
     );
   }
 
+  @Field(() => CoreTransaction, { nullable: true })
+  async latestTransaction() {
+    return await CoreTransaction.findOne({
+      where: {
+        accountId: this.id,
+      },
+      order: { date: "DESC" },
+    });
+  }
+
   @Field(() => Int)
   async totalTransactions(): Promise<number> {
     const [_, count] = await CoreTransaction.findAndCount({

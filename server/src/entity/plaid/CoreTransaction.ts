@@ -1,4 +1,4 @@
-import { Field, Int, ObjectType } from "type-graphql";
+import { Field, Int, ObjectType, registerEnumType } from "type-graphql";
 import {
   Entity,
   BaseEntity,
@@ -8,6 +8,19 @@ import {
   AfterLoad,
 } from "typeorm";
 import { PlaidAccount } from "./Account";
+
+enum TransactionClassification {
+  Duplicate,
+  Salary,
+  Expense,
+  Recurring,
+  Transfer,
+}
+
+registerEnumType(TransactionClassification, {
+  name: "TransactionClassification", // this one is mandatory
+  description: "Some general transaction classifications", // this one is optional
+});
 
 @ObjectType()
 @Entity("transaction")
@@ -42,6 +55,11 @@ export class CoreTransaction extends BaseEntity {
   @Field(() => Number)
   amount() {
     return this.amountCents / 100;
+  }
+
+  @Field(() => TransactionClassification)
+  async classification(): Promise<TransactionClassification> {
+    return TransactionClassification.Duplicate;
   }
 
   @AfterLoad()
