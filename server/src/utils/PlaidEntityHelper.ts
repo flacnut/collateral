@@ -104,6 +104,34 @@ export async function createTransaction(
   return transaction.save();
 }
 
+export async function createOrUpdateTransaction(
+  rawTransaction: Transaction
+): Promise<PlaidTransaction> {
+  const existingTransaction = await PlaidTransaction.findOne({ id: rawTransaction.transaction_id });
+  const transaction = existingTransaction ?? new PlaidTransaction();
+
+  transaction.id = rawTransaction.transaction_id;
+  transaction.accountId = rawTransaction.account_id;
+  transaction.amountCents = Math.floor(rawTransaction.amount * 100);
+  transaction.category = rawTransaction.category?.join(",") ?? "";
+  transaction.categoryId = rawTransaction.category_id ?? "";
+  transaction.currency = rawTransaction.iso_currency_code;
+  transaction.date = rawTransaction.date;
+  transaction.dateTime = rawTransaction.datetime ?? "";
+  transaction.authorizedDate = rawTransaction.authorized_date ?? "";
+  transaction.authorizedDateTime = rawTransaction.authorized_datetime ?? "";
+  transaction.locationJson = JSON.stringify(rawTransaction.location);
+  transaction.paymentChannel = rawTransaction.payment_channel;
+  transaction.paymentMetaJson = JSON.stringify(rawTransaction.payment_meta);
+  transaction.description = rawTransaction.name;
+  transaction.originalDescription =
+    rawTransaction.original_description ?? rawTransaction.name;
+  transaction.merchant = rawTransaction.merchant_name ?? "";
+  transaction.transactionCode = rawTransaction.transaction_code ?? "";
+  transaction.pending = rawTransaction.pending;
+  return transaction.save();
+}
+
 export async function createSecurity(
   rawSecurity: Security
 ): Promise<PlaidSecurity> {

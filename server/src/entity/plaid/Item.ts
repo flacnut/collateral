@@ -14,6 +14,10 @@ export class PlaidItem extends BaseEntity {
   @Column("text")
   accessToken: string;
 
+  // not a field to be accessed
+  @Column("text", { nullable: true })
+  transactionsCursor: string | null;
+
   @Field()
   @Column("text")
   institutionId: string;
@@ -21,6 +25,8 @@ export class PlaidItem extends BaseEntity {
   @Field(() => [PlaidAccount])
   @OneToMany(() => PlaidAccount, (account) => account.item, { eager: true })
   accounts: PlaidAccount[];
+
+  /* Dynamic / Generated fields */
 
   @Field(() => PlaidInstitution)
   async institution() {

@@ -48,4 +48,8 @@ export class PlaidTransaction extends CoreTransaction {
   @Field()
   @Column("text")
   transactionCode: string;
+
+  @Field(() => Boolean)
+  @Column("boolean", { default: false })
+  pending: boolean;
 }

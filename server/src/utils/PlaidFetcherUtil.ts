@@ -1,7 +1,8 @@
 import moment from "moment";
-import { Configuration, PlaidApi, PlaidEnvironments } from "plaid";
-import { PlaidAccount, PlaidItem } from "../../src/entity/plaid";
+import { Configuration, PlaidApi, PlaidEnvironments, TransactionsSyncResponse } from "plaid";
+import { PlaidAccount, PlaidItem, PlaidTransaction } from "../../src/entity/plaid";
 import { CoreTransaction } from "../../src/entity/plaid/CoreTransaction";
+import { createOrUpdateTransaction } from "./PlaidEntityHelper";
 
 import { client_id, dev_secret } from "../../plaidConfig.json";
 import {
@@ -124,4 +125,60 @@ export default {
       })
     );
   },
+
+  async syncTransactions(item: PlaidItem) {
+    const options = {
+      access_token: item.accessToken,
+      cursor: item.transactionsCursor ?? undefined,
+      count: 500,
+      options: {
+        include_original_description: true,
+        include_personal_finance_category: true,
+      },
+    };
+
+    let response = await client.transactionsSync(options);
+    await this.handleSyncResponse(item, response.data);
+
+    while (response.data.has_more) {
+      options.cursor = response.data.next_cursor;
+      response = await client.transactionsSync(options);
+      await this.handleSyncResponse(item, response.data);
+    }
+  },
+
+  async handleSyncResponse(item: PlaidItem, data: TransactionsSyncResponse) {
+    try {
+      // Added
+      for (let i = 0; i < data.added.length; i++) {
+        await createOrUpdateTransaction(data.added[i]);
+
+        // if this transaction replaces a pending transaction
+        let pendingId = data.added[i].pending_transaction_id;
+        let pendingTransaction = null;
+        if (pendingId != null) {
+          pendingTransaction = await PlaidTransaction.findOne({ id: pendingId });
+        }
+        if (pendingTransaction != null) {
+          await PlaidTransaction.softRemove(pendingTransaction);
+        }
+      }
+
+      // Modified
+      for (let i = 0; i < data.modified.length; i++) {
+        await createOrUpdateTransaction(data.modified[i]);
+      }
+
+      // Removed
+      const transactions = await PlaidTransaction.findByIds(data.removed);
+      await PlaidTransaction.softRemove(transactions);
+
+      // Update Cursor
+      item.transactionsCursor = data.next_cursor;
+      await item.save();
+    } catch (err) {
+      console.error(err);
+      throw new Error(`Unable to write sync-transactions updates: ${err.message}`);
+    }
+  }
 };

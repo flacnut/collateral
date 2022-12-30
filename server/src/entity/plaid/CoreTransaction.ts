@@ -6,6 +6,7 @@ import {
   PrimaryColumn,
   TableInheritance,
   AfterLoad,
+  DeleteDateColumn,
 } from "typeorm";
 import { PlaidAccount } from "./Account";
 
@@ -49,6 +50,9 @@ export class CoreTransaction extends BaseEntity {
   @Field(() => String, { nullable: true })
   @Column("text", { nullable: true })
   currency: string | null;
+
+  @DeleteDateColumn()
+  deletedDate: Date;
 
   // Additional Fields
 
