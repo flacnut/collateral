@@ -32,7 +32,7 @@ import {
   createInstitution,
   createInvestmentHolding,
   createItem,
-  createSecurity,
+  createOrUpdateSecurity,
   createTransaction,
 } from "../../src/utils/PlaidEntityHelper";
 import {
@@ -237,7 +237,7 @@ export class PlaidResolver {
 
     const allItems = await Promise.all([
       ...response.data.holdings.map(createInvestmentHolding),
-      ...response.data.securities.map(createSecurity),
+      ...response.data.securities.map(createOrUpdateSecurity),
     ]);
 
     return allItems.filter((item) => item instanceof PlaidInvestmentHolding);
@@ -275,7 +275,7 @@ export class PlaidResolver {
 
     const allItems = await Promise.all([
       ...response.data.investment_transactions.map(createHoldingTransaction),
-      ...response.data.securities.map(createSecurity),
+      ...response.data.securities.map(createOrUpdateSecurity),
     ]);
 
     return allItems.filter((item) => item instanceof PlaidHoldingTransaction);

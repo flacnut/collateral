@@ -58,23 +58,26 @@ export async function createAccount(
   account.subtype = rawAccount.subtype;
   account.currency = rawAccount.balances.iso_currency_code;
   await account.save();
-  await createBalance(account.id, rawAccount.balances);
+  await createOrUpdateBalance(account.id, rawAccount.balances);
 
   return account;
 }
 
-export async function createBalance(
+export async function createOrUpdateBalance(
   accountId: string,
   rawBalance: AccountBalance
 ): Promise<PlaidAccountBalance> {
-  const balance = new PlaidAccountBalance();
+  const lastUpdateDate = rawBalance.last_updated_datetime ? new Date(rawBalance.last_updated_datetime).toLocaleDateString() : new Date().toLocaleDateString();
+  const existingBalance = await PlaidAccountBalance.findOne({ lastUpdateDate, accountId });
+  const balance = existingBalance ?? new PlaidAccountBalance();
+
   balance.accountId = accountId;
   balance.availableCents = Math.floor(rawBalance.available ?? 0 * 100);
   balance.balanceCents = Math.floor(rawBalance.current ?? 0 * 100);
   balance.limitCents = Math.floor(rawBalance.limit ?? 0 * 100);
   balance.currency = rawBalance.iso_currency_code;
-  balance.lastUpdateDate =
-    rawBalance.last_updated_datetime ?? new Date().toLocaleDateString();
+  balance.lastUpdateDate = lastUpdateDate;
+
   return balance.save();
 }
 
@@ -132,11 +135,13 @@ export async function createOrUpdateTransaction(
   return transaction.save();
 }
 
-export async function createSecurity(
+export async function createOrUpdateSecurity(
   rawSecurity: Security
 ): Promise<PlaidSecurity> {
   // verify Account ID & security
-  const security = new PlaidSecurity();
+  const existingSecurity = await PlaidSecurity.findOne({ id: rawSecurity.security_id });
+  const security = existingSecurity ?? new PlaidSecurity();
+
   security.id = rawSecurity.security_id;
   security.ticker = rawSecurity.ticker_symbol ?? "";
   security.name = rawSecurity.name ?? "";
@@ -148,6 +153,7 @@ export async function createSecurity(
   security.isin = rawSecurity.isin ?? "";
   security.cusip = rawSecurity.cusip ?? "";
   security.sedol = rawSecurity.sedol ?? "";
+
   return await security.save();
 }
 

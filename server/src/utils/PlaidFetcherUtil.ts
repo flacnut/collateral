@@ -6,10 +6,9 @@ import { createOrUpdateTransaction } from "./PlaidEntityHelper";
 
 import { client_id, dev_secret } from "../../plaidConfig.json";
 import {
-  createBalance,
+  createOrUpdateBalance,
   createHoldingTransaction,
-  createSecurity,
-  createTransaction,
+  createOrUpdateSecurity,
 } from "./PlaidEntityHelper";
 
 const configuration = new Configuration({
@@ -54,35 +53,12 @@ export default {
         // balances
         await Promise.all(
           accountResponse.data?.accounts?.map((acc) =>
-            createBalance(acc.account_id, acc.balances)
+            createOrUpdateBalance(acc.account_id, acc.balances),
           )
         );
 
         // transactions
-        const options = {
-          access_token: item.accessToken,
-          start_date: moment().subtract(2, "days").format("YYYY-MM-DD"),
-          end_date: moment().add(2, "days").format("YYYY-MM-DD"),
-          options: {
-            include_original_description: true,
-            include_personal_finance_category: true,
-            offset: 0,
-          },
-        };
-
-        const tResponse = await client.transactionsGet(options);
-        let transactions = tResponse.data.transactions;
-        const total_transactions = tResponse.data.total_transactions;
-
-        while (transactions.length < total_transactions) {
-          options.options.offset = transactions.length;
-          const paginatedResponse = await client.transactionsGet(options);
-          transactions = transactions.concat(
-            paginatedResponse.data.transactions
-          );
-        }
-
-        await Promise.all(transactions.map(createTransaction));
+        await this.syncTransactions(item);
 
         // holding transactions & securities
         try {
@@ -116,7 +92,7 @@ export default {
 
           await Promise.all([
             ...investment_transactions.map(createHoldingTransaction),
-            ...investment_securities.map(createSecurity),
+            ...investment_securities.map(createOrUpdateSecurity),
           ]);
         } catch (_ignore) {
           // happens because some items don't have investment accounts.
