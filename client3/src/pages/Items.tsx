@@ -198,8 +198,6 @@ export default function ItemsPage() {
   const { open, ready } = usePlaidLink({
     token: gltResponse.data?.getLinkToken?.token ?? null,
     onSuccess: (public_token, metadata) => {
-      console.dir(public_token);
-      console.dir(metadata);
       setPlaidLinkResponse({
         variables: {
           plaidLinkResponse: {
@@ -239,12 +237,11 @@ export default function ItemsPage() {
     onChangeDense,
     onChangePage,
     onChangeRowsPerPage,
-  } = useTable({ defaultOrderBy: 'createDate' });
+  } = useTable();
 
   const [tableData, setTableData] = useState([] as IAccount[]);
 
   useEffect(() => {
-    console.dir(data);
     const maybedata = (data?.getItems as IItem[] | null)?.map((item) => item.accounts).flat(1);
     setTableData((maybedata ?? []) as IAccount[]);
   }, [data]);
@@ -317,11 +314,6 @@ export default function ItemsPage() {
     setOpenConfirm(false);
   };
 
-  const handleFilterStatus = (event: React.SyntheticEvent<Element, Event>, newValue: string) => {
-    setPage(0);
-    setFilterStatus(newValue);
-  };
-
   const handleFilterName = (event: React.ChangeEvent<HTMLInputElement>) => {
     setPage(0);
     setFilterName(event.target.value);
@@ -333,7 +325,6 @@ export default function ItemsPage() {
   };
 
   const handleDeleteRow = async (id: string) => {
-    // TODO: delete
     let didDelete = await deleteAccount({ variables: { accountId: id } });
     if (didDelete) {
       await refetch();
@@ -347,20 +338,7 @@ export default function ItemsPage() {
   };
 
   const handleDeleteRows = (selected: string[]) => {
-    const deleteRows = tableData.filter((row: { id: string }) => !selected.includes(row.id));
-    setSelected([]);
-    setTableData(deleteRows);
-
-    if (page > 0) {
-      if (selected.length === dataInPage.length) {
-        setPage(page - 1);
-      } else if (selected.length === dataFiltered.length) {
-        setPage(0);
-      } else if (selected.length > dataInPage.length) {
-        const newPage = Math.ceil((tableData.length - selected.length) / rowsPerPage) - 1;
-        setPage(newPage);
-      }
-    }
+    // TODO
   };
 
   const handleEditRow = (id: string) => {
