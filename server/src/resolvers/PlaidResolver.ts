@@ -425,6 +425,23 @@ export class PlaidResolver {
     return await PlaidAccount.find();
   }
 
+  @Mutation(() => Boolean)
+  async deleteAccount(@Arg("accountId", () => String) accountId: string) {
+    const account = await PlaidAccount.findOne({ id: accountId });
+    if (account) {
+      const accountsForItem = await PlaidAccount.find({ itemId: account.itemId });
+
+      await CoreTransaction.delete({ accountId: accountId });
+      await PlaidAccount.delete({ id: accountId });
+
+      if (accountsForItem.length === 1) {
+        await PlaidItem.delete({ id: account.itemId });
+      }
+    }
+
+    return true;
+  }
+
   @Query(() => [AnyTransaction])
   async getTransactions(
     @Arg("accountId", { nullable: true }) accountId: string,

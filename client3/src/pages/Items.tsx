@@ -180,14 +180,20 @@ mutation setPlaidLinkResponse($plaidLinkResponse: PlaidLinkResponse!) {
 }
 `);
 
+const deleteAccountMutation = gql(`
+mutation deletAccount($accountId: String!) {
+  deleteAccount(accountId: $accountId) 
+}`);
+
 // ----------------------------------------------------------------------
 
 export default function ItemsPage() {
   const theme = useTheme();
 
-  const { loading, data } = useQuery(query);
+  const { loading, data, refetch } = useQuery(query);
   const [getLinkToken, gltResponse] = useLazyQuery(getLinkTokenQuery);
   const [setPlaidLinkResponse] = useMutation<PlaidLinkResponse>(setLinkResponse);
+  const [deleteAccount] = useMutation(deleteAccountMutation);
 
   const { open, ready } = usePlaidLink({
     token: gltResponse.data?.getLinkToken?.token ?? null,
@@ -326,14 +332,16 @@ export default function ItemsPage() {
     setFilterService(event.target.value);
   };
 
-  const handleDeleteRow = (id: string) => {
-    const deleteRow = tableData.filter((row: { id: string }) => row.id !== id);
-    setSelected([]);
-    setTableData(deleteRow);
-
-    if (page > 0) {
-      if (dataInPage.length < 2) {
-        setPage(page - 1);
+  const handleDeleteRow = async (id: string) => {
+    // TODO: delete
+    let didDelete = await deleteAccount({ variables: { accountId: id } });
+    if (didDelete) {
+      await refetch();
+      setSelected([]);
+      if (page > 0) {
+        if (dataInPage.length < 2) {
+          setPage(page - 1);
+        }
       }
     }
   };
@@ -815,7 +823,8 @@ function InvoiceTableRow({
             color={
               (row.status === 'active' && 'success') ||
               (row.status === 'stale' && 'warning') ||
-              (row.status === 'inactive' && 'error') ||
+              (row.status === 'inactive' && 'default') ||
+              (row.status === 'error' && 'error') ||
               'default'
             }
           >
