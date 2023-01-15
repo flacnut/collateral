@@ -45,7 +45,6 @@ import {
   useTable,
 } from '../components/table';
 // sections
-import { _invoices } from 'src/_mock/arrays/_invoice';
 import DatePicker from '@mui/lab/DatePicker/DatePicker';
 import MenuPopover from 'src/components/menu-popover';
 import { CustomAvatar } from 'src/components/custom-avatar';
@@ -53,9 +52,13 @@ import { fCurrency } from 'src/utils/formatNumber';
 import { useNavigate } from 'react-router-dom';
 import ConfirmDialog from 'src/components/confirm-dialog';
 
-import { useQuery } from '@apollo/client';
+import { useLazyQuery, useMutation, useQuery } from '@apollo/client';
 import { gql } from 'src/__generated__/gql';
 import Label from 'src/components/label';
+import { PlaidLinkResponse } from 'src/__generated__/graphql';
+import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
+import { PATH_DASHBOARD } from 'src/routes/paths';
+import { usePlaidLink } from 'react-plaid-link';
 
 // ----------------------------------------------------------------------
 
@@ -159,12 +162,55 @@ fragment InstitutionParts on PlaidInstitution {
 }
 `);
 
+const getLinkTokenQuery = gql(`
+query getToken {
+  getLinkToken {
+    token
+    error
+  }
+}
+`);
+
+const setLinkResponse = gql(`
+mutation setPlaidLinkResponse($plaidLinkResponse: PlaidLinkResponse!) {
+  setPlaidLinkResponse(plaidLinkResponse: $plaidLinkResponse) {
+    id 
+    institutionId
+  }
+}
+`);
+
 // ----------------------------------------------------------------------
 
 export default function ItemsPage() {
   const theme = useTheme();
 
   const { loading, data } = useQuery(query);
+  const [getLinkToken, gltResponse] = useLazyQuery(getLinkTokenQuery);
+  const [setPlaidLinkResponse] = useMutation<PlaidLinkResponse>(setLinkResponse);
+
+  const { open, ready } = usePlaidLink({
+    token: gltResponse.data?.getLinkToken?.token ?? null,
+    onSuccess: (public_token, metadata) => {
+      console.dir(public_token);
+      console.dir(metadata);
+      setPlaidLinkResponse({
+        variables: {
+          plaidLinkResponse: {
+            publicToken: public_token,
+            linkSessionId: metadata.link_session_id,
+            institutionId: metadata.institution?.institution_id
+          }
+        }
+      });
+    },
+  });
+
+  useEffect(() => {
+    if (ready) {
+      open();
+    }
+  }, [ready, open]);
 
   const { themeStretch } = useSettingsContext();
 
@@ -192,6 +238,7 @@ export default function ItemsPage() {
   const [tableData, setTableData] = useState([] as IAccount[]);
 
   useEffect(() => {
+    console.dir(data);
     const maybedata = (data?.getItems as IItem[] | null)?.map((item) => item.accounts).flat(1);
     setTableData((maybedata ?? []) as IAccount[]);
   }, [data]);
@@ -330,7 +377,37 @@ export default function ItemsPage() {
         <title>Items</title>
       </Helmet>
 
+
+
       <Container maxWidth={themeStretch ? false : 'lg'}>
+        <CustomBreadcrumbs
+          heading="Invoice List"
+          links={[
+            {
+              name: 'Dashboard',
+              href: PATH_DASHBOARD.root,
+            },
+            {
+              name: 'Accounts',
+              href: '', //PATH_DASHBOARD.invoice.root,
+            },
+            {
+              name: 'List',
+            },
+          ]}
+          action={
+            <Button
+              onClick={() => {
+                getLinkToken();
+              }}
+              variant="contained"
+              startIcon={<Iconify icon="eva:plus-fill" />}
+            >
+              Link Account
+            </Button>
+          }
+        />
+
         <Card>
           <InvoiceTableToolbar
             isFiltered={isFiltered}
@@ -511,7 +588,7 @@ function applyFilter({
 
   /*
   if (filterStatus !== 'all') {
-    inputData = inputData.filter((invoice) => invoice.status === filterStatus);
+        inputData = inputData.filter((invoice) => invoice.status === filterStatus);
   } */
 
   if (filterService !== 'all') {
@@ -520,11 +597,11 @@ function applyFilter({
 
   /*
   if (filterStartDate && filterEndDate) {
-    inputData = inputData.filter(
-      (invoice) =>
-        fTimestamp(invoice.createDate) >= fTimestamp(filterStartDate) &&
-        fTimestamp(invoice.createDate) <= fTimestamp(filterEndDate)
-    );
+        inputData = inputData.filter(
+          (invoice) =>
+            fTimestamp(invoice.createDate) >= fTimestamp(filterStartDate) &&
+            fTimestamp(invoice.createDate) <= fTimestamp(filterEndDate)
+        );
   }*/
 
   return inputData;
