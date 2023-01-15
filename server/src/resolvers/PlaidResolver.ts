@@ -16,6 +16,7 @@ import {
   Products,
   TransactionsGetRequest,
   InvestmentsTransactionsGetRequest,
+  Holding,
 } from "plaid";
 import { client_id, dev_secret } from "../../plaidConfig.json";
 import {
@@ -279,6 +280,34 @@ export class PlaidResolver {
     ]);
 
     return allItems.filter((item) => item instanceof PlaidHoldingTransaction);
+  }
+
+  @Query(() => [PlaidInvestmentHolding])
+  async fetchHoldings(@Arg("itemId") itemId: string) {
+    const item = await PlaidItem.findOneOrFail(itemId);
+
+    const response = await client.investmentsHoldingsGet({
+      access_token: item.accessToken,
+    });
+
+    console.dir(response.data);
+
+    await Promise.all(response.data.holdings.map(async (holding: Holding) => {
+      let h = new PlaidInvestmentHolding();
+      h.accountId = holding.account_id;
+      h.securityId = holding.security_id;
+      h.costBasisCents = Number(holding.cost_basis) * 100;
+      h.quantity = holding.quantity;
+      h.currency = holding.iso_currency_code;
+      h.institutionPriceCents = holding.institution_price * 100;
+      h.institutionValueCents = holding.institution_value * 100;
+      h.institutionPriceAsOfDate = holding.institution_price_datetime ? new Date().toLocaleDateString(holding.institution_price_datetime) : null;
+      await h.save();
+    }));
+
+    await Promise.all(response.data.securities.map(createOrUpdateSecurity));
+
+    return await PlaidInvestmentHolding.find();
   }
 
   @Query(() => PlaidInstitution)
