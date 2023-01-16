@@ -23,9 +23,9 @@ const navConfig = [
   {
     subheader: 'general v4.0.0',
     items: [
-      { title: 'Dashboard', path: PATH_DASHBOARD.one, icon: ICONS.dashboard },
-      { title: 'Items', path: PATH_DASHBOARD.two, icon: ICONS.banking },
-      { title: 'Three', path: PATH_DASHBOARD.three, icon: ICONS.analytics },
+      { title: 'Dashboard', path: PATH_DASHBOARD.dashboard, icon: ICONS.dashboard },
+      { title: 'Items', path: PATH_DASHBOARD.items, icon: ICONS.banking },
+      { title: 'Transactions', path: PATH_DASHBOARD.transactions, icon: ICONS.analytics },
     ],
   },
 

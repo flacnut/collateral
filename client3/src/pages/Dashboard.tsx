@@ -293,7 +293,7 @@ export default function PageOne() {
           ]}
           action={
             <Button
-              to={PATH_DASHBOARD.one /*.invoice.new*/}
+              to={PATH_DASHBOARD.transactions /*.invoice.new*/}
               component={RouterLink}
               variant="contained"
               startIcon={<Iconify icon="eva:plus-fill" />}

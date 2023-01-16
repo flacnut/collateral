@@ -14,9 +14,9 @@ export const PATH_AUTH = {
 
 export const PATH_DASHBOARD = {
   root: ROOTS_DASHBOARD,
-  one: path(ROOTS_DASHBOARD, '/one'),
-  two: path(ROOTS_DASHBOARD, '/items'),
-  three: path(ROOTS_DASHBOARD, '/three'),
+  transactions: path(ROOTS_DASHBOARD, '/transactions'),
+  items: path(ROOTS_DASHBOARD, '/items'),
+  dashboard: path(ROOTS_DASHBOARD, '/dashboard'),
   user: {
     root: path(ROOTS_DASHBOARD, '/user'),
     four: path(ROOTS_DASHBOARD, '/user/four'),
