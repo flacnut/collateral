@@ -3,6 +3,7 @@ import {
   createUnionType,
   Field,
   InputType,
+  Int,
   Mutation,
   ObjectType,
   Query,
@@ -445,8 +446,8 @@ export class PlaidResolver {
   @Query(() => [AnyTransaction])
   async getTransactions(
     @Arg("accountId", { nullable: true }) accountId: string,
-    @Arg("limit", { nullable: true, defaultValue: 100 }) limit: number,
-    @Arg("after", { nullable: true, defaultValue: 0 }) after: number
+    @Arg("limit", () => Int, { nullable: true, defaultValue: 100 }) limit: number,
+    @Arg("after", () => Int, { nullable: true, defaultValue: 0 }) after: number
   ) {
     const options = {
       where: {},

@@ -50,7 +50,7 @@ import {
   TablePaginationCustom,
 } from '../components/table';
 // sections
-import { _invoices } from 'src/_mock/arrays/_invoice';
+import { gql } from 'src/__generated__/gql';
 import DatePicker from '@mui/lab/DatePicker/DatePicker';
 import MenuPopover from 'src/components/menu-popover';
 import { CustomAvatar } from 'src/components/custom-avatar';
@@ -68,49 +68,59 @@ const SERVICE_OPTIONS = [
 ];
 
 const TABLE_HEAD = [
-  { id: 'invoiceNumber', label: 'Client', align: 'left' },
-  { id: 'createDate', label: 'Create', align: 'left' },
-  { id: 'dueDate', label: 'Due', align: 'left' },
-  { id: 'price', label: 'Amount', align: 'center', width: 140 },
-  { id: 'sent', label: 'Sent', align: 'center', width: 140 },
-  { id: 'status', label: 'Status', align: 'left' },
+  { id: 'date', label: 'Date', align: 'left' },
+  { id: 'description', label: 'Description', align: 'left' },
+  { id: 'amount', label: 'Amount', align: 'right' },
+  { id: '__typename', label: 'Type', align: 'center' },
+  { id: 'classification', label: 'Category', align: 'center' },
   { id: '' },
 ];
 
-type IInvoiceAddress = {
+type IBasicTransaction = {
   id: string;
-  name: string;
-  address: string;
-  company: string;
-  email: string;
-  phone: string;
-};
-
-type IInvoiceItem = {
-  id: string;
-  title: string;
+  accountId: string;
   description: string;
-  quantity: number;
-  price: number;
-  total: number;
-  service: string;
+  amountCents: number;
+  amount: number;
+  date: string;
+  currency: string | null;
+  classification: string;
 };
 
-type IInvoice = {
-  id: string;
-  sent: number;
-  status: string;
-  totalPrice: number;
-  invoiceNumber: string;
-  subTotalPrice: number;
-  taxes: number | string;
-  discount: number | string;
-  invoiceFrom: IInvoiceAddress;
-  invoiceTo: IInvoiceAddress;
-  createDate: Date | number;
-  dueDate: Date | number;
-  items: IInvoiceItem[];
-};
+const transactionsQuery = gql(`
+query getBasicTransactions($accountId: String, $limit: Int, $offset: Int) {
+  getTransactions(accountId: $accountId, limit: $limit, after: $offset) {
+    __typename
+  	...on PlaidTransaction {
+      ...CorePlaidTransactionParts
+    }
+    ... on PlaidHoldingTransaction {
+      ...CoreHoldingTransactionParts
+    }
+  }
+}
+
+fragment CorePlaidTransactionParts on PlaidTransaction {
+  id
+  accountId
+  description
+  amountCents
+  amount
+  date
+  currency
+  classification
+}
+
+fragment CoreHoldingTransactionParts on PlaidHoldingTransaction {
+  id
+  accountId
+  description
+  amountCents
+  amount
+  date
+  currency
+  classification
+}`);
 
 // ----------------------------------------------------------------------
 
@@ -140,7 +150,7 @@ export default function PageOne() {
     onChangeRowsPerPage,
   } = useTable({ defaultOrderBy: 'createDate' });
 
-  const [tableData, setTableData] = useState(_invoices);
+  const [tableData, setTableData] = useState([]);
 
   const [filterName, setFilterName] = useState('');
 
@@ -479,7 +489,7 @@ function applyFilter({
   filterStartDate,
   filterEndDate,
 }: {
-  inputData: IInvoice[];
+  inputData: IBasicTransaction[];
   comparator: (a: any, b: any) => number;
   filterName: string;
   filterStatus: string;
@@ -666,7 +676,7 @@ function InvoiceTableRow({
   onEditRow,
   onDeleteRow,
 }: {
-  row: IInvoice;
+  row: IBasicTransaction;
   selected: boolean;
   onSelectRow: VoidFunction;
   onViewRow: VoidFunction;

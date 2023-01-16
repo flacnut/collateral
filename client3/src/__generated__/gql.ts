@@ -17,6 +17,7 @@ const documents = {
     "\nquery getToken {\n  getLinkToken {\n    token\n    error\n  }\n}\n": types.GetTokenDocument,
     "\nmutation setPlaidLinkResponse($plaidLinkResponse: PlaidLinkResponse!) {\n  setPlaidLinkResponse(plaidLinkResponse: $plaidLinkResponse) {\n    id \n    institutionId\n  }\n}\n": types.SetPlaidLinkResponseDocument,
     "\nmutation deletAccount($accountId: String!) {\n  deleteAccount(accountId: $accountId) \n}": types.DeletAccountDocument,
+    "\nquery getBasicTransactions($accountId: String, $limit: Int, $offset: Int) {\n  getTransactions(accountId: $accountId, limit: $limit, after: $offset) {\n    __typename\n  \t...on PlaidTransaction {\n      ...CorePlaidTransactionParts\n    }\n    ... on PlaidHoldingTransaction {\n      ...CoreHoldingTransactionParts\n    }\n  }\n}\n\nfragment CorePlaidTransactionParts on PlaidTransaction {\n  id\n  accountId\n  description\n  amountCents\n  amount\n  date\n  currency\n  classification\n}\n\nfragment CoreHoldingTransactionParts on PlaidHoldingTransaction {\n  id\n  accountId\n  description\n  amountCents\n  amount\n  date\n  currency\n  classification\n}": types.GetBasicTransactionsDocument,
 };
 
 /**
@@ -35,6 +36,10 @@ export function gql(source: "\nmutation setPlaidLinkResponse($plaidLinkResponse:
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function gql(source: "\nmutation deletAccount($accountId: String!) {\n  deleteAccount(accountId: $accountId) \n}"): (typeof documents)["\nmutation deletAccount($accountId: String!) {\n  deleteAccount(accountId: $accountId) \n}"];
+/**
+ * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function gql(source: "\nquery getBasicTransactions($accountId: String, $limit: Int, $offset: Int) {\n  getTransactions(accountId: $accountId, limit: $limit, after: $offset) {\n    __typename\n  \t...on PlaidTransaction {\n      ...CorePlaidTransactionParts\n    }\n    ... on PlaidHoldingTransaction {\n      ...CoreHoldingTransactionParts\n    }\n  }\n}\n\nfragment CorePlaidTransactionParts on PlaidTransaction {\n  id\n  accountId\n  description\n  amountCents\n  amount\n  date\n  currency\n  classification\n}\n\nfragment CoreHoldingTransactionParts on PlaidHoldingTransaction {\n  id\n  accountId\n  description\n  amountCents\n  amount\n  date\n  currency\n  classification\n}"): (typeof documents)["\nquery getBasicTransactions($accountId: String, $limit: Int, $offset: Int) {\n  getTransactions(accountId: $accountId, limit: $limit, after: $offset) {\n    __typename\n  \t...on PlaidTransaction {\n      ...CorePlaidTransactionParts\n    }\n    ... on PlaidHoldingTransaction {\n      ...CoreHoldingTransactionParts\n    }\n  }\n}\n\nfragment CorePlaidTransactionParts on PlaidTransaction {\n  id\n  accountId\n  description\n  amountCents\n  amount\n  date\n  currency\n  classification\n}\n\nfragment CoreHoldingTransactionParts on PlaidHoldingTransaction {\n  id\n  accountId\n  description\n  amountCents\n  amount\n  date\n  currency\n  classification\n}"];
 
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
