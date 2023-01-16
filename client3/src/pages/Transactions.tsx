@@ -1,5 +1,5 @@
 import { Helmet } from 'react-helmet-async';
-import { SetStateAction, useState } from 'react';
+import { SetStateAction, useEffect, useState } from 'react';
 import sumBy from 'lodash/sumBy';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 // @mui
@@ -55,6 +55,7 @@ import DatePicker from '@mui/lab/DatePicker/DatePicker';
 import MenuPopover from 'src/components/menu-popover';
 import { CustomAvatar } from 'src/components/custom-avatar';
 import { fCurrency } from 'src/utils/formatNumber';
+import { useQuery } from '@apollo/client';
 
 // ----------------------------------------------------------------------
 
@@ -68,15 +69,16 @@ const SERVICE_OPTIONS = [
 ];
 
 const TABLE_HEAD = [
-  { id: 'date', label: 'Date', align: 'left' },
   { id: 'description', label: 'Description', align: 'left' },
   { id: 'amount', label: 'Amount', align: 'right' },
-  { id: '__typename', label: 'Type', align: 'center' },
-  { id: 'classification', label: 'Category', align: 'center' },
+  { id: 'date', label: 'Date', align: 'left', width: 140 },
+  { id: '__typename', label: 'Type', align: 'center', width: 140 },
+  { id: 'classification', label: 'Category', align: 'center', width: 240 },
   { id: '' },
 ];
 
 type IBasicTransaction = {
+  __typename: string;
   id: string;
   accountId: string;
   description: string;
@@ -126,6 +128,11 @@ fragment CoreHoldingTransactionParts on PlaidHoldingTransaction {
 
 export default function PageOne() {
   const theme = useTheme();
+  const { loading, data, refetch } = useQuery(transactionsQuery);
+  useEffect(() => {
+    const maybedata = data?.getTransactions as unknown[] | null;
+    setTableData((maybedata ?? []) as IBasicTransaction[]);
+  }, [data]);
 
   const { themeStretch } = useSettingsContext();
 
@@ -150,7 +157,7 @@ export default function PageOne() {
     onChangeRowsPerPage,
   } = useTable({ defaultOrderBy: 'createDate' });
 
-  const [tableData, setTableData] = useState([]);
+  const [tableData, setTableData] = useState<IBasicTransaction[]>([]);
 
   const [filterName, setFilterName] = useState('');
 
@@ -191,12 +198,12 @@ export default function PageOne() {
     (!dataFiltered.length && !!filterEndDate) ||
     (!dataFiltered.length && !!filterStartDate);
 
-  const getLengthByStatus = (status: string) =>
-    tableData.filter((item: { status: string }) => item.status === status).length;
+  const getLengthByStatus = (classification: string) =>
+    tableData.filter((transaction) => transaction.classification === classification).length;
 
-  const getTotalPriceByStatus = (status: string) =>
+  const getTotalPriceByStatus = (classification: string) =>
     sumBy(
-      tableData.filter((item: { status: string }) => item.status === status),
+      tableData.filter((transaction) => transaction.classification === classification),
       'totalPrice'
     );
 
@@ -282,19 +289,19 @@ export default function PageOne() {
   return (
     <>
       <Helmet>
-        <title> Invoice: List | Minimal UI</title>
+        <title> Transaction: List | Minimal UI</title>
       </Helmet>
 
       <Container maxWidth={themeStretch ? false : 'lg'}>
         <CustomBreadcrumbs
-          heading="Invoice List"
+          heading="Transaction List"
           links={[
             {
               name: 'Dashboard',
               href: PATH_DASHBOARD.root,
             },
             {
-              name: 'Invoices',
+              name: 'Transactions',
               href: '', //PATH_DASHBOARD.invoice.root,
             },
             {
@@ -308,7 +315,7 @@ export default function PageOne() {
               variant="contained"
               startIcon={<Iconify icon="eva:plus-fill" />}
             >
-              New Invoice
+              New Transaction
             </Button>
           }
         />
@@ -338,7 +345,7 @@ export default function PageOne() {
 
           <Divider />
 
-          <InvoiceTableToolbar
+          <TransactionTableToolbar
             isFiltered={isFiltered}
             filterName={filterName}
             filterService={filterService}
@@ -417,7 +424,7 @@ export default function PageOne() {
                   {dataFiltered
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     .map((row) => (
-                      <InvoiceTableRow
+                      <TransactionTableRow
                         key={row.id}
                         row={row}
                         selected={selected.includes(row.id)}
@@ -507,13 +514,14 @@ function applyFilter({
 
   inputData = stabilizedThis.map((el) => el[0]);
 
+  /*
   if (filterName) {
     inputData = inputData.filter(
       (invoice) =>
         invoice.invoiceNumber.toLowerCase().indexOf(filterName.toLowerCase()) !== -1 ||
         invoice.invoiceTo.name.toLowerCase().indexOf(filterName.toLowerCase()) !== -1
     );
-  }
+  } 
 
   if (filterStatus !== 'all') {
     inputData = inputData.filter((invoice) => invoice.status === filterStatus);
@@ -531,14 +539,14 @@ function applyFilter({
         fTimestamp(invoice.createDate) >= fTimestamp(filterStartDate) &&
         fTimestamp(invoice.createDate) <= fTimestamp(filterEndDate)
     );
-  }
+  } */
 
   return inputData;
 }
 
 const INPUT_WIDTH = 160;
 
-function InvoiceTableToolbar({
+function TransactionTableToolbar({
   filterName,
   isFiltered,
   onFilterName,
@@ -668,7 +676,7 @@ function InvoiceTableToolbar({
   );
 }
 
-function InvoiceTableRow({
+function TransactionTableRow({
   row,
   selected,
   onSelectRow,
@@ -683,7 +691,7 @@ function InvoiceTableRow({
   onEditRow: VoidFunction;
   onDeleteRow: VoidFunction;
 }) {
-  const { sent, invoiceNumber, createDate, dueDate, status, invoiceTo, totalPrice } = row;
+  const { date, description, amount, __typename, classification, accountId } = row;
 
   const [openConfirm, setOpenConfirm] = useState(false);
 
@@ -714,11 +722,11 @@ function InvoiceTableRow({
 
         <TableCell>
           <Stack direction="row" alignItems="center" spacing={2}>
-            <CustomAvatar name={invoiceTo.name} />
+            <CustomAvatar name={accountId} />
 
             <div>
               <Typography variant="subtitle2" noWrap>
-                {invoiceTo.name}
+                {description}
               </Typography>
 
               <Link
@@ -727,34 +735,31 @@ function InvoiceTableRow({
                 onClick={onViewRow}
                 sx={{ color: 'text.disabled', cursor: 'pointer' }}
               >
-                {`INV-${invoiceNumber}`}
+                {`Account Name Placeholder`}
               </Link>
             </div>
           </Stack>
         </TableCell>
 
-        <TableCell align="left">{fDate(createDate)}</TableCell>
+        <TableCell align="center">{fCurrency(amount)}</TableCell>
 
-        <TableCell align="left">{fDate(dueDate)}</TableCell>
-
-        <TableCell align="center">{fCurrency(totalPrice)}</TableCell>
-
-        <TableCell align="center" sx={{ textTransform: 'capitalize' }}>
-          {sent}
-        </TableCell>
+        <TableCell align="left">{fDate(date)}</TableCell>
 
         <TableCell align="left">
           <Label
             variant="soft"
             color={
-              (status === 'paid' && 'success') ||
-              (status === 'unpaid' && 'warning') ||
-              (status === 'overdue' && 'error') ||
+              (__typename === 'PlaidHoldingTransaction' && 'primary') ||
+              (__typename === 'PlaidTransaction' && 'secondary') ||
               'default'
             }
           >
-            {status}
+            {__typename}
           </Label>
+        </TableCell>
+
+        <TableCell align="center" sx={{ textTransform: 'capitalize' }}>
+          {classification}
         </TableCell>
 
         <TableCell align="right">
