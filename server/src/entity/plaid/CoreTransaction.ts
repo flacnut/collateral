@@ -15,10 +15,11 @@ import { PlaidAccount } from "./Account";
 
 enum TransactionClassification {
   Duplicate,
-  Salary,
+  Income,
   Expense,
   Recurring,
   Transfer,
+  Investment,
 }
 
 registerEnumType(TransactionClassification, {
@@ -62,16 +63,17 @@ export class CoreTransaction extends BaseEntity {
   @ManyToMany(() => Tag, { onDelete: "NO ACTION" })
   tags: Promise<Tag[]>;
 
+  @Column("text", { nullable: true })
+  @Field(() => TransactionClassification, { nullable: true })
+  async classification(): Promise<TransactionClassification> {
+    return TransactionClassification.Transfer;
+  }
+
   // Additional Fields
 
   @Field(() => Number)
   amount() {
     return this.amountCents / 100;
-  }
-
-  @Field(() => TransactionClassification)
-  async classification(): Promise<TransactionClassification> {
-    return TransactionClassification.Transfer;
   }
 
   @AfterLoad()
