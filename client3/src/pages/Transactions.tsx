@@ -741,7 +741,10 @@ function TransactionTableRow({
           </Stack>
         </TableCell>
 
-        <TableCell align="center">{fCurrency(amount)}</TableCell>
+        <TableCell align="right">
+          <Typography fontFamily="Lucida Sans Typewriter" color={amount > 0 ? "#36B37E" : "#FF5630"} fontWeight="bold">{fCurrency(amount)}
+          </Typography>
+        </TableCell>
 
         <TableCell align="left">{fDate(date)}</TableCell>
 
