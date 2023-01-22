@@ -3,13 +3,10 @@ import {
   BaseEntity,
   PrimaryGeneratedColumn,
   Column,
-  ManyToMany,
-  JoinTable,
   JoinColumn,
   ManyToOne,
   OneToOne,
 } from "typeorm";
-import { Tag } from "./Tag";
 import { Source } from "./Source";
 import { Account } from "./Account";
 import { Field, ObjectType, Int } from "type-graphql";
@@ -36,11 +33,12 @@ export class Transaction extends BaseEntity {
   @Field(() => Int)
   @Column("int")
   amountCents: number;
-
-  @Field(() => [Tag])
-  @JoinTable()
-  @ManyToMany(() => Tag, { onDelete: "NO ACTION" })
-  tags: Promise<Tag[]>;
+  /*
+    @Field(() => [Tag])
+    @JoinTable()
+    @ManyToMany(() => Tag, { onDelete: "NO ACTION" })
+    tags: Promise<Tag[]>;
+    */
 
   @Field(() => Source)
   @ManyToOne(() => Source, (source) => source.transactions, { lazy: true })

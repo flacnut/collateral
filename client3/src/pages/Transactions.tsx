@@ -731,7 +731,7 @@ function TransactionTableRow({
 
         <TableCell>
           <Stack direction="row" alignItems="center" spacing={2}>
-            <CustomAvatar name={accountId} />
+            <CustomAvatar name={description} />
 
             <div>
               <Typography variant="subtitle2" noWrap>

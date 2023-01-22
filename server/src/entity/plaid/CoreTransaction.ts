@@ -1,3 +1,4 @@
+import { Tag } from "@entities";
 import { Field, Int, ObjectType, registerEnumType } from "type-graphql";
 import {
   Entity,
@@ -7,6 +8,8 @@ import {
   TableInheritance,
   AfterLoad,
   DeleteDateColumn,
+  ManyToMany,
+  JoinTable,
 } from "typeorm";
 import { PlaidAccount } from "./Account";
 
@@ -54,6 +57,11 @@ export class CoreTransaction extends BaseEntity {
   @DeleteDateColumn()
   deletedDate: Date;
 
+  @Field(() => [Tag])
+  @JoinTable()
+  @ManyToMany(() => Tag, { onDelete: "NO ACTION" })
+  tags: Promise<Tag[]>;
+
   // Additional Fields
 
   @Field(() => Number)
@@ -63,7 +71,7 @@ export class CoreTransaction extends BaseEntity {
 
   @Field(() => TransactionClassification)
   async classification(): Promise<TransactionClassification> {
-    return TransactionClassification.Duplicate;
+    return TransactionClassification.Transfer;
   }
 
   @AfterLoad()

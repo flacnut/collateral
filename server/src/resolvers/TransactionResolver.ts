@@ -1,5 +1,5 @@
 import { Account, Transaction, Tag, Source } from "@entities";
-import { getManager, getConnection, In } from "typeorm";
+import { getManager, In } from "typeorm";
 import {
   Arg,
   Field,
@@ -167,7 +167,7 @@ export class TransactionResolver {
     const newTransaction = await Transaction.create(options).save();
     newTransaction.source = Promise.resolve(source);
     newTransaction.account = Promise.resolve(account);
-    newTransaction.tags = Promise.resolve([]);
+    ///newTransaction.tags = Promise.resolve([]);
     newTransaction.save();
     return newTransaction;
   }
@@ -187,7 +187,7 @@ export class TransactionResolver {
     @Arg("options", () => [TransactionUpdateTagsInput])
     options: TransactionUpdateTagsInput[]
   ) {
-    const connection = await getConnection();
+    //const connection = await getConnection();
     const transactionIds = options.map(
       (transactionUpdateTagsInput) => transactionUpdateTagsInput.id
     );
@@ -208,10 +208,10 @@ export class TransactionResolver {
       )
     ).flat();
 
-    const allUpdateActions = transactions.map(async (transaction) => {
-      const allExpectedTags =
+    const allUpdateActions = transactions.map(async (_) => {
+      /*const allExpectedTags =
         options.find((o) => o.id === transaction.id)?.tags ?? [];
-      const existingTags = (await transaction.tags).map((et) => et.id);
+      /const existingTags = (await transaction.tags).map((et) => et.id);
 
       const tagsToAdd = allExpectedTags.filter(
         (expectedId) => existingTags.indexOf(expectedId) < 0
@@ -223,9 +223,9 @@ export class TransactionResolver {
           .relation(Transaction, "tags")
           .of(transaction)
           .add(tagToAdd);
-      });
+      });*/
 
-      return Promise.all(updateActions);
+      return null; //Promise.all(updateActions);
     });
 
     await Promise.all(allUpdateActions);
