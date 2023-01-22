@@ -87,6 +87,9 @@ type IBasicTransaction = {
   date: string;
   currency: string | null;
   classification: string;
+  account: {
+    name: string;
+  }
 };
 
 const transactionsQuery = gql(`
@@ -95,9 +98,15 @@ query getBasicTransactions($accountId: String, $limit: Int, $offset: Int) {
     __typename
   	...on PlaidTransaction {
       ...CorePlaidTransactionParts
+      account {
+        name
+      }
     }
     ... on PlaidHoldingTransaction {
       ...CoreHoldingTransactionParts
+      account {
+        name
+      }
     }
   }
 }
@@ -735,7 +744,7 @@ function TransactionTableRow({
                 onClick={onViewRow}
                 sx={{ color: 'text.disabled', cursor: 'pointer' }}
               >
-                {`Account Name Placeholder`}
+                {row.account.name}
               </Link>
             </div>
           </Stack>

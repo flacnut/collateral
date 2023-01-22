@@ -6,6 +6,7 @@
   "private": true,
   "scripts": {
     "graphql": "./node_modules/@graphql-codegen/cli/cjs/bin.js",
+    "graphql-win": "node node_modules\\@graphql-codegen\\cli\\cjs\\bin.js",
     "lint": "eslint --ext .ts,.tsx ./src",
     "lint:fix": "eslint --fix --ext .ts,.tsx ./src",
     "start": "react-scripts start",

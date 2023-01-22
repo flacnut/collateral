@@ -77,6 +77,14 @@ export class CoreTransaction extends BaseEntity {
     }
   }
 
+  @Field(() => PlaidAccount)
+  async account() {
+    return await PlaidAccount.findOne({
+      where: { id: this.accountId },
+      cache: true,
+    })
+  }
+
   // TODO: Balance in dollars
   // TODO: Invert account transactions (and balance)
   //       Cache results for perf.
