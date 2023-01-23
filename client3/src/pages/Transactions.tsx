@@ -196,9 +196,7 @@ export default function PageOne() {
 
   const [filterDescription, setFilterDescription] = useState('');
   const [filterAccount, setFilterAccount] = useState('all');
-
   const [filterClassification, setFilterClassification] = useState('all');
-
   const [filterEndDate, setFilterEndDate] = useState<Date | null>(null);
   const [filterStartDate, setFilterStartDate] = useState<Date | null>(null);
 
@@ -372,7 +370,7 @@ export default function PageOne() {
               onSelectAllRows={(checked: any) =>
                 onSelectAllRows(
                   checked,
-                  tableData.map((row: { id: any }) => row.id)
+                  dataFiltered.map((row: { id: any }) => row.id)
                 )
               }
               action={
@@ -416,7 +414,7 @@ export default function PageOne() {
                   onSelectAllRows={(checked: any) =>
                     onSelectAllRows(
                       checked,
-                      tableData.map((row: { id: any }) => row.id)
+                      dataFiltered.map((row: { id: any }) => row.id)
                     )
                   }
                 />
