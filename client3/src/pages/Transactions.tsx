@@ -51,7 +51,7 @@ import {
 } from '../components/table';
 // sections
 import { gql } from 'src/__generated__/gql';
-import DatePicker from '@mui/lab/DatePicker/DatePicker';
+import { DatePicker } from '@mui/x-date-pickers';
 import MenuPopover from 'src/components/menu-popover';
 import { CustomAvatar } from 'src/components/custom-avatar';
 import { fCurrency } from 'src/utils/formatNumber';
@@ -301,7 +301,7 @@ export default function PageOne() {
         <title> Transaction: List | Minimal UI</title>
       </Helmet>
 
-      <Container maxWidth={themeStretch ? false : 'lg'}>
+      <Container maxWidth={themeStretch ? false : 'xl'}>
         <CustomBreadcrumbs
           heading="Transaction List"
           links={[
@@ -523,15 +523,14 @@ function applyFilter({
 
   inputData = stabilizedThis.map((el) => el[0]);
 
-  /*
+
   if (filterName) {
     inputData = inputData.filter(
-      (invoice) =>
-        invoice.invoiceNumber.toLowerCase().indexOf(filterName.toLowerCase()) !== -1 ||
-        invoice.invoiceTo.name.toLowerCase().indexOf(filterName.toLowerCase()) !== -1
+      (transaction) =>
+        transaction.description.toLowerCase().indexOf(filterName.toLowerCase()) !== -1
     );
-  } 
-
+  }
+  /*
   if (filterStatus !== 'all') {
     inputData = inputData.filter((invoice) => invoice.status === filterStatus);
   }
@@ -646,16 +645,18 @@ function TransactionTableToolbar({
         label="End date"
         value={filterEndDate}
         onChange={onFilterEndDate}
-        renderInput={(params: JSX.IntrinsicAttributes & TextFieldProps) => (
-          <TextField
+        renderInput={(params: JSX.IntrinsicAttributes & TextFieldProps) => {
+          console.dir(params);
+          return <TextField
             {...params}
             fullWidth
             sx={{
               maxWidth: { md: INPUT_WIDTH },
             }}
-          />
-        )}
+          />;
+        }}
       />
+
 
       <TextField
         fullWidth
