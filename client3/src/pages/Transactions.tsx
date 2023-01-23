@@ -87,9 +87,12 @@ type IBasicTransaction = {
   date: string;
   currency: string | null;
   classification: string;
-  account: {
-    name: string;
-  }
+  account: IBasicAccount;
+};
+
+type IBasicAccount = {
+  id: string;
+  name: string;
 };
 
 const transactionsQuery = gql(`
@@ -99,12 +102,14 @@ query getBasicTransactions($accountId: String, $limit: Int, $offset: Int) {
   	...on PlaidTransaction {
       ...CorePlaidTransactionParts
       account {
+        id
         name
       }
     }
     ... on PlaidHoldingTransaction {
       ...CoreHoldingTransactionParts
       account {
+        id
         name
       }
     }
@@ -133,14 +138,32 @@ fragment CoreHoldingTransactionParts on PlaidHoldingTransaction {
   classification
 }`);
 
+const Classifications = [
+  "Duplicate",
+  "Income",
+  "Expense",
+  "Recurring",
+  "Transfer",
+  "Investment",
+];
+
 // ----------------------------------------------------------------------
 
 export default function PageOne() {
   const theme = useTheme();
-  const { loading, data, refetch } = useQuery(transactionsQuery);
+  const { loading, data, refetch } = useQuery(transactionsQuery, { variables: { offset: 0, limit: 500 } });
   useEffect(() => {
     const maybedata = data?.getTransactions as unknown[] | null;
-    setTableData((maybedata ?? []) as IBasicTransaction[]);
+    const transactionData = (maybedata ?? []) as IBasicTransaction[];
+    const accounts = transactionData.reduce(
+      (accounts: { [key: string]: IBasicAccount }, transaction) => {
+        if (!accounts[transaction.accountId]) {
+          accounts[transaction.accountId] = transaction.account;
+        }
+        return accounts;
+      }, {});
+    setTableData(transactionData);
+    setAccounts(Object.values(accounts));
   }, [data]);
 
   const { themeStretch } = useSettingsContext();
@@ -164,30 +187,29 @@ export default function PageOne() {
     onChangeDense,
     onChangePage,
     onChangeRowsPerPage,
-  } = useTable({ defaultOrderBy: 'createDate' });
+  } = useTable({ defaultRowsPerPage: 50, defaultOrderBy: 'createDate' });
 
   const [tableData, setTableData] = useState<IBasicTransaction[]>([]);
-
-  const [filterName, setFilterName] = useState('');
+  const [accounts, setAccounts] = useState<IBasicAccount[]>([]);
 
   const [openConfirm, setOpenConfirm] = useState(false);
 
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterDescription, setFilterDescription] = useState('');
+  const [filterAccount, setFilterAccount] = useState('all');
 
-  const [filterService, setFilterService] = useState('all');
+  const [filterClassification, setFilterClassification] = useState('all');
 
   const [filterEndDate, setFilterEndDate] = useState<Date | null>(null);
-
   const [filterStartDate, setFilterStartDate] = useState<Date | null>(null);
 
   const dataFiltered = applyFilter({
     inputData: tableData,
     comparator: getComparator(order, orderBy),
-    filterName,
-    filterService,
-    filterStatus,
+    filterDescription,
+    filterClassification,
     filterStartDate,
     filterEndDate,
+    filterAccount,
   });
 
   const dataInPage = dataFiltered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
@@ -195,15 +217,14 @@ export default function PageOne() {
   const denseHeight = dense ? 56 : 76;
 
   const isFiltered =
-    filterStatus !== 'all' ||
-    filterName !== '' ||
-    filterService !== 'all' ||
+    filterClassification !== 'all' ||
+    filterDescription !== '' ||
+    filterAccount !== 'all' ||
     (!!filterStartDate && !!filterEndDate);
 
   const isNotFound =
-    (!dataFiltered.length && !!filterName) ||
-    (!dataFiltered.length && !!filterStatus) ||
-    (!dataFiltered.length && !!filterService) ||
+    (!dataFiltered.length && !!filterDescription) ||
+    (!dataFiltered.length && !!filterClassification) ||
     (!dataFiltered.length && !!filterEndDate) ||
     (!dataFiltered.length && !!filterStartDate);
 
@@ -219,14 +240,6 @@ export default function PageOne() {
   const getPercentByStatus = (status: string) =>
     (getLengthByStatus(status) / tableData.length) * 100;
 
-  const TABS = [
-    { value: 'all', label: 'All', color: 'info', count: tableData.length },
-    { value: 'paid', label: 'Paid', color: 'success', count: getLengthByStatus('paid') },
-    { value: 'unpaid', label: 'Unpaid', color: 'warning', count: getLengthByStatus('unpaid') },
-    { value: 'overdue', label: 'Overdue', color: 'error', count: getLengthByStatus('overdue') },
-    { value: 'draft', label: 'Draft', color: 'default', count: getLengthByStatus('draft') },
-  ] as const;
-
   const handleOpenConfirm = () => {
     setOpenConfirm(true);
   };
@@ -235,19 +248,19 @@ export default function PageOne() {
     setOpenConfirm(false);
   };
 
-  const handleFilterStatus = (event: React.SyntheticEvent<Element, Event>, newValue: string) => {
+  const handleFilterClassification = (event: React.ChangeEvent<HTMLInputElement>) => {
     setPage(0);
-    setFilterStatus(newValue);
+    setFilterClassification(event.target.value);
   };
 
-  const handleFilterName = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFilterDescription = (event: React.ChangeEvent<HTMLInputElement>) => {
     setPage(0);
-    setFilterName(event.target.value);
+    setFilterDescription(event.target.value);
   };
 
-  const handleFilterService = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFilterAccount = (event: React.ChangeEvent<HTMLInputElement>) => {
     setPage(0);
-    setFilterService(event.target.value);
+    setFilterAccount(event.target.value);
   };
 
   const handleDeleteRow = (id: string) => {
@@ -280,17 +293,17 @@ export default function PageOne() {
   };
 
   const handleEditRow = (id: string) => {
-    //navigate(PATH_DASHBOARD.invoice.edit(id));
+    //navigate(PATH_DASHBOARD.transaction.edit(id));
   };
 
   const handleViewRow = (id: string) => {
-    //navigate(PATH_DASHBOARD.invoice.view(id));
+    //navigate(PATH_DASHBOARD.transaction.view(id));
   };
 
   const handleResetFilter = () => {
-    setFilterName('');
-    setFilterStatus('all');
-    setFilterService('all');
+    setFilterDescription('');
+    setFilterClassification('all');
+    setFilterAccount('all');
     setFilterEndDate(null);
     setFilterStartDate(null);
   };
@@ -311,7 +324,7 @@ export default function PageOne() {
             },
             {
               name: 'Transactions',
-              href: '', //PATH_DASHBOARD.invoice.root,
+              href: '', //PATH_DASHBOARD.transaction.root,
             },
             {
               name: 'List',
@@ -319,7 +332,7 @@ export default function PageOne() {
           ]}
           action={
             <Button
-              to={PATH_DASHBOARD.transactions /*.invoice.new*/}
+              to={PATH_DASHBOARD.transactions /*.transaction.new*/}
               component={RouterLink}
               variant="contained"
               startIcon={<Iconify icon="eva:plus-fill" />}
@@ -330,40 +343,19 @@ export default function PageOne() {
         />
 
         <Card>
-          <Tabs
-            value={filterStatus}
-            onChange={handleFilterStatus}
-            sx={{
-              px: 2,
-              bgcolor: 'background.neutral',
-            }}
-          >
-            {TABS.map((tab) => (
-              <Tab
-                key={tab.value}
-                value={tab.value}
-                label={tab.label}
-                icon={
-                  <Label color={tab.color} sx={{ mr: 1 }}>
-                    {tab.count}
-                  </Label>
-                }
-              />
-            ))}
-          </Tabs>
-
-          <Divider />
 
           <TransactionTableToolbar
+            accounts={accounts}
+            onFilterAccount={handleFilterAccount}
+            filterAccount={filterAccount}
             isFiltered={isFiltered}
-            filterName={filterName}
-            filterService={filterService}
+            filterDescription={filterDescription}
             filterEndDate={filterEndDate}
-            onFilterName={handleFilterName}
-            optionsService={SERVICE_OPTIONS}
+            filterClassification={filterClassification}
+            onFilterDescription={handleFilterDescription}
+            onFilterClassification={handleFilterClassification}
             onResetFilter={handleResetFilter}
             filterStartDate={filterStartDate}
-            onFilterService={handleFilterService}
             onFilterStartDate={(newValue: SetStateAction<Date | null>) => {
               setFilterStartDate(newValue);
             }}
@@ -499,19 +491,19 @@ export default function PageOne() {
 function applyFilter({
   inputData,
   comparator,
-  filterName,
-  filterStatus,
-  filterService,
+  filterDescription,
+  filterClassification,
   filterStartDate,
   filterEndDate,
+  filterAccount,
 }: {
   inputData: IBasicTransaction[];
   comparator: (a: any, b: any) => number;
-  filterName: string;
-  filterStatus: string;
-  filterService: string;
+  filterDescription: string;
+  filterClassification: string;
   filterStartDate: Date | null;
   filterEndDate: Date | null;
+  filterAccount: string;
 }) {
   const stabilizedThis = inputData.map((el, index) => [el, index] as const);
 
@@ -523,31 +515,30 @@ function applyFilter({
 
   inputData = stabilizedThis.map((el) => el[0]);
 
-
-  if (filterName) {
+  if (filterDescription) {
     inputData = inputData.filter(
       (transaction) =>
-        transaction.description.toLowerCase().indexOf(filterName.toLowerCase()) !== -1
-    );
-  }
-  /*
-  if (filterStatus !== 'all') {
-    inputData = inputData.filter((invoice) => invoice.status === filterStatus);
-  }
-
-  if (filterService !== 'all') {
-    inputData = inputData.filter((invoice) =>
-      invoice.items.some((c: { service: string }) => c.service === filterService)
+        transaction.description.toLowerCase().indexOf(filterDescription.toLowerCase()) !== -1
     );
   }
 
   if (filterStartDate && filterEndDate) {
     inputData = inputData.filter(
-      (invoice) =>
-        fTimestamp(invoice.createDate) >= fTimestamp(filterStartDate) &&
-        fTimestamp(invoice.createDate) <= fTimestamp(filterEndDate)
+      (transaction) =>
+        fTimestamp(transaction.date) >= fTimestamp(filterStartDate) &&
+        fTimestamp(transaction.date) <= fTimestamp(filterEndDate)
     );
-  } */
+  }
+
+  if (filterAccount !== 'all') {
+    inputData = inputData.filter((transaction) =>
+      transaction.account.name === filterAccount
+    );
+  }
+
+  if (filterClassification !== 'all') {
+    inputData = inputData.filter((transaction) => transaction.classification === filterClassification);
+  }
 
   return inputData;
 }
@@ -555,27 +546,31 @@ function applyFilter({
 const INPUT_WIDTH = 160;
 
 function TransactionTableToolbar({
-  filterName,
+  accounts,
+  filterDescription,
   isFiltered,
-  onFilterName,
+  onFilterDescription,
   filterEndDate,
-  filterService,
+  filterAccount,
   onResetFilter,
-  optionsService,
   filterStartDate,
-  onFilterService,
+  onFilterAccount,
   onFilterEndDate,
   onFilterStartDate,
+  onFilterClassification,
+  filterClassification,
 }: {
-  filterName: string;
+  accounts: IBasicAccount[];
+  filterDescription: string;
+  filterClassification: string;
   isFiltered: boolean;
-  filterService: string;
-  optionsService: string[];
+  filterAccount: string;
   filterEndDate: Date | null;
   onResetFilter: VoidFunction;
   filterStartDate: Date | null;
-  onFilterName: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onFilterService: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onFilterClassification: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onFilterDescription: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onFilterAccount: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onFilterStartDate: (value: Date | null) => void;
   onFilterEndDate: (value: Date | null) => void;
 }) {
@@ -589,12 +584,13 @@ function TransactionTableToolbar({
       }}
       sx={{ px: 2.5, py: 3 }}
     >
+
       <TextField
         fullWidth
         select
-        label="Service type"
-        value={filterService}
-        onChange={onFilterService}
+        label="Account"
+        value={filterAccount}
+        onChange={onFilterAccount}
         SelectProps={{
           MenuProps: {
             PaperProps: {
@@ -607,7 +603,74 @@ function TransactionTableToolbar({
           textTransform: 'capitalize',
         }}
       >
-        {optionsService.map((option) => (
+        <MenuItem
+          key={"all"}
+          value={"all"}
+          sx={{
+            mx: 1,
+            my: 0.5,
+            borderRadius: 0.75,
+            typography: 'body2',
+            textTransform: 'capitalize',
+            '&:first-of-type': { mt: 0 },
+            '&:last-of-type': { mb: 0 },
+          }}
+        >
+          All
+        </MenuItem>
+        {accounts.map((account) => (
+          <MenuItem
+            key={account.id}
+            value={account.name}
+            sx={{
+              mx: 1,
+              my: 0.5,
+              borderRadius: 0.75,
+              typography: 'body2',
+              textTransform: 'capitalize',
+              '&:first-of-type': { mt: 0 },
+              '&:last-of-type': { mb: 0 },
+            }}
+          >
+            {account.name}
+          </MenuItem>
+        ))}
+      </TextField>
+
+      <TextField
+        fullWidth
+        select
+        label="Classification type"
+        value={filterClassification}
+        onChange={onFilterClassification}
+        SelectProps={{
+          MenuProps: {
+            PaperProps: {
+              sx: { maxHeight: 220 },
+            },
+          },
+        }}
+        sx={{
+          maxWidth: { md: INPUT_WIDTH },
+          textTransform: 'capitalize',
+        }}
+      >
+        <MenuItem
+          key={"all"}
+          value={"all"}
+          sx={{
+            mx: 1,
+            my: 0.5,
+            borderRadius: 0.75,
+            typography: 'body2',
+            textTransform: 'capitalize',
+            '&:first-of-type': { mt: 0 },
+            '&:last-of-type': { mb: 0 },
+          }}
+        >
+          All
+        </MenuItem>
+        {Classifications.map((option) => (
           <MenuItem
             key={option}
             value={option}
@@ -660,9 +723,9 @@ function TransactionTableToolbar({
 
       <TextField
         fullWidth
-        value={filterName}
-        onChange={onFilterName}
-        placeholder="Search client or invoice number..."
+        value={filterDescription}
+        onChange={onFilterDescription}
+        placeholder="Search client or transaction number..."
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">

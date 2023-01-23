@@ -65,9 +65,7 @@ export class CoreTransaction extends BaseEntity {
 
   @Column("text", { nullable: true })
   @Field(() => TransactionClassification, { nullable: true })
-  async classification(): Promise<TransactionClassification> {
-    return TransactionClassification.Transfer;
-  }
+  classification: TransactionClassification;
 
   // Additional Fields
 
