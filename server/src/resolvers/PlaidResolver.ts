@@ -100,6 +100,7 @@ export class PlaidResolver {
         language: "en",
         webhook: "https://sample-web-hook.com",
         redirect_uri: "https://localhost:3000/oauth",
+        //access_token: "<item access token>",
       })
       .then((response) => {
         return {
@@ -134,6 +135,7 @@ export class PlaidResolver {
       }
     } catch (error) {
       console.error(error);
+      return;
     }
 
     if (item != null) {
