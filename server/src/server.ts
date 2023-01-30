@@ -7,7 +7,7 @@ import DBInit from "./utils/DBInit";
 import jwt from "jsonwebtoken";
 import cors from "cors";
 import bodyParser from "body-parser";
-import { PlaidResolver } from "./resolvers";
+import { PlaidResolver, TransactionResolver } from "./resolvers";
 
 import crypto from "crypto";
 
@@ -62,6 +62,7 @@ export default async function StartServer() {
           TransactionResolver,
           TagResolver,
           FilteredTransactionResolver,*/
+          TransactionResolver,
           PlaidResolver,
         ],
         validate: true,

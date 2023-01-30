@@ -1,20 +1,17 @@
-import { Account, Transaction, Tag, Source } from "@entities";
-import { getManager, In } from "typeorm";
+import { Tag } from "@entities";
 import {
   Arg,
   Field,
   Int,
-  Mutation,
   InputType,
   Query,
   Resolver,
   registerEnumType,
   ObjectType,
 } from "type-graphql";
-import {
-  BaseTransaction,
-  DetectDuplicateTransactions,
-} from "../utils/AccountUtils";
+
+import { CoreTransaction } from "../../src/entity/plaid/CoreTransaction";
+import { PlaidAccount } from "../../src/entity/plaid";
 
 enum GroupByOption {
   originalDescription = "originalDescription",
@@ -26,7 +23,7 @@ registerEnumType(GroupByOption, {
   name: "GroupByOption",
   description: "Basic group-by options for transactions", // this one is optional
 });
-
+/*
 @InputType()
 class TransactionUpdateInput {
   @Field(() => Date)
@@ -73,7 +70,7 @@ class TransactionCreateInput extends TransactionBulkCreateInput {
 
   @Field(() => Int)
   accountId: number;
-}
+} */
 
 @ObjectType()
 export class TransactionGroup {
@@ -96,8 +93,57 @@ export class TransactionGroup {
   transactionIds: Array<number>;
 }
 
+@InputType()
+class QueryAggregationOptions {
+  @Field(() => Boolean, { nullable: true })
+  account: boolean;
+
+  @Field(() => Boolean, { nullable: true })
+  description: boolean;
+
+  @Field(() => Boolean, { nullable: true })
+  month: boolean;
+
+  @Field(() => Boolean, { nullable: true })
+  classification: boolean;
+
+  @Field(() => Boolean, { nullable: true })
+  tags: boolean;
+}
+
+@ObjectType()
+class AggregatedTransaction {
+  @Field(() => PlaidAccount, { nullable: true })
+  account?: PlaidAccount | null;
+
+  @Field(() => String, { nullable: true })
+  description?: string | null;
+
+  @Field(() => String, { nullable: true })
+  month?: string | null;
+
+  @Field(() => String, { nullable: true })
+  classification?: string | null;
+
+  @Field(() => [Tag], { nullable: true })
+  tags?: Tag[] | null;
+
+  @Field(() => Int)
+  totalDepositCents: number;
+
+  @Field(() => Int)
+  totalExpenseCents: number;
+
+  @Field(() => Int)
+  transactionCount: number;
+
+  @Field(() => [String])
+  transactionIds: String[];
+}
+
 @Resolver()
 export class TransactionResolver {
+  /*
   @Mutation(() => Boolean)
   async createTransactions(
     @Arg("transactions", () => [TransactionBulkCreateInput])
@@ -223,7 +269,7 @@ export class TransactionResolver {
           .relation(Transaction, "tags")
           .of(transaction)
           .add(tagToAdd);
-      });*/
+      });* /
 
       return null; //Promise.all(updateActions);
     });
@@ -278,8 +324,62 @@ export class TransactionResolver {
         transactionIds: transactionGroup._transactionIds.split(","),
       };
     });
+  } */
+
+  @Query(() => [AggregatedTransaction])
+  async getAggregatedTransactions(@Arg("options", () => QueryAggregationOptions) options: QueryAggregationOptions) {
+    if (!options.account && !options.month && !options.description && !options.classification && !options.tags) {
+      throw new Error("Please provide valid aggregation options");
+    }
+
+    const getMonthNormalizeDate = (d: Date | string): Date => {
+      let date = new Date(d);
+      date.setDate(1);
+      return date;
+    }
+
+    const getGroupKey = async (t: CoreTransaction): Promise<string> => {
+      let key = "";
+      if (options.account) key += '::' + t.accountId;
+      if (options.classification) key += '::' + t.classification.toString();
+      if (options.description) key += '::' + t.description;
+      if (options.month) key += '::' + getMonthNormalizeDate(t.date).toLocaleDateString();
+      if (options.tags) key += '::' + (await t.tags).map(tag => tag.tag).sort().join(':');
+
+      return key;
+    };
+
+    const allTransactions = await CoreTransaction.find();
+    let groups: { [key: string]: AggregatedTransaction } = {};
+
+    await Promise.all(allTransactions.map(async (t) => {
+      let key = await getGroupKey(t);
+      await t.applyAmountUpdates();
+
+      if (!groups[key]) {
+        groups[key] = {
+          totalDepositCents: 0,
+          totalExpenseCents: 0,
+          transactionCount: 0,
+          transactionIds: [],
+        }
+
+        if (options.account) groups[key].account = await t.account();
+        if (options.classification) groups[key].classification = t.classification.toString();
+        if (options.description) groups[key].description = t.description;
+        if (options.month) groups[key].month = getMonthNormalizeDate(t.date).toLocaleDateString();
+        if (options.tags) groups[key].tags = await t.tags;
+      }
+
+      groups[key].transactionCount++;
+      groups[key].transactionIds.push(t.id);
+      t.amountCents < 0 ? groups[key].totalDepositCents += Math.abs(t.amountCents) : groups[key].totalExpenseCents += Math.abs(t.amountCents);
+    }));
+
+    return Object.values(groups).sort((a, b) => b.transactionCount - a.transactionCount);
   }
 
+  /*
   @Query(() => [Transaction])
   async transactionsByTags(@Arg("tags", () => [String]) tagNames: string[]) {
     const tags = await Tag.find({ tag: In(tagNames) });
@@ -319,5 +419,5 @@ export class TransactionResolver {
         })
       )
     ).flat();
-  }
+  } */
 }
