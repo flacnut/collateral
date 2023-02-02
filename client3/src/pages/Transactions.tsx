@@ -2,6 +2,7 @@ import { Helmet } from 'react-helmet-async';
 import { SetStateAction, useEffect, useState } from 'react';
 import sumBy from 'lodash/sumBy';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import Chart from 'react-apexcharts';
 // @mui
 import { useTheme } from '@mui/material/styles';
 import {
@@ -26,6 +27,9 @@ import {
   Typography,
   Link,
   Checkbox,
+  CardProps,
+  alpha,
+  Box,
 } from '@mui/material';
 // routes
 import { PATH_DASHBOARD } from '../routes/paths';
@@ -54,8 +58,11 @@ import { gql } from 'src/__generated__/gql';
 import { DatePicker } from '@mui/x-date-pickers';
 import MenuPopover from 'src/components/menu-popover';
 import { CustomAvatar } from 'src/components/custom-avatar';
-import { fCurrency } from 'src/utils/formatNumber';
+import { fCurrency, fPercent } from 'src/utils/formatNumber';
 import { useQuery } from '@apollo/client';
+import { ApexOptions } from 'apexcharts';
+import { merge } from 'lodash';
+import { ColorSchema } from 'src/theme/palette';
 
 // ----------------------------------------------------------------------
 
@@ -138,20 +145,15 @@ fragment CoreHoldingTransactionParts on PlaidHoldingTransaction {
   classification
 }`);
 
-const Classifications = [
-  "Duplicate",
-  "Income",
-  "Expense",
-  "Recurring",
-  "Transfer",
-  "Investment",
-];
+const Classifications = ['Duplicate', 'Income', 'Expense', 'Recurring', 'Transfer', 'Investment'];
 
 // ----------------------------------------------------------------------
 
 export default function PageOne() {
   const theme = useTheme();
-  const { loading, data, refetch } = useQuery(transactionsQuery, { variables: { offset: 0, limit: 500 } });
+  const { loading, data, refetch } = useQuery(transactionsQuery, {
+    variables: { offset: 0, limit: 500 },
+  });
   useEffect(() => {
     const maybedata = data?.getTransactions as unknown[] | null;
     const transactionData = (maybedata ?? []) as IBasicTransaction[];
@@ -161,7 +163,9 @@ export default function PageOne() {
           accounts[transaction.accountId] = transaction.account;
         }
         return accounts;
-      }, {});
+      },
+      {}
+    );
     setTableData(transactionData);
     setAccounts(Object.values(accounts));
   }, [data]);
@@ -340,8 +344,33 @@ export default function PageOne() {
           }
         />
 
-        <Card>
+        <BankingWidgetSummary
+          title="Income"
+          icon="eva:diagonal-arrow-left-down-fill"
+          percent={2.6}
+          total={18765}
+          chart={{
+            series: [
+              12474.02, 0.59, 0.06, 8893.79, 61588.28, 110345.13, 47687.76, 60570.56, 48061.41,
+              14744.27, 288834.6, 45590.2, 7644.64, 17384.07, 133094.92, 59151.68, 40425.18,
+              50818.72, 62334.44, 33409.89, 87017.17, 379644.91, 121946.08, 55377.55, 84825.88,
+              137792.25, 35487.23, 13442.93,
+            ],
+          }}
+        />
 
+        <BankingWidgetSummary
+          title="Expenses"
+          color="warning"
+          icon="eva:diagonal-arrow-right-up-fill"
+          percent={-0.5}
+          total={8938}
+          chart={{
+            series: [111, 136, 76, 108, 74, 54, 57, 84],
+          }}
+        />
+
+        <Card>
           <TransactionTableToolbar
             accounts={accounts}
             onFilterAccount={handleFilterAccount}
@@ -529,13 +558,13 @@ function applyFilter({
   }
 
   if (filterAccount !== 'all') {
-    inputData = inputData.filter((transaction) =>
-      transaction.account.name === filterAccount
-    );
+    inputData = inputData.filter((transaction) => transaction.account.name === filterAccount);
   }
 
   if (filterClassification !== 'all') {
-    inputData = inputData.filter((transaction) => transaction.classification === filterClassification);
+    inputData = inputData.filter(
+      (transaction) => transaction.classification === filterClassification
+    );
   }
 
   return inputData;
@@ -582,7 +611,6 @@ function TransactionTableToolbar({
       }}
       sx={{ px: 2.5, py: 3 }}
     >
-
       <TextField
         fullWidth
         select
@@ -602,8 +630,8 @@ function TransactionTableToolbar({
         }}
       >
         <MenuItem
-          key={"all"}
-          value={"all"}
+          key={'all'}
+          value={'all'}
           sx={{
             mx: 1,
             my: 0.5,
@@ -654,8 +682,8 @@ function TransactionTableToolbar({
         }}
       >
         <MenuItem
-          key={"all"}
-          value={"all"}
+          key={'all'}
+          value={'all'}
           sx={{
             mx: 1,
             my: 0.5,
@@ -708,16 +736,17 @@ function TransactionTableToolbar({
         onChange={onFilterEndDate}
         renderInput={(params: JSX.IntrinsicAttributes & TextFieldProps) => {
           console.dir(params);
-          return <TextField
-            {...params}
-            fullWidth
-            sx={{
-              maxWidth: { md: INPUT_WIDTH },
-            }}
-          />;
+          return (
+            <TextField
+              {...params}
+              fullWidth
+              sx={{
+                maxWidth: { md: INPUT_WIDTH },
+              }}
+            />
+          );
         }}
       />
-
 
       <TextField
         fullWidth
@@ -813,7 +842,12 @@ function TransactionTableRow({
         </TableCell>
 
         <TableCell align="right">
-          <Typography fontFamily="Lucida Sans Typewriter" color={amount > 0 ? "#36B37E" : "#FF5630"} fontWeight="bold">{fCurrency(amount)}
+          <Typography
+            fontFamily="Lucida Sans Typewriter"
+            color={amount > 0 ? '#36B37E' : '#FF5630'}
+            fontWeight="bold"
+          >
+            {fCurrency(amount)}
           </Typography>
         </TableCell>
 
@@ -896,4 +930,330 @@ function TransactionTableRow({
       />
     </>
   );
+}
+
+// ----------------------------------------------------------------------
+
+interface Props extends CardProps {
+  title: string;
+  total: number;
+  percent: number;
+  color?: ColorSchema;
+  icon: string;
+  chart: {
+    series: number[];
+    options?: ApexOptions;
+  };
+}
+
+function BankingWidgetSummary({
+  title,
+  total,
+  icon,
+  percent,
+  color = 'primary',
+  chart,
+  sx,
+  ...other
+}: Props) {
+  const theme = useTheme();
+
+  const { series, options } = chart;
+
+  const chartOptions = useChart({
+    colors: [theme.palette[color].main],
+    chart: {
+      sparkline: {
+        enabled: true,
+      },
+    },
+    xaxis: {
+      labels: { show: false },
+    },
+    yaxis: {
+      labels: { show: false },
+    },
+    stroke: {
+      width: 4,
+    },
+    legend: {
+      show: false,
+    },
+    grid: {
+      show: false,
+    },
+    tooltip: {
+      marker: { show: false },
+      y: {
+        formatter: (value: number) => fCurrency(value),
+        title: {
+          formatter: () => '',
+        },
+      },
+    },
+    fill: {
+      gradient: {
+        opacityFrom: 0.56,
+        opacityTo: 0.56,
+      },
+    },
+    ...options,
+  });
+
+  return (
+    <Card
+      sx={{
+        width: 1,
+        boxShadow: 0,
+        color: (theme) => theme.palette[color].darker,
+        bgcolor: (theme) => theme.palette[color].lighter,
+        ...sx,
+      }}
+      {...other}
+    >
+      <Iconify
+        icon={icon}
+        sx={{
+          p: 1.5,
+          top: 24,
+          right: 24,
+          width: 48,
+          height: 48,
+          borderRadius: '50%',
+          position: 'absolute',
+          color: (theme) => theme.palette[color].lighter,
+          bgcolor: (theme) => theme.palette[color].dark,
+        }}
+      />
+
+      <Stack spacing={1} sx={{ p: 3 }}>
+        <Typography variant="subtitle2">{title}</Typography>
+
+        <Typography variant="h3">{fCurrency(total)}</Typography>
+
+        <TrendingInfo percent={percent} />
+      </Stack>
+
+      <Chart type="area" series={[{ data: series }]} options={chartOptions} height={120} />
+    </Card>
+  );
+}
+
+// ----------------------------------------------------------------------
+
+type TrendingInfoProps = {
+  percent: number;
+};
+
+function TrendingInfo({ percent }: TrendingInfoProps) {
+  return (
+    <Stack direction="row" alignItems="center" flexWrap="wrap" spacing={0.5}>
+      <Iconify icon={percent < 0 ? 'eva:trending-down-fill' : 'eva:trending-up-fill'} />
+
+      <Typography variant="subtitle2" component="span">
+        {percent > 0 && '+'}
+
+        {fPercent(percent)}
+
+        <Box component="span" sx={{ opacity: 0.72, typography: 'body2' }}>
+          {' than last month'}
+        </Box>
+      </Typography>
+    </Stack>
+  );
+}
+
+function useChart(options?: ApexOptions) {
+  const theme = useTheme();
+
+  const LABEL_TOTAL = {
+    show: true,
+    label: 'Total',
+    color: theme.palette.text.secondary,
+    fontSize: theme.typography.subtitle2.fontSize as string,
+    fontWeight: theme.typography.subtitle2.fontWeight,
+    lineHeight: theme.typography.subtitle2.lineHeight,
+  };
+
+  const LABEL_VALUE = {
+    offsetY: 8,
+    color: theme.palette.text.primary,
+    fontSize: theme.typography.h3.fontSize as string,
+    fontWeight: theme.typography.h3.fontWeight,
+    lineHeight: theme.typography.h3.lineHeight,
+  };
+
+  const baseOptions = {
+    // Colors
+    colors: [
+      theme.palette.primary.main,
+      theme.palette.warning.main,
+      theme.palette.info.main,
+      theme.palette.error.main,
+      theme.palette.success.main,
+      theme.palette.warning.dark,
+      theme.palette.success.darker,
+      theme.palette.info.dark,
+      theme.palette.info.darker,
+    ],
+
+    // Chart
+    chart: {
+      toolbar: { show: false },
+      zoom: { enabled: false },
+      // animations: { enabled: false },
+      foreColor: theme.palette.text.disabled,
+      fontFamily: theme.typography.fontFamily,
+    },
+
+    // States
+    states: {
+      hover: {
+        filter: {
+          type: 'lighten',
+          value: 0.04,
+        },
+      },
+      active: {
+        filter: {
+          type: 'darken',
+          value: 0.88,
+        },
+      },
+    },
+
+    // Fill
+    fill: {
+      opacity: 1,
+      gradient: {
+        type: 'vertical',
+        shadeIntensity: 0,
+        opacityFrom: 0.4,
+        opacityTo: 0,
+        stops: [0, 100],
+      },
+    },
+
+    // Datalabels
+    dataLabels: { enabled: false },
+
+    // Stroke
+    stroke: {
+      width: 3,
+      curve: 'smooth',
+      lineCap: 'round',
+    },
+
+    // Grid
+    grid: {
+      strokeDashArray: 3,
+      borderColor: theme.palette.divider,
+    },
+
+    // Xaxis
+    xaxis: {
+      axisBorder: { show: false },
+      axisTicks: { show: false },
+    },
+
+    // Markers
+    markers: {
+      size: 0,
+      strokeColors: theme.palette.background.paper,
+    },
+
+    // Tooltip
+    tooltip: {
+      x: {
+        show: false,
+      },
+    },
+
+    // Legend
+    legend: {
+      show: true,
+      fontSize: String(13),
+      position: 'top',
+      horizontalAlign: 'right',
+      markers: {
+        radius: 12,
+      },
+      fontWeight: 500,
+      itemMargin: { horizontal: 12 },
+      labels: {
+        colors: theme.palette.text.primary,
+      },
+    },
+
+    // plotOptions
+    plotOptions: {
+      // Bar
+      bar: {
+        borderRadius: 4,
+        columnWidth: '28%',
+      },
+
+      // Pie + Donut
+      pie: {
+        donut: {
+          labels: {
+            show: true,
+            value: LABEL_VALUE,
+            total: LABEL_TOTAL,
+          },
+        },
+      },
+
+      // Radialbar
+      radialBar: {
+        track: {
+          strokeWidth: '100%',
+          background: alpha(theme.palette.grey[500], 0.16),
+        },
+        dataLabels: {
+          value: LABEL_VALUE,
+          total: LABEL_TOTAL,
+        },
+      },
+
+      // Radar
+      radar: {
+        polygons: {
+          fill: { colors: ['transparent'] },
+          strokeColors: theme.palette.divider,
+          connectorColors: theme.palette.divider,
+        },
+      },
+
+      // polarArea
+      polarArea: {
+        rings: {
+          strokeColor: theme.palette.divider,
+        },
+        spokes: {
+          connectorColors: theme.palette.divider,
+        },
+      },
+    },
+
+    // Responsive
+    responsive: [
+      {
+        // sm
+        breakpoint: theme.breakpoints.values.sm,
+        options: {
+          plotOptions: { bar: { columnWidth: '40%' } },
+        },
+      },
+      {
+        // md
+        breakpoint: theme.breakpoints.values.md,
+        options: {
+          plotOptions: { bar: { columnWidth: '32%' } },
+        },
+      },
+    ],
+  };
+
+  return merge(baseOptions, options);
 }
