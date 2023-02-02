@@ -327,8 +327,17 @@ export class TransactionResolver {
   } */
 
   @Query(() => [AggregatedTransaction])
-  async getAggregatedTransactions(@Arg("options", () => QueryAggregationOptions) options: QueryAggregationOptions) {
-    if (!options.account && !options.month && !options.description && !options.classification && !options.tags) {
+  async getAggregatedTransactions(
+    @Arg("options", () => QueryAggregationOptions)
+    options: QueryAggregationOptions
+  ) {
+    if (
+      !options.account &&
+      !options.month &&
+      !options.description &&
+      !options.classification &&
+      !options.tags
+    ) {
       throw new Error("Please provide valid aggregation options");
     }
 
@@ -336,15 +345,22 @@ export class TransactionResolver {
       let date = new Date(d);
       date.setDate(1);
       return date;
-    }
+    };
 
     const getGroupKey = async (t: CoreTransaction): Promise<string> => {
       let key = "";
-      if (options.account) key += '::' + t.accountId;
-      if (options.classification) key += '::' + t.classification.toString();
-      if (options.description) key += '::' + t.description;
-      if (options.month) key += '::' + getMonthNormalizeDate(t.date).toLocaleDateString();
-      if (options.tags) key += '::' + (await t.tags).map(tag => tag.tag).sort().join(':');
+      if (options.account) key += "::" + t.accountId;
+      if (options.classification) key += "::" + t.classification.toString();
+      if (options.description) key += "::" + t.description;
+      if (options.month)
+        key += "::" + getMonthNormalizeDate(t.date).toLocaleDateString();
+      if (options.tags)
+        key +=
+          "::" +
+          (await t.tags)
+            .map((tag) => tag.tag)
+            .sort()
+            .join(":");
 
       return key;
     };
@@ -352,31 +368,41 @@ export class TransactionResolver {
     const allTransactions = await CoreTransaction.find();
     let groups: { [key: string]: AggregatedTransaction } = {};
 
-    await Promise.all(allTransactions.map(async (t) => {
-      let key = await getGroupKey(t);
-      await t.applyAmountUpdates();
+    await Promise.all(
+      allTransactions.map(async (t) => {
+        let key = await getGroupKey(t);
+        await t.applyAmountUpdates();
 
-      if (!groups[key]) {
-        groups[key] = {
-          totalDepositCents: 0,
-          totalExpenseCents: 0,
-          transactionCount: 0,
-          transactionIds: [],
+        if (!groups[key]) {
+          groups[key] = {
+            totalDepositCents: 0,
+            totalExpenseCents: 0,
+            transactionCount: 0,
+            transactionIds: [],
+          };
+
+          if (options.account) groups[key].account = await t.account();
+          if (options.classification)
+            groups[key].classification = t.classification.toString();
+          if (options.description) groups[key].description = t.description;
+          if (options.month)
+            groups[key].month = getMonthNormalizeDate(
+              t.date
+            ).toLocaleDateString();
+          if (options.tags) groups[key].tags = await t.tags;
         }
 
-        if (options.account) groups[key].account = await t.account();
-        if (options.classification) groups[key].classification = t.classification.toString();
-        if (options.description) groups[key].description = t.description;
-        if (options.month) groups[key].month = getMonthNormalizeDate(t.date).toLocaleDateString();
-        if (options.tags) groups[key].tags = await t.tags;
-      }
+        groups[key].transactionCount++;
+        groups[key].transactionIds.push(t.id);
+        t.amountCents < 0
+          ? (groups[key].totalDepositCents += Math.abs(t.amountCents))
+          : (groups[key].totalExpenseCents += Math.abs(t.amountCents));
+      })
+    );
 
-      groups[key].transactionCount++;
-      groups[key].transactionIds.push(t.id);
-      t.amountCents < 0 ? groups[key].totalDepositCents += Math.abs(t.amountCents) : groups[key].totalExpenseCents += Math.abs(t.amountCents);
-    }));
-
-    return Object.values(groups).sort((a, b) => b.transactionCount - a.transactionCount);
+    return Object.values(groups).sort(
+      (a, b) => b.transactionCount - a.transactionCount
+    );
   }
 
   /*

@@ -1,6 +1,15 @@
 import moment from "moment";
-import { Configuration, PlaidApi, PlaidEnvironments, TransactionsSyncResponse } from "plaid";
-import { PlaidInstitution, PlaidItem, PlaidTransaction } from "../../src/entity/plaid";
+import {
+  Configuration,
+  PlaidApi,
+  PlaidEnvironments,
+  TransactionsSyncResponse,
+} from "plaid";
+import {
+  PlaidInstitution,
+  PlaidItem,
+  PlaidTransaction,
+} from "../../src/entity/plaid";
 import { createOrUpdateTransaction } from "./PlaidEntityHelper";
 
 import { client_id, dev_secret } from "../../plaidConfig.json";
@@ -35,16 +44,18 @@ export default {
         // balances
         await Promise.all(
           accountResponse.data?.accounts?.map((acc) =>
-            createOrUpdateBalance(acc.account_id, acc.balances),
-          ),
+            createOrUpdateBalance(acc.account_id, acc.balances)
+          )
         );
 
         // transactions
         await this.syncTransactions(item);
 
         // holding transactions & securities
-        let institution = await PlaidInstitution.findOne({ id: item.institutionId });
-        if (institution?.products.split(',').includes('investments')) {
+        let institution = await PlaidInstitution.findOne({
+          id: item.institutionId,
+        });
+        if (institution?.products.split(",").includes("investments")) {
           await this.fetchHoldingTransactions(item);
         }
       })
@@ -65,8 +76,7 @@ export default {
 
       let investment_transactions = hResponse.data.investment_transactions;
       let investment_securities = hResponse.data.securities;
-      const total_h_transactions =
-        hResponse.data.total_investment_transactions;
+      const total_h_transactions = hResponse.data.total_investment_transactions;
 
       while (investment_transactions.length < total_h_transactions) {
         h_options.options.offset = investment_transactions.length;
@@ -122,7 +132,9 @@ export default {
         let pendingId = data.added[i].pending_transaction_id;
         let pendingTransaction = null;
         if (pendingId != null) {
-          pendingTransaction = await PlaidTransaction.findOne({ id: pendingId });
+          pendingTransaction = await PlaidTransaction.findOne({
+            id: pendingId,
+          });
         }
         if (pendingTransaction != null) {
           await PlaidTransaction.softRemove(pendingTransaction);
@@ -143,7 +155,9 @@ export default {
       await item.save();
     } catch (err) {
       console.error(err);
-      throw new Error(`Unable to write sync-transactions updates: ${err.message}`);
+      throw new Error(
+        `Unable to write sync-transactions updates: ${err.message}`
+      );
     }
-  }
+  },
 };

@@ -295,18 +295,22 @@ export class PlaidResolver {
 
     console.dir(response.data);
 
-    await Promise.all(response.data.holdings.map(async (holding: Holding) => {
-      let h = new PlaidInvestmentHolding();
-      h.accountId = holding.account_id;
-      h.securityId = holding.security_id;
-      h.costBasisCents = Number(holding.cost_basis) * 100;
-      h.quantity = holding.quantity;
-      h.currency = holding.iso_currency_code;
-      h.institutionPriceCents = holding.institution_price * 100;
-      h.institutionValueCents = holding.institution_value * 100;
-      h.institutionPriceAsOfDate = holding.institution_price_datetime ? new Date().toLocaleDateString(holding.institution_price_datetime) : null;
-      await h.save();
-    }));
+    await Promise.all(
+      response.data.holdings.map(async (holding: Holding) => {
+        let h = new PlaidInvestmentHolding();
+        h.accountId = holding.account_id;
+        h.securityId = holding.security_id;
+        h.costBasisCents = Number(holding.cost_basis) * 100;
+        h.quantity = holding.quantity;
+        h.currency = holding.iso_currency_code;
+        h.institutionPriceCents = holding.institution_price * 100;
+        h.institutionValueCents = holding.institution_value * 100;
+        h.institutionPriceAsOfDate = holding.institution_price_datetime
+          ? new Date().toLocaleDateString(holding.institution_price_datetime)
+          : null;
+        await h.save();
+      })
+    );
 
     await Promise.all(response.data.securities.map(createOrUpdateSecurity));
 
@@ -432,7 +436,9 @@ export class PlaidResolver {
   async deleteAccount(@Arg("accountId", () => String) accountId: string) {
     const account = await PlaidAccount.findOne({ id: accountId });
     if (account) {
-      const accountsForItem = await PlaidAccount.find({ itemId: account.itemId });
+      const accountsForItem = await PlaidAccount.find({
+        itemId: account.itemId,
+      });
 
       await CoreTransaction.delete({ accountId: accountId });
       await PlaidAccount.delete({ id: accountId });
@@ -448,15 +454,18 @@ export class PlaidResolver {
   @Query(() => [AnyTransaction])
   async getTransactions(
     @Arg("accountId", { nullable: true }) accountId: string,
-    @Arg("limit", () => Int, { nullable: true, defaultValue: 100 }) limit: number,
+    @Arg("limit", () => Int, { nullable: true, defaultValue: 100 })
+    limit: number,
     @Arg("after", () => Int, { nullable: true, defaultValue: 0 }) after: number
   ) {
     const options = {
       where: {},
       order: { date: "DESC" },
       skip: after,
-      take: limit,
+      //take: limit,
     } as FindManyOptions<CoreTransaction>;
+
+    console.dir(limit);
 
     if (accountId != null) {
       options.where = { accountId };

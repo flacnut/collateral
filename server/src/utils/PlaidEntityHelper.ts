@@ -67,8 +67,13 @@ export async function createOrUpdateBalance(
   accountId: string,
   rawBalance: AccountBalance
 ): Promise<PlaidAccountBalance> {
-  const lastUpdateDate = rawBalance.last_updated_datetime ? new Date(rawBalance.last_updated_datetime).toLocaleDateString() : new Date().toLocaleDateString();
-  const existingBalance = await PlaidAccountBalance.findOne({ lastUpdateDate, accountId });
+  const lastUpdateDate = rawBalance.last_updated_datetime
+    ? new Date(rawBalance.last_updated_datetime).toLocaleDateString()
+    : new Date().toLocaleDateString();
+  const existingBalance = await PlaidAccountBalance.findOne({
+    lastUpdateDate,
+    accountId,
+  });
   const balance = existingBalance ?? new PlaidAccountBalance();
 
   balance.accountId = accountId;
@@ -110,7 +115,9 @@ export async function createTransaction(
 export async function createOrUpdateTransaction(
   rawTransaction: Transaction
 ): Promise<PlaidTransaction> {
-  const existingTransaction = await PlaidTransaction.findOne({ id: rawTransaction.transaction_id });
+  const existingTransaction = await PlaidTransaction.findOne({
+    id: rawTransaction.transaction_id,
+  });
   const transaction = existingTransaction ?? new PlaidTransaction();
 
   transaction.id = rawTransaction.transaction_id;
@@ -139,7 +146,9 @@ export async function createOrUpdateSecurity(
   rawSecurity: Security
 ): Promise<PlaidSecurity> {
   // verify Account ID & security
-  const existingSecurity = await PlaidSecurity.findOne({ id: rawSecurity.security_id });
+  const existingSecurity = await PlaidSecurity.findOne({
+    id: rawSecurity.security_id,
+  });
   const security = existingSecurity ?? new PlaidSecurity();
 
   security.id = rawSecurity.security_id;

@@ -90,7 +90,7 @@ export class CoreTransaction extends BaseEntity {
     return await PlaidAccount.findOne({
       where: { id: this.accountId },
       cache: true,
-    })
+    });
   }
 
   // TODO: Balance in dollars
