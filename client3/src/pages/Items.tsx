@@ -203,9 +203,9 @@ export default function ItemsPage() {
           plaidLinkResponse: {
             publicToken: public_token,
             linkSessionId: metadata.link_session_id,
-            institutionId: metadata.institution?.institution_id
-          }
-        }
+            institutionId: metadata.institution?.institution_id,
+          },
+        },
       });
     },
   });
@@ -362,8 +362,6 @@ export default function ItemsPage() {
       <Helmet>
         <title>Items</title>
       </Helmet>
-
-
 
       <Container maxWidth={themeStretch ? false : 'lg'}>
         <CustomBreadcrumbs

@@ -13,33 +13,47 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
  * Therefore it is highly recommended to use the babel-plugin for production.
  */
 const documents = {
-    "\nquery getItems {\n  getItems {\n    id\n    accounts {\n      ...AccountParts\n      latestBalance {\n        ...BalanceParts\n      }\n      latestTransaction {\n        date\n      }\n      institution {\n        ...InstitutionParts\n      }\n    }\n  }\n}\n\nfragment AccountParts on PlaidAccount {\n  id\n  name\n  mask\n  type\n  subtype\n  officialName\n  status\n  currency\n  totalTransactions\n}\n\nfragment BalanceParts on PlaidAccountBalance {\n  balanceCents\n  limitCents\n  lastUpdateDate\n  availableCents\n}\n\nfragment InstitutionParts on PlaidInstitution {\n  id\n  url\n  name\n  logo\n  products\n  countryCodes\n  primaryColor\n}\n": types.GetItemsDocument,
-    "\nquery getToken {\n  getLinkToken {\n    token\n    error\n  }\n}\n": types.GetTokenDocument,
-    "\nmutation setPlaidLinkResponse($plaidLinkResponse: PlaidLinkResponse!) {\n  setPlaidLinkResponse(plaidLinkResponse: $plaidLinkResponse) {\n    id \n    institutionId\n  }\n}\n": types.SetPlaidLinkResponseDocument,
-    "\nmutation deletAccount($accountId: String!) {\n  deleteAccount(accountId: $accountId) \n}": types.DeletAccountDocument,
-    "\nquery getBasicTransactions($accountId: String, $limit: Int, $offset: Int) {\n  getTransactions(accountId: $accountId, limit: $limit, after: $offset) {\n    __typename\n  \t...on PlaidTransaction {\n      ...CorePlaidTransactionParts\n      account {\n        id\n        name\n      }\n    }\n    ... on PlaidHoldingTransaction {\n      ...CoreHoldingTransactionParts\n      account {\n        id\n        name\n      }\n    }\n  }\n}\n\nfragment CorePlaidTransactionParts on PlaidTransaction {\n  id\n  accountId\n  description\n  amountCents\n  amount\n  date\n  currency\n  classification\n}\n\nfragment CoreHoldingTransactionParts on PlaidHoldingTransaction {\n  id\n  accountId\n  description\n  amountCents\n  amount\n  date\n  currency\n  classification\n}": types.GetBasicTransactionsDocument,
+  '\nquery getItems {\n  getItems {\n    id\n    accounts {\n      ...AccountParts\n      latestBalance {\n        ...BalanceParts\n      }\n      latestTransaction {\n        date\n      }\n      institution {\n        ...InstitutionParts\n      }\n    }\n  }\n}\n\nfragment AccountParts on PlaidAccount {\n  id\n  name\n  mask\n  type\n  subtype\n  officialName\n  status\n  currency\n  totalTransactions\n}\n\nfragment BalanceParts on PlaidAccountBalance {\n  balanceCents\n  limitCents\n  lastUpdateDate\n  availableCents\n}\n\nfragment InstitutionParts on PlaidInstitution {\n  id\n  url\n  name\n  logo\n  products\n  countryCodes\n  primaryColor\n}\n':
+    types.GetItemsDocument,
+  '\nquery getToken {\n  getLinkToken {\n    token\n    error\n  }\n}\n': types.GetTokenDocument,
+  '\nmutation setPlaidLinkResponse($plaidLinkResponse: PlaidLinkResponse!) {\n  setPlaidLinkResponse(plaidLinkResponse: $plaidLinkResponse) {\n    id \n    institutionId\n  }\n}\n':
+    types.SetPlaidLinkResponseDocument,
+  '\nmutation deletAccount($accountId: String!) {\n  deleteAccount(accountId: $accountId) \n}':
+    types.DeletAccountDocument,
+  '\nquery getBasicTransactions($accountId: String, $limit: Int, $offset: Int) {\n  getTransactions(accountId: $accountId, limit: $limit, after: $offset) {\n    __typename\n  \t...on PlaidTransaction {\n      ...CorePlaidTransactionParts\n      account {\n        id\n        name\n      }\n    }\n    ... on PlaidHoldingTransaction {\n      ...CoreHoldingTransactionParts\n      account {\n        id\n        name\n      }\n    }\n  }\n}\n\nfragment CorePlaidTransactionParts on PlaidTransaction {\n  id\n  accountId\n  description\n  amountCents\n  amount\n  date\n  currency\n  classification\n}\n\nfragment CoreHoldingTransactionParts on PlaidHoldingTransaction {\n  id\n  accountId\n  description\n  amountCents\n  amount\n  date\n  currency\n  classification\n}':
+    types.GetBasicTransactionsDocument,
 };
 
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function gql(source: "\nquery getItems {\n  getItems {\n    id\n    accounts {\n      ...AccountParts\n      latestBalance {\n        ...BalanceParts\n      }\n      latestTransaction {\n        date\n      }\n      institution {\n        ...InstitutionParts\n      }\n    }\n  }\n}\n\nfragment AccountParts on PlaidAccount {\n  id\n  name\n  mask\n  type\n  subtype\n  officialName\n  status\n  currency\n  totalTransactions\n}\n\nfragment BalanceParts on PlaidAccountBalance {\n  balanceCents\n  limitCents\n  lastUpdateDate\n  availableCents\n}\n\nfragment InstitutionParts on PlaidInstitution {\n  id\n  url\n  name\n  logo\n  products\n  countryCodes\n  primaryColor\n}\n"): (typeof documents)["\nquery getItems {\n  getItems {\n    id\n    accounts {\n      ...AccountParts\n      latestBalance {\n        ...BalanceParts\n      }\n      latestTransaction {\n        date\n      }\n      institution {\n        ...InstitutionParts\n      }\n    }\n  }\n}\n\nfragment AccountParts on PlaidAccount {\n  id\n  name\n  mask\n  type\n  subtype\n  officialName\n  status\n  currency\n  totalTransactions\n}\n\nfragment BalanceParts on PlaidAccountBalance {\n  balanceCents\n  limitCents\n  lastUpdateDate\n  availableCents\n}\n\nfragment InstitutionParts on PlaidInstitution {\n  id\n  url\n  name\n  logo\n  products\n  countryCodes\n  primaryColor\n}\n"];
+export function gql(
+  source: '\nquery getItems {\n  getItems {\n    id\n    accounts {\n      ...AccountParts\n      latestBalance {\n        ...BalanceParts\n      }\n      latestTransaction {\n        date\n      }\n      institution {\n        ...InstitutionParts\n      }\n    }\n  }\n}\n\nfragment AccountParts on PlaidAccount {\n  id\n  name\n  mask\n  type\n  subtype\n  officialName\n  status\n  currency\n  totalTransactions\n}\n\nfragment BalanceParts on PlaidAccountBalance {\n  balanceCents\n  limitCents\n  lastUpdateDate\n  availableCents\n}\n\nfragment InstitutionParts on PlaidInstitution {\n  id\n  url\n  name\n  logo\n  products\n  countryCodes\n  primaryColor\n}\n'
+): typeof documents['\nquery getItems {\n  getItems {\n    id\n    accounts {\n      ...AccountParts\n      latestBalance {\n        ...BalanceParts\n      }\n      latestTransaction {\n        date\n      }\n      institution {\n        ...InstitutionParts\n      }\n    }\n  }\n}\n\nfragment AccountParts on PlaidAccount {\n  id\n  name\n  mask\n  type\n  subtype\n  officialName\n  status\n  currency\n  totalTransactions\n}\n\nfragment BalanceParts on PlaidAccountBalance {\n  balanceCents\n  limitCents\n  lastUpdateDate\n  availableCents\n}\n\nfragment InstitutionParts on PlaidInstitution {\n  id\n  url\n  name\n  logo\n  products\n  countryCodes\n  primaryColor\n}\n'];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function gql(source: "\nquery getToken {\n  getLinkToken {\n    token\n    error\n  }\n}\n"): (typeof documents)["\nquery getToken {\n  getLinkToken {\n    token\n    error\n  }\n}\n"];
+export function gql(
+  source: '\nquery getToken {\n  getLinkToken {\n    token\n    error\n  }\n}\n'
+): typeof documents['\nquery getToken {\n  getLinkToken {\n    token\n    error\n  }\n}\n'];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function gql(source: "\nmutation setPlaidLinkResponse($plaidLinkResponse: PlaidLinkResponse!) {\n  setPlaidLinkResponse(plaidLinkResponse: $plaidLinkResponse) {\n    id \n    institutionId\n  }\n}\n"): (typeof documents)["\nmutation setPlaidLinkResponse($plaidLinkResponse: PlaidLinkResponse!) {\n  setPlaidLinkResponse(plaidLinkResponse: $plaidLinkResponse) {\n    id \n    institutionId\n  }\n}\n"];
+export function gql(
+  source: '\nmutation setPlaidLinkResponse($plaidLinkResponse: PlaidLinkResponse!) {\n  setPlaidLinkResponse(plaidLinkResponse: $plaidLinkResponse) {\n    id \n    institutionId\n  }\n}\n'
+): typeof documents['\nmutation setPlaidLinkResponse($plaidLinkResponse: PlaidLinkResponse!) {\n  setPlaidLinkResponse(plaidLinkResponse: $plaidLinkResponse) {\n    id \n    institutionId\n  }\n}\n'];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function gql(source: "\nmutation deletAccount($accountId: String!) {\n  deleteAccount(accountId: $accountId) \n}"): (typeof documents)["\nmutation deletAccount($accountId: String!) {\n  deleteAccount(accountId: $accountId) \n}"];
+export function gql(
+  source: '\nmutation deletAccount($accountId: String!) {\n  deleteAccount(accountId: $accountId) \n}'
+): typeof documents['\nmutation deletAccount($accountId: String!) {\n  deleteAccount(accountId: $accountId) \n}'];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function gql(source: "\nquery getBasicTransactions($accountId: String, $limit: Int, $offset: Int) {\n  getTransactions(accountId: $accountId, limit: $limit, after: $offset) {\n    __typename\n  \t...on PlaidTransaction {\n      ...CorePlaidTransactionParts\n      account {\n        id\n        name\n      }\n    }\n    ... on PlaidHoldingTransaction {\n      ...CoreHoldingTransactionParts\n      account {\n        id\n        name\n      }\n    }\n  }\n}\n\nfragment CorePlaidTransactionParts on PlaidTransaction {\n  id\n  accountId\n  description\n  amountCents\n  amount\n  date\n  currency\n  classification\n}\n\nfragment CoreHoldingTransactionParts on PlaidHoldingTransaction {\n  id\n  accountId\n  description\n  amountCents\n  amount\n  date\n  currency\n  classification\n}"): (typeof documents)["\nquery getBasicTransactions($accountId: String, $limit: Int, $offset: Int) {\n  getTransactions(accountId: $accountId, limit: $limit, after: $offset) {\n    __typename\n  \t...on PlaidTransaction {\n      ...CorePlaidTransactionParts\n      account {\n        id\n        name\n      }\n    }\n    ... on PlaidHoldingTransaction {\n      ...CoreHoldingTransactionParts\n      account {\n        id\n        name\n      }\n    }\n  }\n}\n\nfragment CorePlaidTransactionParts on PlaidTransaction {\n  id\n  accountId\n  description\n  amountCents\n  amount\n  date\n  currency\n  classification\n}\n\nfragment CoreHoldingTransactionParts on PlaidHoldingTransaction {\n  id\n  accountId\n  description\n  amountCents\n  amount\n  date\n  currency\n  classification\n}"];
+export function gql(
+  source: '\nquery getBasicTransactions($accountId: String, $limit: Int, $offset: Int) {\n  getTransactions(accountId: $accountId, limit: $limit, after: $offset) {\n    __typename\n  \t...on PlaidTransaction {\n      ...CorePlaidTransactionParts\n      account {\n        id\n        name\n      }\n    }\n    ... on PlaidHoldingTransaction {\n      ...CoreHoldingTransactionParts\n      account {\n        id\n        name\n      }\n    }\n  }\n}\n\nfragment CorePlaidTransactionParts on PlaidTransaction {\n  id\n  accountId\n  description\n  amountCents\n  amount\n  date\n  currency\n  classification\n}\n\nfragment CoreHoldingTransactionParts on PlaidHoldingTransaction {\n  id\n  accountId\n  description\n  amountCents\n  amount\n  date\n  currency\n  classification\n}'
+): typeof documents['\nquery getBasicTransactions($accountId: String, $limit: Int, $offset: Int) {\n  getTransactions(accountId: $accountId, limit: $limit, after: $offset) {\n    __typename\n  \t...on PlaidTransaction {\n      ...CorePlaidTransactionParts\n      account {\n        id\n        name\n      }\n    }\n    ... on PlaidHoldingTransaction {\n      ...CoreHoldingTransactionParts\n      account {\n        id\n        name\n      }\n    }\n  }\n}\n\nfragment CorePlaidTransactionParts on PlaidTransaction {\n  id\n  accountId\n  description\n  amountCents\n  amount\n  date\n  currency\n  classification\n}\n\nfragment CoreHoldingTransactionParts on PlaidHoldingTransaction {\n  id\n  accountId\n  description\n  amountCents\n  amount\n  date\n  currency\n  classification\n}'];
 
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
@@ -52,11 +66,12 @@ export function gql(source: "\nquery getBasicTransactions($accountId: String, $l
  *
  * The query argument is unknown!
  * Please regenerate the types.
-**/
+ **/
 export function gql(source: string): unknown;
 
 export function gql(source: string) {
   return (documents as any)[source] ?? {};
 }
 
-export type DocumentType<TDocumentNode extends DocumentNode<any, any>> = TDocumentNode extends DocumentNode<  infer TType,  any>  ? TType  : never;
+export type DocumentType<TDocumentNode extends DocumentNode<any, any>> =
+  TDocumentNode extends DocumentNode<infer TType, any> ? TType : never;
