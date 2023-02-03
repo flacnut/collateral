@@ -1,13 +1,10 @@
-import { Transaction } from "@entities";
 import {
   Between,
   MoreThan,
   LessThan,
-  FindConditions,
   Raw,
   MoreThanOrEqual,
   LessThanOrEqual,
-  IsNull,
 } from "typeorm";
 import {
   Arg,
@@ -215,6 +212,7 @@ function getTextFilter(textFilter: TextFilter): FindOperator<string> | string {
   return Raw((_) => `(` + allMatches.join(" OR ") + `)`);
 }
 
+/*
 function includeTransactionForFilters(
   tagsFilter: ListFilter,
   transactionItemsMap: { id: number; items: number[] } | null
@@ -241,11 +239,11 @@ function includeTransactionForFilters(
     case ListOptions.NOT_EMPTY:
       return transactionItemsMap.items.length > 0;
   }
-}
+}*/
 
 @Resolver()
 export class FilteredTransactionResolver {
-  @Query(() => [Transaction])
+  @Query(() => [Int])
   async getFilteredTransactions(
     @Arg("options", () => RichQuery) options: RichQuery
   ) {
@@ -253,31 +251,24 @@ export class FilteredTransactionResolver {
     // using the API means we can swap the underlying instance
     // to Postgres or MySQL easily. This is not performant, but
     // is very flexible in future.
-    const searchOptions: FindConditions<Transaction> = {};
 
     if (Object.keys(options.where).length === 1) {
       return [];
     }
 
     if (options.where.amount) {
-      searchOptions.amountCents = getAmountFilter(options.where.amount);
+      getAmountFilter(options.where.amount);
     }
 
     if (options.where.description) {
-      searchOptions.originalDescription = getTextFilter(
-        options.where.description
-      );
+      getTextFilter(options.where.description);
     }
 
     if (options.where.date) {
-      searchOptions.date = getDateFilter(options.where.date);
+      getDateFilter(options.where.date);
     }
 
-    if (options.where.excludeTransfers) {
-      searchOptions.transferPairId = IsNull();
-    }
-
-    let transactions = await Transaction.find({
+    /*let transactions = await Transaction.find({
       where: searchOptions,
     });
 
@@ -309,9 +300,8 @@ export class FilteredTransactionResolver {
       );
     }
     */
-    console.dir(transactions);
 
-    return transactions;
+    return [];
   }
 
   @Query(() => [TransactionGroup])

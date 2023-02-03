@@ -1,4 +1,4 @@
-import { Source } from "@entities";
+/*import { Source } from "@entities";
 import { Arg, Mutation, Query, Resolver } from "type-graphql";
 
 @Resolver()
@@ -17,3 +17,4 @@ export class SourceResolver {
     return sources;
   }
 }
+*/

@@ -1,5 +1,5 @@
-import { Transaction } from "../entity";
 import { createHash } from "crypto";
+import { CoreTransaction } from "src/entity/plaid/CoreTransaction";
 
 export type DateAmountTuple = { date: Date; amountCents: number };
 export type DateAmountAccountTuple = DateAmountTuple & {
@@ -71,7 +71,7 @@ export function DetectDuplicateTransactions<T extends BaseTransaction>(
 }
 
 export function CalculateBalance(
-  transactions: DateAmountTuple[] | Transaction[],
+  transactions: DateAmountTuple[] | CoreTransaction[],
   knownClosingBalance: DateAmountTuple
 ): DateAmountTuple[] {
   if (!transactions || !transactions.length) {
@@ -82,7 +82,8 @@ export function CalculateBalance(
   let minDate: Date = new Date(8640000000000000);
   let maxDate: Date = new Date(-8640000000000000);
 
-  transactions.forEach((t) => {
+  transactions.forEach((_) => {
+    /*
     if (t.date > maxDate) {
       maxDate = t.date;
     }
@@ -96,6 +97,7 @@ export function CalculateBalance(
     }
 
     dateChanges[t.date.toLocaleDateString()] += t.amountCents;
+    */
   });
 
   const dateArray = getDateArray(minDate, maxDate);
