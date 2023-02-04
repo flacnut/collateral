@@ -1,9 +1,7 @@
 import {
   Arg,
-  createUnionType,
   Field,
   InputType,
-  Int,
   Mutation,
   ObjectType,
   Query,
@@ -20,7 +18,6 @@ import {
 } from "plaid";
 import { client_id, dev_secret } from "../../plaidConfig.json";
 import {
-  CoreTransaction,
   Transaction,
   PlaidItem,
   Institution,
@@ -37,12 +34,6 @@ import {
   createOrUpdateSecurity,
   createTransaction,
 } from "../../src/utils/PlaidEntityHelper";
-import {
-  DateAmountAccountTuple,
-  MatchTransfers,
-} from "../../src/utils/AccountUtils";
-import { Transfer } from "@entities";
-import { UnsavedTransfer } from "../../src/entity/Transfer";
 import { FindManyOptions } from "typeorm";
 import PlaidFetcherUtil from "../../src/utils/PlaidFetcherUtil";
 
@@ -78,11 +69,6 @@ class PlaidLinkResponse {
   @Field(() => String)
   institutionId: string;
 }
-
-const AnyTransaction = createUnionType({
-  name: "AnyTransaction",
-  types: () => [Transaction, InvestmentTransaction] as const,
-});
 
 @Resolver()
 export class PlaidResolver {
@@ -320,119 +306,9 @@ export class PlaidResolver {
     return await Institution.find();
   }
 
-  @Query(() => [Transfer])
-  async getPossibleTransfers() {
-    const transactions = await CoreTransaction.find();
-
-    const rawTransfers = MatchTransfers(
-      transactions.map((t) => {
-        return {
-          date: new Date(t.date),
-          amountCents: t.amountCents,
-          accountId: t.accountId,
-          transactionId: t.id,
-        } as DateAmountAccountTuple;
-      })
-    );
-
-    let transfers = rawTransfers.map((transfer) => {
-      let to = transactions.filter((t) => t.id === transfer.to)[0];
-      let from = transactions.filter((t) => t.id === transfer.from)[0];
-
-      return {
-        from,
-        to,
-        date: from.date,
-        amountCents: transfer.amountCents,
-      } as Transfer;
-    });
-
-    return transfers;
-  }
-
-  @Mutation(() => [Transfer])
-  async saveTransfers(
-    @Arg("transfers", () => [UnsavedTransfer]) transfers: UnsavedTransfer[]
-  ) {
-    let transactionIds = transfers
-      .map((transfer) => {
-        return [transfer.toId, transfer.fromId];
-      })
-      .flat();
-    let transactions = await CoreTransaction.findByIds(transactionIds);
-
-    if (transactions.length !== 2 * transfers.length) {
-      console.error("Should be unreachable.");
-    }
-
-    let transferWrites = transfers
-      .map((_transfer) => {
-        let from = transactions.find((t) => t.id === _transfer.fromId);
-        let to = transactions.find((t) => t.id === _transfer.toId);
-        if (from == null || to == null) {
-          return null;
-        }
-
-        let transfer = new Transfer();
-        transfer.id = _transfer.fromId;
-        transfer.from = from;
-        transfer.to = to;
-        transfer.amountCents = to.amountCents;
-        transfer.date = from.date;
-        return transfer;
-      })
-      .filter((t) => t != null) as Transfer[];
-
-    await Transfer.getRepository().save(transferWrites);
-    return transferWrites;
-  }
-
   @Query(() => [PlaidItem])
   async getItems() {
     return await PlaidItem.find();
-  }
-
-  @Query(() => [AnyTransaction])
-  async getTransactions(
-    @Arg("accountId", { nullable: true }) accountId: string,
-    @Arg("limit", () => Int, { nullable: true, defaultValue: 100 })
-    limit: number,
-    @Arg("after", () => Int, { nullable: true, defaultValue: 0 }) after: number
-  ) {
-    const options = {
-      where: {},
-      order: { date: "DESC" },
-      skip: after,
-      //take: limit,
-    } as FindManyOptions<CoreTransaction>;
-
-    console.dir(limit);
-
-    if (accountId != null) {
-      options.where = { accountId };
-    }
-
-    return await CoreTransaction.find(options);
-  }
-
-  @Query(() => [InvestmentTransaction])
-  async getHoldingTransactions(
-    @Arg("accountId", { nullable: true }) accountId: string,
-    @Arg("limit", { nullable: true, defaultValue: 100 }) limit: number,
-    @Arg("after", { nullable: true, defaultValue: 0 }) after: number
-  ) {
-    const options = {
-      where: {},
-      order: { date: "DESC" },
-      skip: after,
-      take: limit,
-    } as FindManyOptions<CoreTransaction>;
-
-    if (accountId != null) {
-      options.where = { accountId };
-    }
-
-    return await InvestmentTransaction.find(options);
   }
 
   @Query(() => [TransactionCategory])
