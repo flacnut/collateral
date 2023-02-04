@@ -154,7 +154,7 @@ export class TransactionResolver {
         key +=
           "::" +
           (await t.tags)
-            .map((tag) => tag.tag)
+            .map((tag) => tag.name)
             .sort()
             .join(":");
 

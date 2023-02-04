@@ -10,9 +10,5 @@ export class Tag extends BaseEntity {
 
   @Field()
   @Column("text", { nullable: false })
-  tag: string;
-
-  @Field(() => Boolean)
-  @Column("boolean", { default: false })
-  autopopulate: boolean;
+  name: string;
 }

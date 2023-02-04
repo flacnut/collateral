@@ -22,13 +22,13 @@ export class TagResolver {
     @Arg("options", () => TagCreateInput)
     options: TagCreateInput
   ) {
-    const alreadyExists = await Tag.findOne({ tag: options.tag });
+    const alreadyExists = await Tag.findOne({ name: options.tag });
 
     if (alreadyExists) {
       return alreadyExists;
     }
 
-    return await Tag.create({ tag: options.tag }).save();
+    return await Tag.create({ name: options.tag }).save();
   }
 
   @Mutation(() => Boolean)
