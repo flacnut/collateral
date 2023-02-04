@@ -1,4 +1,3 @@
-import { Tag } from "@entities";
 import {
   Arg,
   Field,
@@ -10,8 +9,7 @@ import {
   ObjectType,
 } from "type-graphql";
 
-import { CoreTransaction } from "../../src/entity/plaid/CoreTransaction";
-import { PlaidAccount } from "../../src/entity/plaid";
+import { Account, CoreTransaction, Tag } from "@entities";
 
 enum GroupByOption {
   originalDescription = "originalDescription",
@@ -113,8 +111,8 @@ class QueryAggregationOptions {
 
 @ObjectType()
 class AggregatedTransaction {
-  @Field(() => PlaidAccount, { nullable: true })
-  account?: PlaidAccount | null;
+  @Field(() => Account, { nullable: true })
+  account?: Account | null;
 
   @Field(() => String, { nullable: true })
   description?: string | null;

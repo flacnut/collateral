@@ -7,7 +7,7 @@ import {
   OneToOne,
   PrimaryColumn,
 } from "typeorm";
-import { CoreTransaction } from "./plaid/CoreTransaction";
+import { CoreTransaction } from "@entities";
 
 @ObjectType()
 @Entity()

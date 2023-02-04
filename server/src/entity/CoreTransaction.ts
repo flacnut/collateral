@@ -11,7 +11,7 @@ import {
   ManyToMany,
   JoinTable,
 } from "typeorm";
-import { Account } from "./Account";
+import { Account } from "@entities";
 
 enum TransactionClassification {
   Duplicate,

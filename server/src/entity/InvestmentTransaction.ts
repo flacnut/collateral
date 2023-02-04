@@ -4,7 +4,7 @@ import { CoreTransaction } from "./CoreTransaction";
 
 @ChildEntity()
 @ObjectType()
-export class HoldingTransaction extends CoreTransaction {
+export class InvestmentTransaction extends CoreTransaction {
   @Field()
   @Column("text")
   securityId: string;

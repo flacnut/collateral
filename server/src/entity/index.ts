@@ -3,21 +3,23 @@ import { Transfer } from "./Transfer";
 import { Account } from "./Account";
 import { InvestmentHolding } from "./InvestmentHolding";
 import { Institution } from "./Institution";
-import { HoldingTransaction } from "./HoldingTransaction";
+import { InvestmentTransaction } from "./InvestmentTransaction";
 import { PlaidItem } from "./PlaidItem";
 import { Security } from "./Security";
 import { Transaction } from "./Transaction";
 import { AccountBalance } from "./AccountBalance";
+import { CoreTransaction } from "./CoreTransaction";
 
 export {
-  Tag,
-  Transfer,
-  PlaidItem,
   Account,
   AccountBalance,
+  CoreTransaction,
   Institution,
+  InvestmentTransaction,
   InvestmentHolding,
-  HoldingTransaction,
-  Transaction,
+  PlaidItem,
   Security,
+  Tag,
+  Transfer,
+  Transaction,
 };

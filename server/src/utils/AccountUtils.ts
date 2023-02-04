@@ -1,5 +1,5 @@
 import { createHash } from "crypto";
-import { CoreTransaction } from "src/entity/plaid/CoreTransaction";
+import { CoreTransaction } from "@entities";
 
 export type DateAmountTuple = { date: Date; amountCents: number };
 export type DateAmountAccountTuple = DateAmountTuple & {

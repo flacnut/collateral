@@ -5,19 +5,15 @@ import {
   PlaidEnvironments,
   TransactionsSyncResponse,
 } from "plaid";
-import {
-  PlaidInstitution,
-  PlaidItem,
-  PlaidTransaction,
-} from "../../src/entity/plaid";
+import { Institution, PlaidItem, Transaction } from "@entities";
 import { createOrUpdateTransaction } from "./PlaidEntityHelper";
-
-import { client_id, dev_secret } from "../../plaidConfig.json";
 import {
   createOrUpdateBalance,
-  createHoldingTransaction,
+  createInvestmentTransaction,
   createOrUpdateSecurity,
 } from "./PlaidEntityHelper";
+
+import { client_id, dev_secret } from "../../plaidConfig.json";
 
 const configuration = new Configuration({
   basePath: PlaidEnvironments.development,
@@ -52,7 +48,7 @@ export default {
         await this.syncTransactions(item);
 
         // holding transactions & securities
-        let institution = await PlaidInstitution.findOne({
+        let institution = await Institution.findOne({
           id: item.institutionId,
         });
         if (institution?.products.split(",").includes("investments")) {
@@ -92,7 +88,7 @@ export default {
       }
 
       await Promise.all([
-        ...investment_transactions.map(createHoldingTransaction),
+        ...investment_transactions.map(createInvestmentTransaction),
         ...investment_securities.map(createOrUpdateSecurity),
       ]);
     } catch (_ignore) {
@@ -132,12 +128,12 @@ export default {
         let pendingId = data.added[i].pending_transaction_id;
         let pendingTransaction = null;
         if (pendingId != null) {
-          pendingTransaction = await PlaidTransaction.findOne({
+          pendingTransaction = await Transaction.findOne({
             id: pendingId,
           });
         }
         if (pendingTransaction != null) {
-          await PlaidTransaction.softRemove(pendingTransaction);
+          await Transaction.softRemove(pendingTransaction);
         }
       }
 
@@ -147,8 +143,8 @@ export default {
       }
 
       // Removed
-      const transactions = await PlaidTransaction.findByIds(data.removed);
-      await PlaidTransaction.softRemove(transactions);
+      const transactions = await Transaction.findByIds(data.removed);
+      await Transaction.softRemove(transactions);
 
       // Update Cursor
       item.transactionsCursor = data.next_cursor;

@@ -1,9 +1,11 @@
 import { Arg, Field, Int, ObjectType } from "type-graphql";
 import { Entity, BaseEntity, Column, PrimaryColumn, ManyToOne } from "typeorm";
-import { AccountBalance } from "./AccountBalance";
-import { CoreTransaction } from "./CoreTransaction";
-import { Institution } from "./Institution";
-import { PlaidItem } from "./PlaidItem";
+import {
+  AccountBalance,
+  CoreTransaction,
+  Institution,
+  PlaidItem,
+} from "@entities";
 
 @Entity("account")
 @ObjectType()

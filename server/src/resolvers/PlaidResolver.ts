@@ -21,16 +21,17 @@ import {
 } from "plaid";
 import { client_id, dev_secret } from "../../plaidConfig.json";
 import {
-  PlaidTransaction,
+  CoreTransaction,
+  Transaction,
   PlaidItem,
-  PlaidInstitution,
-  PlaidInvestmentHolding,
-  PlaidHoldingTransaction,
-  PlaidAccount,
-} from "../../src/entity/plaid";
+  Institution,
+  InvestmentHolding,
+  InvestmentTransaction,
+  Account,
+} from "@entities";
 import {
   createAccount,
-  createHoldingTransaction,
+  createInvestmentTransaction,
   createInstitution,
   createInvestmentHolding,
   createItem,
@@ -41,7 +42,6 @@ import {
   DateAmountAccountTuple,
   MatchTransfers,
 } from "../../src/utils/AccountUtils";
-import { CoreTransaction } from "../../src/entity/plaid/CoreTransaction";
 import { Transfer } from "@entities";
 import { UnsavedTransfer } from "../../src/entity/Transfer";
 import { FindManyOptions } from "typeorm";
@@ -82,7 +82,7 @@ class PlaidLinkResponse {
 
 const AnyTransaction = createUnionType({
   name: "AnyTransaction",
-  types: () => [PlaidTransaction, PlaidHoldingTransaction] as const,
+  types: () => [Transaction, InvestmentTransaction] as const,
 });
 
 @Resolver()
@@ -178,7 +178,7 @@ export class PlaidResolver {
     return true;
   }
 
-  @Query(() => [PlaidAccount])
+  @Query(() => [Account])
   async fetchAccounts(@Arg("itemId") itemId: string) {
     const item = await PlaidItem.findOneOrFail(itemId);
 
@@ -196,8 +196,8 @@ export class PlaidResolver {
     return [];
   }
 
-  @Query(() => [PlaidTransaction])
-  async fetchPlaidTransactions(@Arg("itemId") itemId: string) {
+  @Query(() => [Transaction])
+  async fetchTransactions(@Arg("itemId") itemId: string) {
     const item = await PlaidItem.findOneOrFail(itemId);
 
     const response = await client.transactionsGet({
@@ -231,7 +231,7 @@ export class PlaidResolver {
     return await Promise.all(transactions.map(createTransaction));
   }
 
-  @Query(() => [PlaidInvestmentHolding])
+  @Query(() => [InvestmentHolding])
   async fetchInvestmentHoldings(@Arg("itemId") itemId: string) {
     const item = await PlaidItem.findOneOrFail(itemId);
 
@@ -244,10 +244,10 @@ export class PlaidResolver {
       ...response.data.securities.map(createOrUpdateSecurity),
     ]);
 
-    return allItems.filter((item) => item instanceof PlaidInvestmentHolding);
+    return allItems.filter((item) => item instanceof InvestmentHolding);
   }
 
-  @Query(() => [PlaidHoldingTransaction])
+  @Query(() => [InvestmentTransaction])
   async fetchInvestmentTransactions(@Arg("itemId") itemId: string) {
     const item = await PlaidItem.findOneOrFail(itemId);
 
@@ -278,14 +278,14 @@ export class PlaidResolver {
     }
 
     const allItems = await Promise.all([
-      ...response.data.investment_transactions.map(createHoldingTransaction),
+      ...response.data.investment_transactions.map(createInvestmentTransaction),
       ...response.data.securities.map(createOrUpdateSecurity),
     ]);
 
-    return allItems.filter((item) => item instanceof PlaidHoldingTransaction);
+    return allItems.filter((item) => item instanceof InvestmentTransaction);
   }
 
-  @Query(() => [PlaidInvestmentHolding])
+  @Query(() => [InvestmentHolding])
   async fetchHoldings(@Arg("itemId") itemId: string) {
     const item = await PlaidItem.findOneOrFail(itemId);
 
@@ -297,7 +297,7 @@ export class PlaidResolver {
 
     await Promise.all(
       response.data.holdings.map(async (holding: Holding) => {
-        let h = new PlaidInvestmentHolding();
+        let h = new InvestmentHolding();
         h.accountId = holding.account_id;
         h.securityId = holding.security_id;
         h.costBasisCents = Number(holding.cost_basis) * 100;
@@ -314,13 +314,13 @@ export class PlaidResolver {
 
     await Promise.all(response.data.securities.map(createOrUpdateSecurity));
 
-    return await PlaidInvestmentHolding.find();
+    return await InvestmentHolding.find();
   }
 
-  @Query(() => PlaidInstitution)
+  @Query(() => Institution)
   async getInstitution(@Arg("institutionId") institutionId: string) {
     try {
-      let institution = await PlaidInstitution.findOne(institutionId);
+      let institution = await Institution.findOne(institutionId);
 
       if (institution) {
         return institution;
@@ -344,9 +344,9 @@ export class PlaidResolver {
     return null;
   }
 
-  @Query(() => [PlaidInstitution])
+  @Query(() => [Institution])
   async getAllInstitutions() {
-    return await PlaidInstitution.find();
+    return await Institution.find();
   }
 
   @Query(() => [Transfer])
@@ -421,27 +421,27 @@ export class PlaidResolver {
     return await PlaidItem.find();
   }
 
-  @Query(() => [PlaidAccount])
+  @Query(() => [Account])
   async getAccounts(
     @Arg("accountIds", () => [String], { nullable: true }) accountIds: string[]
   ) {
     if (accountIds && accountIds.length > 0) {
-      return await PlaidAccount.findByIds(accountIds);
+      return await Account.findByIds(accountIds);
     }
 
-    return await PlaidAccount.find();
+    return await Account.find();
   }
 
   @Mutation(() => Boolean)
   async deleteAccount(@Arg("accountId", () => String) accountId: string) {
-    const account = await PlaidAccount.findOne({ id: accountId });
+    const account = await Account.findOne({ id: accountId });
     if (account) {
-      const accountsForItem = await PlaidAccount.find({
+      const accountsForItem = await Account.find({
         itemId: account.itemId,
       });
 
       await CoreTransaction.delete({ accountId: accountId });
-      await PlaidAccount.delete({ id: accountId });
+      await Account.delete({ id: accountId });
 
       if (accountsForItem.length === 1) {
         await PlaidItem.delete({ id: account.itemId });
@@ -474,7 +474,7 @@ export class PlaidResolver {
     return await CoreTransaction.find(options);
   }
 
-  @Query(() => [PlaidHoldingTransaction])
+  @Query(() => [InvestmentTransaction])
   async getHoldingTransactions(
     @Arg("accountId", { nullable: true }) accountId: string,
     @Arg("limit", { nullable: true, defaultValue: 100 }) limit: number,
@@ -491,7 +491,7 @@ export class PlaidResolver {
       options.where = { accountId };
     }
 
-    return await PlaidHoldingTransaction.find(options);
+    return await InvestmentTransaction.find(options);
   }
 
   @Query(() => [TransactionCategory])
@@ -500,14 +500,14 @@ export class PlaidResolver {
   ): Promise<Array<TransactionCategory>> {
     const options = {
       where: {},
-    } as FindManyOptions<PlaidTransaction>;
+    } as FindManyOptions<Transaction>;
 
     if (accountId != null) {
       options.where = { accountId };
     }
 
-    const transactions = await PlaidTransaction.find(options);
-    const reduced = transactions.reduce((acc, trans: PlaidTransaction) => {
+    const transactions = await Transaction.find(options);
+    const reduced = transactions.reduce((acc, trans: Transaction) => {
       if (acc[trans.description]) {
         acc[trans.description].count++;
         acc[trans.description].value += trans.amountCents;

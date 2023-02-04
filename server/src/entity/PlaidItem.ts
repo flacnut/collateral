@@ -1,7 +1,6 @@
 import { Field, ObjectType } from "type-graphql";
 import { Entity, BaseEntity, Column, PrimaryColumn, OneToMany } from "typeorm";
-import { Account } from "./Account";
-import { Institution } from "./Institution";
+import { Account, Institution } from "@entities";
 
 @Entity()
 @ObjectType()

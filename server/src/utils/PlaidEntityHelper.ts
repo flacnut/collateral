@@ -1,22 +1,22 @@
 import {
-  Institution,
-  AccountBase,
-  Transaction,
-  Holding,
-  Security,
-  InvestmentTransaction,
-  AccountBalance,
+  Institution as PlaidInstitution,
+  AccountBase as PlaidAccountBase,
+  Transaction as PlaidTransaction,
+  Holding as PlaidHolding,
+  Security as PlaidSecurity,
+  InvestmentTransaction as PlaidInvestementTransaction,
+  AccountBalance as PlaidAccountBalance,
 } from "plaid";
 import {
-  PlaidAccount,
-  PlaidAccountBalance,
-  PlaidHoldingTransaction,
-  PlaidInstitution,
-  PlaidInvestmentHolding,
   PlaidItem,
-  PlaidSecurity,
-  PlaidTransaction,
-} from "../../src/entity/plaid";
+  Institution,
+  Account,
+  AccountBalance,
+  Transaction,
+  Security,
+  InvestmentHolding,
+  InvestmentTransaction,
+} from "@entities";
 
 export async function createItem(
   itemId: string,
@@ -31,9 +31,9 @@ export async function createItem(
 }
 
 export async function createInstitution(
-  rawInstitution: Institution
-): Promise<PlaidInstitution> {
-  const institution = new PlaidInstitution();
+  rawInstitution: PlaidInstitution
+): Promise<Institution> {
+  const institution = new Institution();
   institution.id = rawInstitution.institution_id;
   institution.name = rawInstitution.name;
   institution.logo = rawInstitution.logo ?? null;
@@ -45,9 +45,9 @@ export async function createInstitution(
 
 export async function createAccount(
   item: PlaidItem,
-  rawAccount: AccountBase
-): Promise<PlaidAccount> {
-  const account = new PlaidAccount();
+  rawAccount: PlaidAccountBase
+): Promise<Account> {
+  const account = new Account();
   account.id = rawAccount.account_id;
   account.itemId = item.id;
   account.institutionId = item.institutionId;
@@ -65,16 +65,16 @@ export async function createAccount(
 
 export async function createOrUpdateBalance(
   accountId: string,
-  rawBalance: AccountBalance
-): Promise<PlaidAccountBalance> {
+  rawBalance: PlaidAccountBalance
+): Promise<AccountBalance> {
   const lastUpdateDate = rawBalance.last_updated_datetime
     ? new Date(rawBalance.last_updated_datetime).toLocaleDateString()
     : new Date().toLocaleDateString();
-  const existingBalance = await PlaidAccountBalance.findOne({
+  const existingBalance = await AccountBalance.findOne({
     lastUpdateDate,
     accountId,
   });
-  const balance = existingBalance ?? new PlaidAccountBalance();
+  const balance = existingBalance ?? new AccountBalance();
 
   balance.accountId = accountId;
   balance.availableCents = Math.floor(rawBalance.available ?? 0 * 100);
@@ -87,10 +87,10 @@ export async function createOrUpdateBalance(
 }
 
 export async function createTransaction(
-  rawTransaction: Transaction
-): Promise<PlaidTransaction> {
+  rawTransaction: PlaidTransaction
+): Promise<Transaction> {
   // verify account Id
-  const transaction = new PlaidTransaction();
+  const transaction = new Transaction();
   transaction.id = rawTransaction.transaction_id;
   transaction.accountId = rawTransaction.account_id;
   transaction.amountCents = Math.floor(rawTransaction.amount * 100);
@@ -113,12 +113,12 @@ export async function createTransaction(
 }
 
 export async function createOrUpdateTransaction(
-  rawTransaction: Transaction
-): Promise<PlaidTransaction> {
-  const existingTransaction = await PlaidTransaction.findOne({
+  rawTransaction: PlaidTransaction
+): Promise<Transaction> {
+  const existingTransaction = await Transaction.findOne({
     id: rawTransaction.transaction_id,
   });
-  const transaction = existingTransaction ?? new PlaidTransaction();
+  const transaction = existingTransaction ?? new Transaction();
 
   transaction.id = rawTransaction.transaction_id;
   transaction.accountId = rawTransaction.account_id;
@@ -143,13 +143,13 @@ export async function createOrUpdateTransaction(
 }
 
 export async function createOrUpdateSecurity(
-  rawSecurity: Security
-): Promise<PlaidSecurity> {
+  rawSecurity: PlaidSecurity
+): Promise<Security> {
   // verify Account ID & security
-  const existingSecurity = await PlaidSecurity.findOne({
+  const existingSecurity = await Security.findOne({
     id: rawSecurity.security_id,
   });
-  const security = existingSecurity ?? new PlaidSecurity();
+  const security = existingSecurity ?? new Security();
 
   security.id = rawSecurity.security_id;
   security.ticker = rawSecurity.ticker_symbol ?? "";
@@ -167,10 +167,10 @@ export async function createOrUpdateSecurity(
 }
 
 export async function createInvestmentHolding(
-  rawHolding: Holding
-): Promise<PlaidInvestmentHolding> {
+  rawHolding: PlaidHolding
+): Promise<InvestmentHolding> {
   // verify Account ID & security
-  const holding = new PlaidInvestmentHolding();
+  const holding = new InvestmentHolding();
   holding.accountId = rawHolding.account_id;
   holding.securityId = rawHolding.security_id;
   holding.costBasisCents = Math.floor(rawHolding.cost_basis ?? 0 * 100);
@@ -186,11 +186,11 @@ export async function createInvestmentHolding(
   return await holding.save();
 }
 
-export async function createHoldingTransaction(
-  rawIT: InvestmentTransaction
-): Promise<PlaidHoldingTransaction> {
+export async function createInvestmentTransaction(
+  rawIT: PlaidInvestementTransaction
+): Promise<InvestmentTransaction> {
   // verify Account ID & security
-  const holdingTransaction = new PlaidHoldingTransaction();
+  const holdingTransaction = new InvestmentTransaction();
   holdingTransaction.id = rawIT.investment_transaction_id;
   holdingTransaction.accountId = rawIT.account_id;
   holdingTransaction.securityId = rawIT.security_id ?? "";
