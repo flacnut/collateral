@@ -1,4 +1,9 @@
-import { PlaidResolver, TransactionResolver } from './resolvers';
+import {
+  AccountResolver,
+  PlaidResolver,
+  TagResolver,
+  TransactionResolver,
+} from '@resolvers';
 import { createConnection, getConnectionOptions } from 'typeorm';
 import { ApolloServer } from 'apollo-server-express';
 import { buildSchema } from 'type-graphql';
@@ -57,13 +62,10 @@ export default async function StartServer() {
     const apolloServer = new ApolloServer({
       schema: await buildSchema({
         resolvers: [
-          /*AccountResolver,
-          SourceResolver,
-          TransactionResolver,
-          TagResolver,
-          FilteredTransactionResolver,*/
-          TransactionResolver,
+          AccountResolver,
           PlaidResolver,
+          TagResolver,
+          TransactionResolver,
         ],
         validate: true,
       }),
