@@ -1,13 +1,13 @@
 import { Arg, Field, Int, ObjectType } from "type-graphql";
 import { Entity, BaseEntity, Column, PrimaryColumn, ManyToOne } from "typeorm";
-import { PlaidAccountBalance } from "./Balance";
+import { AccountBalance } from "./AccountBalance";
 import { CoreTransaction } from "./CoreTransaction";
-import { PlaidInstitution } from "./Institution";
-import { PlaidItem } from "./Item";
+import { Institution } from "./Institution";
+import { PlaidItem } from "./PlaidItem";
 
-@Entity("plaid_account")
+@Entity("account")
 @ObjectType()
-export class PlaidAccount extends BaseEntity {
+export class Account extends BaseEntity {
   // Core Plaid Fields
 
   @Field()
@@ -58,12 +58,12 @@ export class PlaidAccount extends BaseEntity {
 
   // Additional Fields
 
-  @ManyToOne(() => PlaidItem, (item) => item.accounts)
+  @ManyToOne(() => PlaidItem, (item: PlaidItem) => item.accounts)
   item: PlaidItem;
 
-  @Field(() => PlaidAccountBalance)
+  @Field(() => AccountBalance)
   async latestBalance() {
-    const balances = await PlaidAccountBalance.find({
+    const balances = await AccountBalance.find({
       accountId: this.id,
     });
     return (
@@ -109,11 +109,9 @@ export class PlaidAccount extends BaseEntity {
     });
   }
 
-  @Field(() => PlaidInstitution)
+  @Field(() => Institution)
   async institution() {
-    return (
-      (await PlaidInstitution.findByIds([this.institutionId])).pop() ?? null
-    );
+    return (await Institution.findByIds([this.institutionId])).pop() ?? null;
   }
 
   @Field(() => String)

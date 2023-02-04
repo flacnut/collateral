@@ -4,7 +4,7 @@ import { CoreTransaction } from "./CoreTransaction";
 
 @ChildEntity()
 @ObjectType()
-export class PlaidTransaction extends CoreTransaction {
+export class Transaction extends CoreTransaction {
   @Field()
   @Column("text")
   category: string;

@@ -1,9 +1,9 @@
 import { Field, Float, Int, ObjectType } from "type-graphql";
 import { Entity, BaseEntity, Column, PrimaryColumn } from "typeorm";
 
-@Entity("plaid_investment_holding")
+@Entity("investment_holding")
 @ObjectType()
-export class PlaidInvestmentHolding extends BaseEntity {
+export class InvestmentHolding extends BaseEntity {
   @Field()
   @PrimaryColumn("text", { nullable: false, unique: true })
   accountId: string;

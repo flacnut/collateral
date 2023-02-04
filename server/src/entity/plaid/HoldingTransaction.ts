@@ -4,7 +4,7 @@ import { CoreTransaction } from "./CoreTransaction";
 
 @ChildEntity()
 @ObjectType()
-export class PlaidHoldingTransaction extends CoreTransaction {
+export class HoldingTransaction extends CoreTransaction {
   @Field()
   @Column("text")
   securityId: string;

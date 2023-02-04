@@ -1,7 +1,7 @@
 import { Field, ObjectType } from "type-graphql";
 import { Entity, BaseEntity, Column, PrimaryColumn, OneToMany } from "typeorm";
-import { PlaidAccount } from "./Account";
-import { PlaidInstitution } from "./Institution";
+import { Account } from "./Account";
+import { Institution } from "./Institution";
 
 @Entity()
 @ObjectType()
@@ -22,16 +22,14 @@ export class PlaidItem extends BaseEntity {
   @Column("text")
   institutionId: string;
 
-  @Field(() => [PlaidAccount])
-  @OneToMany(() => PlaidAccount, (account) => account.item, { eager: true })
-  accounts: PlaidAccount[];
+  @Field(() => [Account])
+  @OneToMany(() => Account, (account) => account.item, { eager: true })
+  accounts: Account[];
 
   /* Dynamic / Generated fields */
 
-  @Field(() => PlaidInstitution)
+  @Field(() => Institution)
   async institution() {
-    return (
-      (await PlaidInstitution.findByIds([this.institutionId])).pop() ?? null
-    );
+    return (await Institution.findByIds([this.institutionId])).pop() ?? null;
   }
 }

@@ -11,7 +11,7 @@ import {
   ManyToMany,
   JoinTable,
 } from "typeorm";
-import { PlaidAccount } from "./Account";
+import { Account } from "./Account";
 
 enum TransactionClassification {
   Duplicate,
@@ -76,7 +76,7 @@ export class CoreTransaction extends BaseEntity {
 
   @AfterLoad()
   async applyAmountUpdates() {
-    const account = await PlaidAccount.findOne({
+    const account = await Account.findOne({
       where: { id: this.accountId },
       cache: true,
     });
@@ -85,9 +85,9 @@ export class CoreTransaction extends BaseEntity {
     }
   }
 
-  @Field(() => PlaidAccount)
+  @Field(() => Account)
   async account() {
-    return await PlaidAccount.findOne({
+    return await Account.findOne({
       where: { id: this.accountId },
       cache: true,
     });

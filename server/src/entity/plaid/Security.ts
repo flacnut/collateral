@@ -1,9 +1,9 @@
 import { Field, Int, ObjectType } from "type-graphql";
 import { Entity, BaseEntity, Column, PrimaryColumn } from "typeorm";
 
-@Entity("plaid_security")
+@Entity("security")
 @ObjectType()
-export class PlaidSecurity extends BaseEntity {
+export class Security extends BaseEntity {
   @Field()
   @PrimaryColumn("text", { nullable: false, unique: true })
   id: string;

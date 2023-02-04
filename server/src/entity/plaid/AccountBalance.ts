@@ -1,9 +1,9 @@
 import { Field, Int, ObjectType } from "type-graphql";
 import { Entity, BaseEntity, Column, PrimaryColumn } from "typeorm";
 
-@Entity("plaid_account_balance")
+@Entity("account_balance")
 @ObjectType()
-export class PlaidAccountBalance extends BaseEntity {
+export class AccountBalance extends BaseEntity {
   @Field()
   @PrimaryColumn("text")
   lastUpdateDate: string;
