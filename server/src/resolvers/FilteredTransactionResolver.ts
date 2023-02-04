@@ -16,7 +16,6 @@ import {
   registerEnumType,
 } from "type-graphql";
 import { FindOperator } from "typeorm";
-import { TransactionGroup } from "./TransactionResolver";
 
 enum ListOptions {
   ALL_OF = "ALL_OF",
@@ -302,12 +301,5 @@ export class FilteredTransactionResolver {
     */
 
     return [];
-  }
-
-  @Query(() => [TransactionGroup])
-  async richTransactionQuery(
-    @Arg("options", () => RichQuery) options: RichQuery
-  ) {
-    return options ? [] : [];
   }
 }
