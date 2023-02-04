@@ -79,15 +79,5 @@ export class AccountResolver {
     }
     return await Account.findOne(id);
   }
-  
-
-  @Mutation(() => [AccountBalance])
-  async computeBalancesForAccount(@Arg("id", () => Int) id: number) {
-    const account = (await Account.findByIds([id])).pop();
-    if (!account) {
-      throw new Error(`Account for id '${id}' could not be found.`);
-    }
-
-    return await account.balances;
-  } */
+  */
 }
