@@ -17,7 +17,6 @@ import {
   Products,
   TransactionsGetRequest,
   InvestmentsTransactionsGetRequest,
-  Holding,
 } from "plaid";
 import { client_id, dev_secret } from "../../plaidConfig.json";
 import {
@@ -196,6 +195,8 @@ export class PlaidResolver {
     return [];
   }
 
+  // WARNING:
+  // You probably want `refreshPlaidItems` instead!!
   @Query(() => [Transaction])
   async fetchTransactions(@Arg("itemId") itemId: string) {
     const item = await PlaidItem.findOneOrFail(itemId);
@@ -231,22 +232,8 @@ export class PlaidResolver {
     return await Promise.all(transactions.map(createTransaction));
   }
 
-  @Query(() => [InvestmentHolding])
-  async fetchInvestmentHoldings(@Arg("itemId") itemId: string) {
-    const item = await PlaidItem.findOneOrFail(itemId);
-
-    const response = await client.investmentsHoldingsGet({
-      access_token: item.accessToken,
-    });
-
-    const allItems = await Promise.all([
-      ...response.data.holdings.map(createInvestmentHolding),
-      ...response.data.securities.map(createOrUpdateSecurity),
-    ]);
-
-    return allItems.filter((item) => item instanceof InvestmentHolding);
-  }
-
+  // WARNING:
+  // You probably want `refreshPlaidItems` instead!!
   @Query(() => [InvestmentTransaction])
   async fetchInvestmentTransactions(@Arg("itemId") itemId: string) {
     const item = await PlaidItem.findOneOrFail(itemId);
@@ -286,35 +273,19 @@ export class PlaidResolver {
   }
 
   @Query(() => [InvestmentHolding])
-  async fetchHoldings(@Arg("itemId") itemId: string) {
+  async fetchInvestmentHoldings(@Arg("itemId") itemId: string) {
     const item = await PlaidItem.findOneOrFail(itemId);
 
     const response = await client.investmentsHoldingsGet({
       access_token: item.accessToken,
     });
 
-    console.dir(response.data);
+    const allItems = await Promise.all([
+      ...response.data.holdings.map(createInvestmentHolding),
+      ...response.data.securities.map(createOrUpdateSecurity),
+    ]);
 
-    await Promise.all(
-      response.data.holdings.map(async (holding: Holding) => {
-        let h = new InvestmentHolding();
-        h.accountId = holding.account_id;
-        h.securityId = holding.security_id;
-        h.costBasisCents = Number(holding.cost_basis) * 100;
-        h.quantity = holding.quantity;
-        h.currency = holding.iso_currency_code;
-        h.institutionPriceCents = holding.institution_price * 100;
-        h.institutionValueCents = holding.institution_value * 100;
-        h.institutionPriceAsOfDate = holding.institution_price_datetime
-          ? new Date().toLocaleDateString(holding.institution_price_datetime)
-          : null;
-        await h.save();
-      })
-    );
-
-    await Promise.all(response.data.securities.map(createOrUpdateSecurity));
-
-    return await InvestmentHolding.find();
+    return allItems.filter((item) => item instanceof InvestmentHolding);
   }
 
   @Query(() => Institution)
@@ -419,36 +390,6 @@ export class PlaidResolver {
   @Query(() => [PlaidItem])
   async getItems() {
     return await PlaidItem.find();
-  }
-
-  @Query(() => [Account])
-  async getAccounts(
-    @Arg("accountIds", () => [String], { nullable: true }) accountIds: string[]
-  ) {
-    if (accountIds && accountIds.length > 0) {
-      return await Account.findByIds(accountIds);
-    }
-
-    return await Account.find();
-  }
-
-  @Mutation(() => Boolean)
-  async deleteAccount(@Arg("accountId", () => String) accountId: string) {
-    const account = await Account.findOne({ id: accountId });
-    if (account) {
-      const accountsForItem = await Account.find({
-        itemId: account.itemId,
-      });
-
-      await CoreTransaction.delete({ accountId: accountId });
-      await Account.delete({ id: accountId });
-
-      if (accountsForItem.length === 1) {
-        await PlaidItem.delete({ id: account.itemId });
-      }
-    }
-
-    return true;
   }
 
   @Query(() => [AnyTransaction])
