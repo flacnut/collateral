@@ -1,7 +1,7 @@
 import { createHash } from "crypto";
 import { CoreTransaction } from "@entities";
 
-export type DateAmountTuple = { date: Date; amountCents: number };
+export type DateAmountTuple = { date: string; amountCents: number };
 export type DateAmountAccountTuple = DateAmountTuple & {
   transactionId: number | string;
   accountId: number | string;
@@ -15,7 +15,7 @@ export type MatchedPair = {
 export type BaseTransaction = {
   id: number | undefined;
   amountCents: number;
-  date: Date;
+  date: string;
   originalDescription: string;
 };
 
@@ -28,9 +28,7 @@ export function DetectDuplicateTransactions<T extends BaseTransaction>(
     let hash = createHash("sha256");
     let shaSum = hash
       .update(
-        `${
-          x.amountCents
-        }__${x.date.toLocaleDateString()}__${x.originalDescription
+        `${x.amountCents}__${x.date}__${x.originalDescription
           .toLocaleLowerCase()
           .trim()}`
       )
@@ -82,22 +80,21 @@ export function CalculateBalance(
   let minDate: Date = new Date(8640000000000000);
   let maxDate: Date = new Date(-8640000000000000);
 
-  transactions.forEach((_) => {
-    /*
-    if (t.date > maxDate) {
-      maxDate = t.date;
+  transactions.forEach((t) => {
+    let dateobj = new Date(t.date);
+    if (dateobj > maxDate) {
+      maxDate = dateobj;
     }
 
-    if (t.date < minDate) {
-      minDate = t.date;
+    if (dateobj < minDate) {
+      minDate = dateobj;
     }
 
-    if (!dateChanges[t.date.toLocaleDateString()]) {
-      dateChanges[t.date.toLocaleDateString()] = 0;
+    if (!dateChanges[dateobj.toLocaleDateString()]) {
+      dateChanges[dateobj.toLocaleDateString()] = 0;
     }
 
-    dateChanges[t.date.toLocaleDateString()] += t.amountCents;
-    */
+    dateChanges[dateobj.toLocaleDateString()] += t.amountCents;
   });
 
   const dateArray = getDateArray(minDate, maxDate);
@@ -111,14 +108,17 @@ export function CalculateBalance(
         yesterdaysBalance += dateChanges[value.toLocaleDateString()];
       }
 
-      if (knownClosingBalance.date.getTime() == value.getTime()) {
+      if (new Date(knownClosingBalance.date).getTime() == value.getTime()) {
         balanceOffset = knownClosingBalance.amountCents - yesterdaysBalance;
       }
 
       return { date: value, amountCents: yesterdaysBalance };
     })
     .map((tuple) => {
-      return { ...tuple, amountCents: tuple.amountCents + balanceOffset };
+      return {
+        date: tuple.date.toLocaleDateString(),
+        amountCents: tuple.amountCents + balanceOffset,
+      };
     });
 }
 
@@ -135,9 +135,9 @@ export function MatchTransfers(
   transactions: DateAmountAccountTuple[],
   distance = 7
 ): Array<MatchedPair> {
-  transactions.sort((a, b) => a.date.getTime() - b.date.getTime());
-
-  console.dir(transactions);
+  transactions.sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
 
   const possiblePairs: Array<MatchedPair> = [];
   const isAlreadyMatched = (id: number | string) =>
@@ -148,7 +148,8 @@ export function MatchTransfers(
     let windex = index;
     while (--windex >= 0) {
       if (
-        transaction.date.getTime() - transactions[windex].date.getTime() >
+        new Date(transaction.date).getTime() -
+          new Date(transactions[windex].date).getTime() >
         60 * 60 * 24 * 1000 * distance
       ) {
         break;

@@ -8,30 +8,30 @@ test("Calculates accout balance with offset", () => {
   expect(
     CalculateBalance(
       [
-        { date: new Date("2017-12-23"), amountCents: -2300 },
-        { date: new Date("2017-12-28"), amountCents: -4560 },
-        { date: new Date("2018-01-04"), amountCents: 6000 },
-        { date: new Date("2018-01-04"), amountCents: -500 },
-        { date: new Date("2018-01-04"), amountCents: -100 },
-        { date: new Date("2018-01-05"), amountCents: 600 },
+        { date: "12/23/2017", amountCents: -2300 },
+        { date: "12/28/2017", amountCents: -4560 },
+        { date: "1/4/2018", amountCents: 6000 },
+        { date: "1/4/2018", amountCents: -500 },
+        { date: "1/4/2018", amountCents: -100 },
+        { date: "1/5/2018", amountCents: 600 },
       ],
-      { date: new Date("2018-01-03"), amountCents: 0 }
+      { date: "1/3/2018", amountCents: 0 }
     )
   ).toEqual([
-    { date: new Date("2017-12-23"), amountCents: 4560 },
-    { date: new Date("2017-12-24"), amountCents: 4560 },
-    { date: new Date("2017-12-25"), amountCents: 4560 },
-    { date: new Date("2017-12-26"), amountCents: 4560 },
-    { date: new Date("2017-12-27"), amountCents: 4560 },
-    { date: new Date("2017-12-28"), amountCents: 0 },
-    { date: new Date("2017-12-29"), amountCents: 0 },
-    { date: new Date("2017-12-30"), amountCents: 0 },
-    { date: new Date("2017-12-31"), amountCents: 0 },
-    { date: new Date("2018-01-01"), amountCents: 0 },
-    { date: new Date("2018-01-02"), amountCents: 0 },
-    { date: new Date("2018-01-03"), amountCents: 0 },
-    { date: new Date("2018-01-04"), amountCents: 5400 },
-    { date: new Date("2018-01-05"), amountCents: 6000 },
+    { date: "12/23/2017", amountCents: 4560 },
+    { date: "12/24/2017", amountCents: 4560 },
+    { date: "12/25/2017", amountCents: 4560 },
+    { date: "12/26/2017", amountCents: 4560 },
+    { date: "12/27/2017", amountCents: 4560 },
+    { date: "12/28/2017", amountCents: 0 },
+    { date: "12/29/2017", amountCents: 0 },
+    { date: "12/30/2017", amountCents: 0 },
+    { date: "12/31/2017", amountCents: 0 },
+    { date: "1/1/2018", amountCents: 0 },
+    { date: "1/2/2018", amountCents: 0 },
+    { date: "1/3/2018", amountCents: 0 },
+    { date: "1/4/2018", amountCents: 5400 },
+    { date: "1/5/2018", amountCents: 6000 },
   ]);
 });
 
@@ -41,19 +41,19 @@ test("Deduplicate transactions", () => {
       [
         {
           id: 1,
-          date: new Date("2017-12-23"),
+          date: "12/23/2017",
           amountCents: -1000,
           originalDescription: "AMZN BUY SOCKS",
         },
         {
           id: 2,
-          date: new Date("2017-11-14"),
+          date: "11/14/2017",
           amountCents: -1000,
           originalDescription: "AMZN BUY CHEESE",
         },
         {
           id: 3,
-          date: new Date("2017-12-23"),
+          date: "12/23/2017",
           amountCents: -1432,
           originalDescription: "AMZN BUY SOCKS",
         },
@@ -61,14 +61,14 @@ test("Deduplicate transactions", () => {
       [
         {
           id: undefined,
-          date: new Date("2017-12-18"),
+          date: "12/18/2017",
           amountCents: 1000,
           originalDescription: "PAYMENT THANK YOU",
         },
 
         {
           id: undefined,
-          date: new Date("2017-12-23"),
+          date: "12/23/2017",
           amountCents: -1000,
           originalDescription: "AMZN BUY SOCKS",
         },
@@ -79,7 +79,7 @@ test("Deduplicate transactions", () => {
       {
         id: undefined,
         amountCents: 1000,
-        date: new Date("2017-12-18"),
+        date: "12/18/2017",
         originalDescription: "PAYMENT THANK YOU",
       },
     ],
@@ -87,7 +87,7 @@ test("Deduplicate transactions", () => {
       {
         id: undefined,
         amountCents: -1000,
-        date: new Date("2017-12-23"),
+        date: "12/23/2017",
         originalDescription: "AMZN BUY SOCKS",
       },
     ],
@@ -98,13 +98,13 @@ test("Detect transfers between accounts", () => {
   expect(
     MatchTransfers([
       {
-        date: new Date("2017-12-23"),
+        date: "12/23/2018",
         amountCents: -1000,
         accountId: 2,
         transactionId: 4,
       },
       {
-        date: new Date("2017-12-28"),
+        date: "12/28/2018",
         amountCents: 1000,
         accountId: 3,
         transactionId: 5,
@@ -115,37 +115,37 @@ test("Detect transfers between accounts", () => {
   expect(
     MatchTransfers([
       {
-        date: new Date("2018-01-09"),
+        date: "01/09/2018",
         amountCents: 1000,
         accountId: 3,
         transactionId: 1,
       },
       {
-        date: new Date("2018-01-13"),
+        date: "01/03/2018",
         amountCents: +5000,
         accountId: 2,
         transactionId: 2,
       },
       {
-        date: new Date("2017-12-28"),
+        date: "12/28/2017",
         amountCents: 1000,
         accountId: 3,
         transactionId: 3,
       },
       {
-        date: new Date("2017-12-29"),
+        date: "12/29/2017",
         amountCents: -5000,
         accountId: 3,
         transactionId: 4,
       },
       {
-        date: new Date("2017-12-31"),
+        date: "12/31/2017",
         amountCents: -5000,
         accountId: 3,
         transactionId: 5,
       },
       {
-        date: new Date("2017-12-23"),
+        date: "12/23/2017",
         amountCents: -2222,
         accountId: 3,
         transactionId: 6,
