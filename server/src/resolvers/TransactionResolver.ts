@@ -5,11 +5,10 @@ import {
   InputType,
   Query,
   Resolver,
-  registerEnumType,
   ObjectType,
   createUnionType,
   Mutation,
-} from "type-graphql";
+} from 'type-graphql';
 
 import {
   Account,
@@ -18,13 +17,13 @@ import {
   Tag,
   Transaction,
   Transfer,
-} from "@entities";
-import { FindManyOptions } from "typeorm";
+} from '@entities';
 import {
   DateAmountAccountTuple,
   MatchTransfers,
-} from "../../src/utils/AccountUtils";
-import { UnsavedTransfer } from "../../src/entity/Transfer";
+} from '../../src/utils/AccountUtils';
+import { UnsavedTransfer } from '../../src/entity/Transfer';
+import { FindManyOptions } from 'typeorm';
 
 @InputType()
 class QueryAggregationOptions {
@@ -75,7 +74,7 @@ class AggregatedTransaction {
 }
 
 const AnyTransaction = createUnionType({
-  name: "AnyTransaction",
+  name: 'AnyTransaction',
   types: () => [Transaction, InvestmentTransaction] as const,
 });
 
@@ -83,14 +82,14 @@ const AnyTransaction = createUnionType({
 export class TransactionResolver {
   @Query(() => [AnyTransaction])
   async getTransactions(
-    @Arg("accountId", { nullable: true }) accountId: string,
-    @Arg("limit", () => Int, { nullable: true, defaultValue: 100 })
+    @Arg('accountId', { nullable: true }) accountId: string,
+    @Arg('limit', () => Int, { nullable: true, defaultValue: 100 })
     limit: number,
-    @Arg("after", () => Int, { nullable: true, defaultValue: 0 }) after: number
+    @Arg('after', () => Int, { nullable: true, defaultValue: 0 }) after: number,
   ) {
     const options = {
       where: {},
-      order: { date: "DESC" },
+      order: { date: 'DESC' },
       skip: after,
       take: limit,
     } as FindManyOptions<CoreTransaction>;
@@ -104,13 +103,13 @@ export class TransactionResolver {
 
   @Query(() => [InvestmentTransaction])
   async getInvestmentTransactions(
-    @Arg("accountId", { nullable: true }) accountId: string,
-    @Arg("limit", { nullable: true, defaultValue: 100 }) limit: number,
-    @Arg("after", { nullable: true, defaultValue: 0 }) after: number
+    @Arg('accountId', { nullable: true }) accountId: string,
+    @Arg('limit', { nullable: true, defaultValue: 100 }) limit: number,
+    @Arg('after', { nullable: true, defaultValue: 0 }) after: number,
   ) {
     const options = {
       where: {},
-      order: { date: "DESC" },
+      order: { date: 'DESC' },
       skip: after,
       take: limit,
     } as FindManyOptions<CoreTransaction>;
@@ -124,8 +123,8 @@ export class TransactionResolver {
 
   @Query(() => [AggregatedTransaction])
   async getAggregatedTransactions(
-    @Arg("options", () => QueryAggregationOptions)
-    options: QueryAggregationOptions
+    @Arg('options', () => QueryAggregationOptions)
+    options: QueryAggregationOptions,
   ) {
     if (
       !options.account &&
@@ -134,7 +133,7 @@ export class TransactionResolver {
       !options.classification &&
       !options.tags
     ) {
-      throw new Error("Please provide valid aggregation options");
+      throw new Error('Please provide valid aggregation options');
     }
 
     const getMonthNormalizeDate = (d: Date | string): Date => {
@@ -144,19 +143,19 @@ export class TransactionResolver {
     };
 
     const getGroupKey = async (t: CoreTransaction): Promise<string> => {
-      let key = "";
-      if (options.account) key += "::" + t.accountId;
-      if (options.classification) key += "::" + t.classification.toString();
-      if (options.description) key += "::" + t.description;
+      let key = '';
+      if (options.account) key += '::' + t.accountId;
+      if (options.classification) key += '::' + t.classification.toString();
+      if (options.description) key += '::' + t.description;
       if (options.month)
-        key += "::" + getMonthNormalizeDate(t.date).toLocaleDateString();
+        key += '::' + getMonthNormalizeDate(t.date).toLocaleDateString();
       if (options.tags)
         key +=
-          "::" +
+          '::' +
           (await t.tags)
             .map((tag) => tag.name)
             .sort()
-            .join(":");
+            .join(':');
 
       return key;
     };
@@ -183,7 +182,7 @@ export class TransactionResolver {
           if (options.description) groups[key].description = t.description;
           if (options.month)
             groups[key].month = getMonthNormalizeDate(
-              t.date
+              t.date,
             ).toLocaleDateString();
           if (options.tags) groups[key].tags = await t.tags;
         }
@@ -193,11 +192,11 @@ export class TransactionResolver {
         t.amountCents < 0
           ? (groups[key].totalDepositCents += Math.abs(t.amountCents))
           : (groups[key].totalExpenseCents += Math.abs(t.amountCents));
-      })
+      }),
     );
 
     return Object.values(groups).sort(
-      (a, b) => b.transactionCount - a.transactionCount
+      (a, b) => b.transactionCount - a.transactionCount,
     );
   }
 
@@ -217,7 +216,7 @@ export class TransactionResolver {
           accountId: t.accountId,
           transactionId: t.id,
         } as DateAmountAccountTuple;
-      })
+      }),
     );
 
     let transfers = rawTransfers.map((transfer) => {
@@ -237,7 +236,7 @@ export class TransactionResolver {
 
   @Mutation(() => [Transfer])
   async saveTransfers(
-    @Arg("transfers", () => [UnsavedTransfer]) transfers: UnsavedTransfer[]
+    @Arg('transfers', () => [UnsavedTransfer]) transfers: UnsavedTransfer[],
   ) {
     let transactionIds = transfers
       .map((transfer) => {
@@ -247,7 +246,7 @@ export class TransactionResolver {
     let transactions = await CoreTransaction.findByIds(transactionIds);
 
     if (transactions.length !== 2 * transfers.length) {
-      console.error("Should be unreachable.");
+      console.error('Should be unreachable.');
     }
 
     let transferWrites = transfers

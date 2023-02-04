@@ -1,55 +1,55 @@
-import { Field, ObjectType } from "type-graphql";
-import { ChildEntity, Column } from "typeorm";
-import { CoreTransaction } from "./CoreTransaction";
+import { CoreTransaction } from './CoreTransaction';
+import { Field, ObjectType } from 'type-graphql';
+import { ChildEntity, Column } from 'typeorm';
 
 @ChildEntity()
 @ObjectType()
 export class Transaction extends CoreTransaction {
   @Field()
-  @Column("text")
+  @Column('text')
   category: string;
 
   @Field()
-  @Column("text")
+  @Column('text')
   categoryId: string;
 
   @Field()
-  @Column("text")
+  @Column('text')
   dateTime: string;
 
   @Field()
-  @Column("text")
+  @Column('text')
   authorizedDate: string;
 
   @Field()
-  @Column("text")
+  @Column('text')
   authorizedDateTime: string;
 
   @Field()
-  @Column("text")
+  @Column('text')
   locationJson: string;
 
   @Field()
-  @Column("text")
+  @Column('text')
   paymentMetaJson: string;
 
   @Field()
-  @Column("text")
+  @Column('text')
   originalDescription: string;
 
   @Field()
-  @Column("text")
+  @Column('text')
   merchant: string;
 
   @Field()
-  @Column("text")
+  @Column('text')
   paymentChannel: string;
 
   @Field()
-  @Column("text")
+  @Column('text')
   transactionCode: string;
 
   @Field(() => Boolean)
-  @Column("boolean", { default: false })
+  @Column('boolean', { default: false })
   pending: boolean;
 }

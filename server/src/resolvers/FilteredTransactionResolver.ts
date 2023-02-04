@@ -1,12 +1,4 @@
 import {
-  Between,
-  MoreThan,
-  LessThan,
-  Raw,
-  MoreThanOrEqual,
-  LessThanOrEqual,
-} from "typeorm";
-import {
   Arg,
   Field,
   Int,
@@ -14,58 +6,66 @@ import {
   Query,
   Resolver,
   registerEnumType,
-} from "type-graphql";
-import { FindOperator } from "typeorm";
+} from 'type-graphql';
+import {
+  Between,
+  MoreThan,
+  LessThan,
+  Raw,
+  MoreThanOrEqual,
+  LessThanOrEqual,
+} from 'typeorm';
+import { FindOperator } from 'typeorm';
 
 enum ListOptions {
-  ALL_OF = "ALL_OF",
-  ANY_OF = "ANY_OF",
-  NONE_OF = "NONE_OF",
-  EMPTY = "EMPTY",
-  NOT_EMPTY = "NOT_EMPTY",
+  ALL_OF = 'ALL_OF',
+  ANY_OF = 'ANY_OF',
+  NONE_OF = 'NONE_OF',
+  EMPTY = 'EMPTY',
+  NOT_EMPTY = 'NOT_EMPTY',
 }
 
 registerEnumType(ListOptions, {
-  name: "ListOptions",
-  description: "How one set filters of another set.",
+  name: 'ListOptions',
+  description: 'How one set filters of another set.',
 });
 
 enum GroupByOptions {
-  DESCRIPTION = "originalDescription",
-  FRIENDLY_DESCRIPTION = "friendlyDescription",
-  TAGS = "tags",
-  ACCOUNT = "account",
+  DESCRIPTION = 'originalDescription',
+  FRIENDLY_DESCRIPTION = 'friendlyDescription',
+  TAGS = 'tags',
+  ACCOUNT = 'account',
 }
 
 registerEnumType(GroupByOptions, {
-  name: "GroupByOptions",
-  description: "Basic group-by options for transactions.",
+  name: 'GroupByOptions',
+  description: 'Basic group-by options for transactions.',
 });
 
 enum TextMatchOptions {
-  STARTS_WITH = "STARTS_WITH",
-  ENDS_WITH = "ENDS_WITH",
-  CONTAINS = "CONTAINS",
-  EQUALS = "EQUALS",
+  STARTS_WITH = 'STARTS_WITH',
+  ENDS_WITH = 'ENDS_WITH',
+  CONTAINS = 'CONTAINS',
+  EQUALS = 'EQUALS',
 }
 
 registerEnumType(TextMatchOptions, {
-  name: "TextMatchOptions",
-  description: "How strings are compared.",
+  name: 'TextMatchOptions',
+  description: 'How strings are compared.',
 });
 
 enum NumberCompareOptions {
-  GREATER_THAN = "GREATER_THAN",
-  GREATER_THAN_OET = "GREATER_THAN_OET",
-  LESS_THAN = "LESS_THAN",
-  LESS_THAN_OET = "LESS_THAN_OET",
-  BETWEEN = "BETWEEN",
-  EQUALS = "EQUALS",
+  GREATER_THAN = 'GREATER_THAN',
+  GREATER_THAN_OET = 'GREATER_THAN_OET',
+  LESS_THAN = 'LESS_THAN',
+  LESS_THAN_OET = 'LESS_THAN_OET',
+  BETWEEN = 'BETWEEN',
+  EQUALS = 'EQUALS',
 }
 
 registerEnumType(NumberCompareOptions, {
-  name: "NumberCompareOptions",
-  description: "How number values are compared.",
+  name: 'NumberCompareOptions',
+  description: 'How number values are compared.',
 });
 
 @InputType()
@@ -138,7 +138,7 @@ class RichQuery {
 }
 
 function getAmountFilter(
-  amountFilter: AmountFilter
+  amountFilter: AmountFilter,
 ): FindOperator<number> | number {
   switch (amountFilter.compare) {
     case NumberCompareOptions.GREATER_THAN:
@@ -152,7 +152,7 @@ function getAmountFilter(
     case NumberCompareOptions.BETWEEN:
       return Between(
         Math.min(amountFilter.amountCents, amountFilter.secondAmountCents),
-        Math.max(amountFilter.amountCents, amountFilter.secondAmountCents)
+        Math.max(amountFilter.amountCents, amountFilter.secondAmountCents),
       );
     default:
     case NumberCompareOptions.EQUALS:
@@ -208,7 +208,7 @@ function getTextFilter(textFilter: TextFilter): FindOperator<string> | string {
       }
     });
 
-  return Raw((_) => `(` + allMatches.join(" OR ") + `)`);
+  return Raw((_) => `(` + allMatches.join(' OR ') + `)`);
 }
 
 /*
@@ -244,7 +244,7 @@ function includeTransactionForFilters(
 export class FilteredTransactionResolver {
   @Query(() => [Int])
   async getFilteredTransactions(
-    @Arg("options", () => RichQuery) options: RichQuery
+    @Arg('options', () => RichQuery) options: RichQuery,
   ) {
     // We could hand-roll our own SQLite for a perf boost, but
     // using the API means we can swap the underlying instance

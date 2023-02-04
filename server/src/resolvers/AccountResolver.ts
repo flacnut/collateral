@@ -1,11 +1,11 @@
-import { Account, CoreTransaction, PlaidItem } from "@entities";
-import { Arg, Mutation, Query, Resolver } from "type-graphql";
+import { Account, CoreTransaction, PlaidItem } from '@entities';
+import { Arg, Mutation, Query, Resolver } from 'type-graphql';
 
 @Resolver()
 export class AccountResolver {
   @Query(() => [Account])
   async getAccounts(
-    @Arg("accountIds", () => [String], { nullable: true }) accountIds: string[]
+    @Arg('accountIds', () => [String], { nullable: true }) accountIds: string[],
   ) {
     if (accountIds && accountIds.length > 0) {
       return await Account.findByIds(accountIds);
@@ -15,7 +15,7 @@ export class AccountResolver {
   }
 
   @Mutation(() => Boolean)
-  async deleteAccount(@Arg("accountId", () => String) accountId: string) {
+  async deleteAccount(@Arg('accountId', () => String) accountId: string) {
     const account = await Account.findOne({ id: accountId });
     if (account) {
       const accountsForItem = await Account.find({

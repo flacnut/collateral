@@ -6,7 +6,7 @@ import {
   Security as PlaidSecurity,
   InvestmentTransaction as PlaidInvestementTransaction,
   AccountBalance as PlaidAccountBalance,
-} from "plaid";
+} from 'plaid';
 import {
   PlaidItem,
   Institution,
@@ -16,12 +16,12 @@ import {
   Security,
   InvestmentHolding,
   InvestmentTransaction,
-} from "@entities";
+} from '@entities';
 
 export async function createItem(
   itemId: string,
   accessToken: string,
-  institutionId: string
+  institutionId: string,
 ): Promise<PlaidItem> {
   const item = new PlaidItem();
   item.id = itemId;
@@ -31,21 +31,21 @@ export async function createItem(
 }
 
 export async function createInstitution(
-  rawInstitution: PlaidInstitution
+  rawInstitution: PlaidInstitution,
 ): Promise<Institution> {
   const institution = new Institution();
   institution.id = rawInstitution.institution_id;
   institution.name = rawInstitution.name;
   institution.logo = rawInstitution.logo ?? null;
   institution.primaryColor = rawInstitution.primary_color ?? null;
-  institution.products = rawInstitution.products.join(",");
-  institution.countryCodes = rawInstitution.country_codes.join(",");
+  institution.products = rawInstitution.products.join(',');
+  institution.countryCodes = rawInstitution.country_codes.join(',');
   return await institution.save();
 }
 
 export async function createAccount(
   item: PlaidItem,
-  rawAccount: PlaidAccountBase
+  rawAccount: PlaidAccountBase,
 ): Promise<Account> {
   const account = new Account();
   account.id = rawAccount.account_id;
@@ -65,7 +65,7 @@ export async function createAccount(
 
 export async function createOrUpdateBalance(
   accountId: string,
-  rawBalance: PlaidAccountBalance
+  rawBalance: PlaidAccountBalance,
 ): Promise<AccountBalance> {
   const lastUpdateDate = rawBalance.last_updated_datetime
     ? new Date(rawBalance.last_updated_datetime).toLocaleDateString()
@@ -87,33 +87,33 @@ export async function createOrUpdateBalance(
 }
 
 export async function createTransaction(
-  rawTransaction: PlaidTransaction
+  rawTransaction: PlaidTransaction,
 ): Promise<Transaction> {
   // verify account Id
   const transaction = new Transaction();
   transaction.id = rawTransaction.transaction_id;
   transaction.accountId = rawTransaction.account_id;
   transaction.amountCents = Math.floor(rawTransaction.amount * 100);
-  transaction.category = rawTransaction.category?.join(",") ?? "";
-  transaction.categoryId = rawTransaction.category_id ?? "";
+  transaction.category = rawTransaction.category?.join(',') ?? '';
+  transaction.categoryId = rawTransaction.category_id ?? '';
   transaction.currency = rawTransaction.iso_currency_code;
   transaction.date = rawTransaction.date;
-  transaction.dateTime = rawTransaction.datetime ?? "";
-  transaction.authorizedDate = rawTransaction.authorized_date ?? "";
-  transaction.authorizedDateTime = rawTransaction.authorized_datetime ?? "";
+  transaction.dateTime = rawTransaction.datetime ?? '';
+  transaction.authorizedDate = rawTransaction.authorized_date ?? '';
+  transaction.authorizedDateTime = rawTransaction.authorized_datetime ?? '';
   transaction.locationJson = JSON.stringify(rawTransaction.location);
   transaction.paymentChannel = rawTransaction.payment_channel;
   transaction.paymentMetaJson = JSON.stringify(rawTransaction.payment_meta);
   transaction.description = rawTransaction.name;
   transaction.originalDescription =
     rawTransaction.original_description ?? rawTransaction.name;
-  transaction.merchant = rawTransaction.merchant_name ?? "";
-  transaction.transactionCode = rawTransaction.transaction_code ?? "";
+  transaction.merchant = rawTransaction.merchant_name ?? '';
+  transaction.transactionCode = rawTransaction.transaction_code ?? '';
   return transaction.save();
 }
 
 export async function createOrUpdateTransaction(
-  rawTransaction: PlaidTransaction
+  rawTransaction: PlaidTransaction,
 ): Promise<Transaction> {
   const existingTransaction = await Transaction.findOne({
     id: rawTransaction.transaction_id,
@@ -123,27 +123,27 @@ export async function createOrUpdateTransaction(
   transaction.id = rawTransaction.transaction_id;
   transaction.accountId = rawTransaction.account_id;
   transaction.amountCents = Math.floor(rawTransaction.amount * 100);
-  transaction.category = rawTransaction.category?.join(",") ?? "";
-  transaction.categoryId = rawTransaction.category_id ?? "";
+  transaction.category = rawTransaction.category?.join(',') ?? '';
+  transaction.categoryId = rawTransaction.category_id ?? '';
   transaction.currency = rawTransaction.iso_currency_code;
   transaction.date = rawTransaction.date;
-  transaction.dateTime = rawTransaction.datetime ?? "";
-  transaction.authorizedDate = rawTransaction.authorized_date ?? "";
-  transaction.authorizedDateTime = rawTransaction.authorized_datetime ?? "";
+  transaction.dateTime = rawTransaction.datetime ?? '';
+  transaction.authorizedDate = rawTransaction.authorized_date ?? '';
+  transaction.authorizedDateTime = rawTransaction.authorized_datetime ?? '';
   transaction.locationJson = JSON.stringify(rawTransaction.location);
   transaction.paymentChannel = rawTransaction.payment_channel;
   transaction.paymentMetaJson = JSON.stringify(rawTransaction.payment_meta);
   transaction.description = rawTransaction.name;
   transaction.originalDescription =
     rawTransaction.original_description ?? rawTransaction.name;
-  transaction.merchant = rawTransaction.merchant_name ?? "";
-  transaction.transactionCode = rawTransaction.transaction_code ?? "";
+  transaction.merchant = rawTransaction.merchant_name ?? '';
+  transaction.transactionCode = rawTransaction.transaction_code ?? '';
   transaction.pending = rawTransaction.pending;
   return transaction.save();
 }
 
 export async function createOrUpdateSecurity(
-  rawSecurity: PlaidSecurity
+  rawSecurity: PlaidSecurity,
 ): Promise<Security> {
   // verify Account ID & security
   const existingSecurity = await Security.findOne({
@@ -152,22 +152,22 @@ export async function createOrUpdateSecurity(
   const security = existingSecurity ?? new Security();
 
   security.id = rawSecurity.security_id;
-  security.ticker = rawSecurity.ticker_symbol ?? "";
-  security.name = rawSecurity.name ?? "";
+  security.ticker = rawSecurity.ticker_symbol ?? '';
+  security.name = rawSecurity.name ?? '';
   security.closePriceCents = Math.floor(rawSecurity.close_price ?? 0 * 100);
-  security.closePriceDate = rawSecurity.close_price_as_of ?? "";
+  security.closePriceDate = rawSecurity.close_price_as_of ?? '';
   security.currency = rawSecurity.iso_currency_code;
   security.isCashEquivalent = rawSecurity.is_cash_equivalent ?? false;
-  security.type = rawSecurity.type ?? "";
-  security.isin = rawSecurity.isin ?? "";
-  security.cusip = rawSecurity.cusip ?? "";
-  security.sedol = rawSecurity.sedol ?? "";
+  security.type = rawSecurity.type ?? '';
+  security.isin = rawSecurity.isin ?? '';
+  security.cusip = rawSecurity.cusip ?? '';
+  security.sedol = rawSecurity.sedol ?? '';
 
   return await security.save();
 }
 
 export async function createInvestmentHolding(
-  rawHolding: PlaidHolding
+  rawHolding: PlaidHolding,
 ): Promise<InvestmentHolding> {
   // verify Account ID & security
   const holding = new InvestmentHolding();
@@ -176,10 +176,10 @@ export async function createInvestmentHolding(
   holding.costBasisCents = Math.floor(rawHolding.cost_basis ?? 0 * 100);
   holding.quantity = rawHolding.quantity;
   holding.institutionPriceCents = Math.floor(
-    rawHolding.institution_price * 100
+    rawHolding.institution_price * 100,
   );
   holding.institutionValueCents = Math.floor(
-    rawHolding.institution_value * 100
+    rawHolding.institution_value * 100,
   );
   holding.institutionPriceAsOfDate = rawHolding.institution_price_as_of;
   holding.currency = rawHolding.iso_currency_code;
@@ -187,13 +187,13 @@ export async function createInvestmentHolding(
 }
 
 export async function createInvestmentTransaction(
-  rawIT: PlaidInvestementTransaction
+  rawIT: PlaidInvestementTransaction,
 ): Promise<InvestmentTransaction> {
   // verify Account ID & security
   const holdingTransaction = new InvestmentTransaction();
   holdingTransaction.id = rawIT.investment_transaction_id;
   holdingTransaction.accountId = rawIT.account_id;
-  holdingTransaction.securityId = rawIT.security_id ?? "";
+  holdingTransaction.securityId = rawIT.security_id ?? '';
   holdingTransaction.description = rawIT.name;
   holdingTransaction.amountCents = Math.floor(rawIT.amount * 100);
   holdingTransaction.feesCents = Math.floor(rawIT.fees ?? 0 * 100);

@@ -1,38 +1,38 @@
-import { Field, Float, Int, ObjectType } from "type-graphql";
-import { Entity, BaseEntity, Column, PrimaryColumn } from "typeorm";
+import { Entity, BaseEntity, Column, PrimaryColumn } from 'typeorm';
+import { Field, Float, Int, ObjectType } from 'type-graphql';
 
-@Entity("investment_holding")
+@Entity('investment_holding')
 @ObjectType()
 export class InvestmentHolding extends BaseEntity {
   @Field()
-  @PrimaryColumn("text", { nullable: false, unique: true })
+  @PrimaryColumn('text', { nullable: false, unique: true })
   accountId: string;
 
   @Field()
-  @PrimaryColumn("text", { nullable: false, unique: true })
+  @PrimaryColumn('text', { nullable: false, unique: true })
   securityId: string;
 
   @Field(() => Int)
-  @Column("int")
+  @Column('int')
   costBasisCents: number;
 
   @Field(() => Float)
-  @Column("float")
+  @Column('float')
   quantity: number;
 
   @Field(() => Int)
-  @Column("int")
+  @Column('int')
   institutionPriceCents: number;
 
   @Field(() => Int)
-  @Column("int")
+  @Column('int')
   institutionValueCents: number;
 
   @Field(() => String, { nullable: true })
-  @Column("text", { nullable: true })
+  @Column('text', { nullable: true })
   institutionPriceAsOfDate: string | null;
 
   @Field(() => String, { nullable: true })
-  @Column("text", { nullable: true })
+  @Column('text', { nullable: true })
   currency: string | null;
 }

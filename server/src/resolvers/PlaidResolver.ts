@@ -1,12 +1,12 @@
 import {
-  Arg,
-  Field,
-  InputType,
-  Mutation,
-  ObjectType,
-  Query,
-  Resolver,
-} from "type-graphql";
+  createAccount,
+  createInvestmentTransaction,
+  createInstitution,
+  createInvestmentHolding,
+  createItem,
+  createOrUpdateSecurity,
+  createTransaction,
+} from '../../src/utils/PlaidEntityHelper';
 import {
   Configuration,
   PlaidApi,
@@ -15,8 +15,7 @@ import {
   Products,
   TransactionsGetRequest,
   InvestmentsTransactionsGetRequest,
-} from "plaid";
-import { client_id, dev_secret } from "../../plaidConfig.json";
+} from 'plaid';
 import {
   Transaction,
   PlaidItem,
@@ -24,25 +23,26 @@ import {
   InvestmentHolding,
   InvestmentTransaction,
   Account,
-} from "@entities";
+} from '@entities';
 import {
-  createAccount,
-  createInvestmentTransaction,
-  createInstitution,
-  createInvestmentHolding,
-  createItem,
-  createOrUpdateSecurity,
-  createTransaction,
-} from "../../src/utils/PlaidEntityHelper";
-import { FindManyOptions } from "typeorm";
-import PlaidFetcherUtil from "../../src/utils/PlaidFetcherUtil";
+  Arg,
+  Field,
+  InputType,
+  Mutation,
+  ObjectType,
+  Query,
+  Resolver,
+} from 'type-graphql';
+import PlaidFetcherUtil from '../../src/utils/PlaidFetcherUtil';
+import { client_id, dev_secret } from '../../plaidConfig.json';
+import { FindManyOptions } from 'typeorm';
 
 const configuration = new Configuration({
   basePath: PlaidEnvironments.development,
   baseOptions: {
     headers: {
-      "PLAID-CLIENT-ID": client_id,
-      "PLAID-SECRET": dev_secret,
+      'PLAID-CLIENT-ID': client_id,
+      'PLAID-SECRET': dev_secret,
     },
   },
 });
@@ -77,14 +77,14 @@ export class PlaidResolver {
     return client
       .linkTokenCreate({
         user: {
-          client_user_id: "4325",
+          client_user_id: '4325',
         },
-        client_name: "Plaid Test App",
+        client_name: 'Plaid Test App',
         products: [Products.Transactions],
         country_codes: [CountryCode.Us],
-        language: "en",
-        webhook: "https://sample-web-hook.com",
-        redirect_uri: "https://localhost:3000/oauth",
+        language: 'en',
+        webhook: 'https://sample-web-hook.com',
+        redirect_uri: 'https://localhost:3000/oauth',
         //access_token: "<item access token>",
       })
       .then((response) => {
@@ -102,8 +102,8 @@ export class PlaidResolver {
 
   @Mutation(() => PlaidItem)
   async setPlaidLinkResponse(
-    @Arg("plaidLinkResponse", () => PlaidLinkResponse)
-    linkResponse: PlaidLinkResponse
+    @Arg('plaidLinkResponse', () => PlaidLinkResponse)
+    linkResponse: PlaidLinkResponse,
   ) {
     let item: PlaidItem | null = null;
     try {
@@ -115,7 +115,7 @@ export class PlaidResolver {
         item = await createItem(
           response.data.item_id,
           response.data.access_token,
-          linkResponse.institutionId
+          linkResponse.institutionId,
         );
       }
     } catch (error) {
@@ -149,7 +149,7 @@ export class PlaidResolver {
               return;
             }
             return createAccount(item, acc);
-          })
+          }),
         );
       }
     }
@@ -164,7 +164,7 @@ export class PlaidResolver {
   }
 
   @Query(() => [Account])
-  async fetchAccounts(@Arg("itemId") itemId: string) {
+  async fetchAccounts(@Arg('itemId') itemId: string) {
     const item = await PlaidItem.findOneOrFail(itemId);
 
     if (item != null) {
@@ -174,7 +174,7 @@ export class PlaidResolver {
 
       if (response.data != null) {
         return await Promise.all(
-          response.data.accounts.map(async (acc) => createAccount(item, acc))
+          response.data.accounts.map(async (acc) => createAccount(item, acc)),
         );
       }
     }
@@ -184,13 +184,13 @@ export class PlaidResolver {
   // WARNING:
   // You probably want `refreshPlaidItems` instead!!
   @Query(() => [Transaction])
-  async fetchTransactions(@Arg("itemId") itemId: string) {
+  async fetchTransactions(@Arg('itemId') itemId: string) {
     const item = await PlaidItem.findOneOrFail(itemId);
 
     const response = await client.transactionsGet({
       access_token: item.accessToken,
-      start_date: "2022-01-01",
-      end_date: "2022-12-31",
+      start_date: '2022-01-01',
+      end_date: '2022-12-31',
       options: {
         include_original_description: true,
         include_personal_finance_category: true,
@@ -203,8 +203,8 @@ export class PlaidResolver {
     while (transactions.length < total_transactions) {
       const paginatedRequest: TransactionsGetRequest = {
         access_token: item.accessToken,
-        start_date: "2022-01-01",
-        end_date: "2022-12-31",
+        start_date: '2022-01-01',
+        end_date: '2022-12-31',
         options: {
           offset: transactions.length,
           include_original_description: true,
@@ -221,13 +221,13 @@ export class PlaidResolver {
   // WARNING:
   // You probably want `refreshPlaidItems` instead!!
   @Query(() => [InvestmentTransaction])
-  async fetchInvestmentTransactions(@Arg("itemId") itemId: string) {
+  async fetchInvestmentTransactions(@Arg('itemId') itemId: string) {
     const item = await PlaidItem.findOneOrFail(itemId);
 
     const response = await client.investmentsTransactionsGet({
       access_token: item.accessToken,
-      start_date: "2022-01-01",
-      end_date: "2022-12-31",
+      start_date: '2022-01-01',
+      end_date: '2022-12-31',
     });
 
     let investment_transactions = response.data.investment_transactions;
@@ -236,17 +236,17 @@ export class PlaidResolver {
     while (investment_transactions.length < total_transactions) {
       const paginatedRequest: InvestmentsTransactionsGetRequest = {
         access_token: item.accessToken,
-        start_date: "2022-01-01",
-        end_date: "2022-12-31",
+        start_date: '2022-01-01',
+        end_date: '2022-12-31',
         options: {
           offset: investment_transactions.length,
         },
       };
       const paginatedResponse = await client.investmentsTransactionsGet(
-        paginatedRequest
+        paginatedRequest,
       );
       investment_transactions = investment_transactions.concat(
-        paginatedResponse.data.investment_transactions
+        paginatedResponse.data.investment_transactions,
       );
     }
 
@@ -259,7 +259,7 @@ export class PlaidResolver {
   }
 
   @Query(() => [InvestmentHolding])
-  async fetchInvestmentHoldings(@Arg("itemId") itemId: string) {
+  async fetchInvestmentHoldings(@Arg('itemId') itemId: string) {
     const item = await PlaidItem.findOneOrFail(itemId);
 
     const response = await client.investmentsHoldingsGet({
@@ -275,7 +275,7 @@ export class PlaidResolver {
   }
 
   @Query(() => Institution)
-  async getInstitution(@Arg("institutionId") institutionId: string) {
+  async getInstitution(@Arg('institutionId') institutionId: string) {
     try {
       let institution = await Institution.findOne(institutionId);
 
@@ -313,7 +313,7 @@ export class PlaidResolver {
 
   @Query(() => [TransactionCategory])
   async transactionDetails(
-    @Arg("accountId", { nullable: true }) accountId: string
+    @Arg('accountId', { nullable: true }) accountId: string,
   ): Promise<Array<TransactionCategory>> {
     const options = {
       where: {},

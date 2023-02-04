@@ -1,4 +1,3 @@
-import { Field, InputType, Int, ObjectType } from "type-graphql";
 import {
   BaseEntity,
   Column,
@@ -6,13 +5,14 @@ import {
   JoinColumn,
   OneToOne,
   PrimaryColumn,
-} from "typeorm";
-import { CoreTransaction } from "@entities";
+} from 'typeorm';
+import { Field, InputType, Int, ObjectType } from 'type-graphql';
+import { CoreTransaction } from '@entities';
 
 @ObjectType()
 @Entity()
 export class Transfer extends BaseEntity {
-  @PrimaryColumn("text", { nullable: false, unique: true })
+  @PrimaryColumn('text', { nullable: false, unique: true })
   id: string;
 
   @Field(() => CoreTransaction)

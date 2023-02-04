@@ -1,5 +1,3 @@
-import { Tag } from "@entities";
-import { Field, Int, ObjectType, registerEnumType } from "type-graphql";
 import {
   Entity,
   BaseEntity,
@@ -10,8 +8,10 @@ import {
   DeleteDateColumn,
   ManyToMany,
   JoinTable,
-} from "typeorm";
-import { Account } from "@entities";
+} from 'typeorm';
+import { Field, Int, ObjectType, registerEnumType } from 'type-graphql';
+import { Account } from '@entities';
+import { Tag } from '@entities';
 
 enum TransactionClassification {
   Duplicate,
@@ -23,36 +23,36 @@ enum TransactionClassification {
 }
 
 registerEnumType(TransactionClassification, {
-  name: "TransactionClassification", // this one is mandatory
-  description: "Some general transaction classifications", // this one is optional
+  name: 'TransactionClassification', // this one is mandatory
+  description: 'Some general transaction classifications', // this one is optional
 });
 
 @ObjectType()
-@Entity("transaction")
-@TableInheritance({ column: { type: "varchar", name: "type" } })
+@Entity('transaction')
+@TableInheritance({ column: { type: 'varchar', name: 'type' } })
 export class CoreTransaction extends BaseEntity {
   @Field()
-  @PrimaryColumn("text", { nullable: false, unique: true })
+  @PrimaryColumn('text', { nullable: false, unique: true })
   id: string;
 
   @Field()
-  @Column("text")
+  @Column('text')
   accountId: string;
 
   @Field()
-  @Column("text")
+  @Column('text')
   description: string;
 
   @Field(() => Int)
-  @Column("int")
+  @Column('int')
   amountCents: number;
 
   @Field()
-  @Column("text")
+  @Column('text')
   date: string;
 
   @Field(() => String, { nullable: true })
-  @Column("text", { nullable: true })
+  @Column('text', { nullable: true })
   currency: string | null;
 
   @DeleteDateColumn()
@@ -60,10 +60,10 @@ export class CoreTransaction extends BaseEntity {
 
   @Field(() => [Tag])
   @JoinTable()
-  @ManyToMany(() => Tag, { onDelete: "NO ACTION" })
+  @ManyToMany(() => Tag, { onDelete: 'NO ACTION' })
   tags: Promise<Tag[]>;
 
-  @Column("text", { nullable: true })
+  @Column('text', { nullable: true })
   @Field(() => TransactionClassification, { nullable: true })
   classification: TransactionClassification;
 

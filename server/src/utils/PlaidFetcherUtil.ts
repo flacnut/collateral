@@ -1,26 +1,26 @@
-import moment from "moment";
+import {
+  createOrUpdateBalance,
+  createInvestmentTransaction,
+  createOrUpdateSecurity,
+} from './PlaidEntityHelper';
 import {
   Configuration,
   PlaidApi,
   PlaidEnvironments,
   TransactionsSyncResponse,
-} from "plaid";
-import { Institution, PlaidItem, Transaction } from "@entities";
-import { createOrUpdateTransaction } from "./PlaidEntityHelper";
-import {
-  createOrUpdateBalance,
-  createInvestmentTransaction,
-  createOrUpdateSecurity,
-} from "./PlaidEntityHelper";
+} from 'plaid';
+import { createOrUpdateTransaction } from './PlaidEntityHelper';
+import { Institution, PlaidItem, Transaction } from '@entities';
+import moment from 'moment';
 
-import { client_id, dev_secret } from "../../plaidConfig.json";
+import { client_id, dev_secret } from '../../plaidConfig.json';
 
 const configuration = new Configuration({
   basePath: PlaidEnvironments.development,
   baseOptions: {
     headers: {
-      "PLAID-CLIENT-ID": client_id,
-      "PLAID-SECRET": dev_secret,
+      'PLAID-CLIENT-ID': client_id,
+      'PLAID-SECRET': dev_secret,
     },
   },
 });
@@ -40,8 +40,8 @@ export default {
         // balances
         await Promise.all(
           accountResponse.data?.accounts?.map((acc) =>
-            createOrUpdateBalance(acc.account_id, acc.balances)
-          )
+            createOrUpdateBalance(acc.account_id, acc.balances),
+          ),
         );
 
         // transactions
@@ -51,10 +51,10 @@ export default {
         let institution = await Institution.findOne({
           id: item.institutionId,
         });
-        if (institution?.products.split(",").includes("investments")) {
+        if (institution?.products.split(',').includes('investments')) {
           await this.fetchHoldingTransactions(item);
         }
-      })
+      }),
     );
   },
 
@@ -62,8 +62,8 @@ export default {
     try {
       const h_options = {
         access_token: item.accessToken,
-        start_date: moment().subtract(2, "years").format("YYYY-MM-DD"),
-        end_date: moment().add(3, "days").format("YYYY-MM-DD"),
+        start_date: moment().subtract(2, 'years').format('YYYY-MM-DD'),
+        end_date: moment().add(3, 'days').format('YYYY-MM-DD'),
         options: {
           offset: 0,
         },
@@ -77,13 +77,13 @@ export default {
       while (investment_transactions.length < total_h_transactions) {
         h_options.options.offset = investment_transactions.length;
         const paginatedResponse = await client.investmentsTransactionsGet(
-          h_options
+          h_options,
         );
         investment_transactions = investment_transactions.concat(
-          paginatedResponse.data.investment_transactions
+          paginatedResponse.data.investment_transactions,
         );
         investment_securities = investment_securities.concat(
-          paginatedResponse.data.securities
+          paginatedResponse.data.securities,
         );
       }
 
@@ -152,7 +152,7 @@ export default {
     } catch (err) {
       console.error(err);
       throw new Error(
-        `Unable to write sync-transactions updates: ${err.message}`
+        `Unable to write sync-transactions updates: ${err.message}`,
       );
     }
   },

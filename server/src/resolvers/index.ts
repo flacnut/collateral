@@ -1,8 +1,8 @@
-import { TransactionResolver } from "./TransactionResolver";
-import { TagResolver } from "./TagResolver";
-import { AccountResolver } from "./AccountResolver";
-import { FilteredTransactionResolver } from "./FilteredTransactionResolver";
-import { PlaidResolver } from "./PlaidResolver";
+import { FilteredTransactionResolver } from './FilteredTransactionResolver';
+import { TransactionResolver } from './TransactionResolver';
+import { AccountResolver } from './AccountResolver';
+import { PlaidResolver } from './PlaidResolver';
+import { TagResolver } from './TagResolver';
 
 export {
   AccountResolver,

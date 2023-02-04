@@ -22,10 +22,13 @@
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
-      "@entities": ["src/entity"],
-      "@resolvers": ["src/resolvers"]
+      "@entities": ["./src/entity"],
+      "@resolvers": ["./src/resolvers"]
     }
   },
-  "exclude": ["node_modules", "client"],
-  "include": ["./src/**/*.tsx", "./src/**/*.ts"]
+  "exclude": ["node_modules", "client", "client3", "client2"],
+  "include": ["./src/**/*.tsx", "./src/**/*.ts"],
+  "ts-node": {
+    "require": ["tsconfig-paths/register"]
+  }
 }

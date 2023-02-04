@@ -1,61 +1,61 @@
-import { Arg, Field, Int, ObjectType } from "type-graphql";
-import { Entity, BaseEntity, Column, PrimaryColumn, ManyToOne } from "typeorm";
 import {
   AccountBalance,
   CoreTransaction,
   Institution,
   PlaidItem,
-} from "@entities";
+} from '@entities';
+import { Entity, BaseEntity, Column, PrimaryColumn, ManyToOne } from 'typeorm';
+import { Arg, Field, Int, ObjectType } from 'type-graphql';
 
-@Entity("account")
+@Entity('account')
 @ObjectType()
 export class Account extends BaseEntity {
   // Core Plaid Fields
 
   @Field()
-  @PrimaryColumn("text", { nullable: false, unique: true })
+  @PrimaryColumn('text', { nullable: false, unique: true })
   id: string;
 
   @Field()
-  @Column("text")
+  @Column('text')
   itemId: string;
 
   @Field()
-  @Column("text")
+  @Column('text')
   institutionId: string;
 
   @Field()
-  @Column("text")
+  @Column('text')
   name: string;
 
   @Field(() => String, { nullable: true })
-  @Column("text", { nullable: true })
+  @Column('text', { nullable: true })
   officialName: string | null;
 
   @Field(() => String, { nullable: true })
-  @Column("text", { nullable: true })
+  @Column('text', { nullable: true })
   mask: string | null;
 
   @Field()
-  @Column("text")
+  @Column('text')
   type: string;
 
   @Field(() => String, { nullable: true })
-  @Column("text", { nullable: true })
+  @Column('text', { nullable: true })
   subtype: string | null;
 
   @Field(() => String, { nullable: true })
-  @Column("text", { nullable: true })
+  @Column('text', { nullable: true })
   currency: string | null;
 
   // non-plaid fields
 
   @Field(() => Boolean)
-  @Column("boolean", { default: true })
+  @Column('boolean', { default: true })
   invertTransactions: boolean;
 
   @Field(() => Boolean)
-  @Column("boolean", { default: true })
+  @Column('boolean', { default: true })
   invertBalances: boolean;
 
   // Additional Fields
@@ -73,7 +73,7 @@ export class Account extends BaseEntity {
         .sort(
           (a, b) =>
             new Date(a.lastUpdateDate).getTime() -
-            new Date(b.lastUpdateDate).getTime()
+            new Date(b.lastUpdateDate).getTime(),
         )
         .pop() ?? null
     );
@@ -85,7 +85,7 @@ export class Account extends BaseEntity {
       where: {
         accountId: this.id,
       },
-      order: { date: "DESC" },
+      order: { date: 'DESC' },
     });
   }
 
@@ -99,13 +99,13 @@ export class Account extends BaseEntity {
 
   @Field(() => [CoreTransaction])
   async transactions(
-    @Arg("after", { nullable: true }) after: number
+    @Arg('after', { nullable: true }) after: number,
   ): Promise<CoreTransaction[]> {
     return await CoreTransaction.getRepository().find({
       where: {
         accountId: this.id,
       },
-      order: { date: "DESC" },
+      order: { date: 'DESC' },
       skip: after,
       take: 50,
     });
@@ -118,18 +118,18 @@ export class Account extends BaseEntity {
 
   @Field(() => String)
   async status() {
-    const query = CoreTransaction.createQueryBuilder("transaction");
+    const query = CoreTransaction.createQueryBuilder('transaction');
     query.where({ accountId: this.id });
-    query.select("MAX(transaction.date)", "max");
+    query.select('MAX(transaction.date)', 'max');
     const { max } = (await query.getRawOne()) as { max: string };
 
     switch (true) {
       case max == null:
-        return "inactive";
+        return 'inactive';
       case isOlderThanOneMonth(max):
-        return "stale";
+        return 'stale';
       default:
-        return "active";
+        return 'active';
     }
   }
 }

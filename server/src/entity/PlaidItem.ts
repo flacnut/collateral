@@ -1,24 +1,24 @@
-import { Field, ObjectType } from "type-graphql";
-import { Entity, BaseEntity, Column, PrimaryColumn, OneToMany } from "typeorm";
-import { Account, Institution } from "@entities";
+import { Entity, BaseEntity, Column, PrimaryColumn, OneToMany } from 'typeorm';
+import { Field, ObjectType } from 'type-graphql';
+import { Account, Institution } from '@entities';
 
 @Entity()
 @ObjectType()
 export class PlaidItem extends BaseEntity {
   @Field()
-  @PrimaryColumn("text", { nullable: false, unique: true })
+  @PrimaryColumn('text', { nullable: false, unique: true })
   id: string;
 
   // not a field to be accessed
-  @Column("text")
+  @Column('text')
   accessToken: string;
 
   // not a field to be accessed
-  @Column("text", { nullable: true })
+  @Column('text', { nullable: true })
   transactionsCursor: string | null;
 
   @Field()
-  @Column("text")
+  @Column('text')
   institutionId: string;
 
   @Field(() => [Account])

@@ -1,14 +1,14 @@
-import { Tag } from "./Tag";
-import { Transfer } from "./Transfer";
-import { Account } from "./Account";
-import { InvestmentHolding } from "./InvestmentHolding";
-import { Institution } from "./Institution";
-import { InvestmentTransaction } from "./InvestmentTransaction";
-import { PlaidItem } from "./PlaidItem";
-import { Security } from "./Security";
-import { Transaction } from "./Transaction";
-import { AccountBalance } from "./AccountBalance";
-import { CoreTransaction } from "./CoreTransaction";
+import { InvestmentTransaction } from './InvestmentTransaction';
+import { InvestmentHolding } from './InvestmentHolding';
+import { CoreTransaction } from './CoreTransaction';
+import { AccountBalance } from './AccountBalance';
+import { Institution } from './Institution';
+import { Transaction } from './Transaction';
+import { PlaidItem } from './PlaidItem';
+import { Transfer } from './Transfer';
+import { Security } from './Security';
+import { Account } from './Account';
+import { Tag } from './Tag';
 
 export {
   Account,

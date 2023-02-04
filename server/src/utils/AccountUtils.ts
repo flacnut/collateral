@@ -1,5 +1,5 @@
-import { createHash } from "crypto";
-import { CoreTransaction } from "@entities";
+import { CoreTransaction } from '@entities';
+import { createHash } from 'crypto';
 
 export type DateAmountTuple = { date: string; amountCents: number };
 export type DateAmountAccountTuple = DateAmountTuple & {
@@ -21,18 +21,18 @@ export type BaseTransaction = {
 
 export function DetectDuplicateTransactions<T extends BaseTransaction>(
   existingTransactions: T[],
-  newTransactions: T[]
+  newTransactions: T[],
 ): { unique: T[]; duplicates: T[] } {
   const duplicates: T[] = [];
   const reducer = (memo: { [key: string]: T }, x: T) => {
-    let hash = createHash("sha256");
+    let hash = createHash('sha256');
     let shaSum = hash
       .update(
         `${x.amountCents}__${x.date}__${x.originalDescription
           .toLocaleLowerCase()
-          .trim()}`
+          .trim()}`,
       )
-      .digest("hex");
+      .digest('hex');
 
     if (memo[shaSum] && memo[shaSum].amountCents === x.amountCents) {
       duplicates.push(x);
@@ -45,24 +45,24 @@ export function DetectDuplicateTransactions<T extends BaseTransaction>(
 
   const existingHashMappedTransactions = existingTransactions.reduce(
     reducer,
-    {}
+    {},
   );
 
   if (duplicates.length > 0) {
     console.warn(
-      "Found duplicates in existing transactions!",
-      duplicates.map((d) => d.id)
+      'Found duplicates in existing transactions!',
+      duplicates.map((d) => d.id),
     );
   }
 
   const existingAndNewHashMappedTransactions = newTransactions.reduce(
     reducer,
-    existingHashMappedTransactions
+    existingHashMappedTransactions,
   );
 
   return {
     unique: Object.values(existingAndNewHashMappedTransactions).filter(
-      (t) => t.id == null
+      (t) => t.id == null,
     ),
     duplicates: duplicates,
   };
@@ -70,7 +70,7 @@ export function DetectDuplicateTransactions<T extends BaseTransaction>(
 
 export function CalculateBalance(
   transactions: DateAmountTuple[] | CoreTransaction[],
-  knownClosingBalance: DateAmountTuple
+  knownClosingBalance: DateAmountTuple,
 ): DateAmountTuple[] {
   if (!transactions || !transactions.length) {
     return [];
@@ -124,7 +124,7 @@ export function CalculateBalance(
 
 function checkMatch(
   t1: DateAmountAccountTuple,
-  t2: DateAmountAccountTuple
+  t2: DateAmountAccountTuple,
 ): boolean {
   return (
     t1.amountCents * -1 === t2.amountCents && t1.accountId !== t2.accountId
@@ -133,10 +133,10 @@ function checkMatch(
 
 export function MatchTransfers(
   transactions: DateAmountAccountTuple[],
-  distance = 7
+  distance = 7,
 ): Array<MatchedPair> {
   transactions.sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
   );
 
   const possiblePairs: Array<MatchedPair> = [];

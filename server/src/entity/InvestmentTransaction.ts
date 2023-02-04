@@ -1,31 +1,31 @@
-import { Field, Float, Int, ObjectType } from "type-graphql";
-import { Column, ChildEntity } from "typeorm";
-import { CoreTransaction } from "./CoreTransaction";
+import { Field, Float, Int, ObjectType } from 'type-graphql';
+import { CoreTransaction } from './CoreTransaction';
+import { Column, ChildEntity } from 'typeorm';
 
 @ChildEntity()
 @ObjectType()
 export class InvestmentTransaction extends CoreTransaction {
   @Field()
-  @Column("text")
+  @Column('text')
   securityId: string;
 
   @Field(() => Int)
-  @Column("int")
+  @Column('int')
   feesCents: number;
 
   @Field(() => Int)
-  @Column("int")
+  @Column('int')
   unitPriceCents: number;
 
   @Field(() => Float)
-  @Column("float")
+  @Column('float')
   quantity: number;
 
   @Field()
-  @Column("text")
+  @Column('text')
   type: string;
 
   @Field()
-  @Column("text")
+  @Column('text')
   subType: string;
 }

@@ -1,5 +1,5 @@
-import { Field, ObjectType, Int } from "type-graphql";
-import { Entity, BaseEntity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Entity, BaseEntity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Field, ObjectType, Int } from 'type-graphql';
 
 @Entity()
 @ObjectType()
@@ -9,6 +9,6 @@ export class Tag extends BaseEntity {
   id: number;
 
   @Field()
-  @Column("text", { nullable: false })
+  @Column('text', { nullable: false })
   name: string;
 }

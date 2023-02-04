@@ -1,5 +1,5 @@
-import fs from "fs";
-import csv from "csv-parser";
+import csv from 'csv-parser';
+import fs from 'fs';
 
 export type ParsedTransaction = {
   date: Date;
@@ -44,8 +44,8 @@ export class BasicCSVParser implements TransactionParser {
       try {
         fs.createReadStream(fileName)
           .pipe(csv())
-          .on("data", (row) => rows.push(row))
-          .on("end", () => {
+          .on('data', (row) => rows.push(row))
+          .on('end', () => {
             transactions = this.processRows(rows);
             resolve(transactions);
           });
