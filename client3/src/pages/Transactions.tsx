@@ -106,15 +106,15 @@ const transactionsQuery = gql(`
 query getBasicTransactions($accountId: String, $limit: Int, $offset: Int) {
   getTransactions(accountId: $accountId, limit: $limit, after: $offset) {
     __typename
-  	...on PlaidTransaction {
-      ...CorePlaidTransactionParts
+  	...on Transaction {
+      ...CoreTransactionParts
       account {
         id
         name
       }
     }
-    ... on PlaidHoldingTransaction {
-      ...CoreHoldingTransactionParts
+    ... on InvestmentTransaction {
+      ...CoreInvestmentTransactionParts
       account {
         id
         name
@@ -123,7 +123,7 @@ query getBasicTransactions($accountId: String, $limit: Int, $offset: Int) {
   }
 }
 
-fragment CorePlaidTransactionParts on PlaidTransaction {
+fragment CoreTransactionParts on Transaction {
   id
   accountId
   description
@@ -134,7 +134,7 @@ fragment CorePlaidTransactionParts on PlaidTransaction {
   classification
 }
 
-fragment CoreHoldingTransactionParts on PlaidHoldingTransaction {
+fragment CoreInvestmentTransactionParts on InvestmentTransaction {
   id
   accountId
   description
@@ -156,6 +156,7 @@ export default function PageOne() {
   });
   useEffect(() => {
     const maybedata = data?.getTransactions as unknown[] | null;
+    console.dir(data);
     const transactionData = (maybedata ?? []) as IBasicTransaction[];
     const accounts = transactionData.reduce(
       (accounts: { [key: string]: IBasicAccount }, transaction) => {
@@ -857,8 +858,8 @@ function TransactionTableRow({
           <Label
             variant="soft"
             color={
-              (__typename === 'PlaidHoldingTransaction' && 'primary') ||
-              (__typename === 'PlaidTransaction' && 'secondary') ||
+              (__typename === 'InvestmentTransaction' && 'primary') ||
+              (__typename === 'Transaction' && 'secondary') ||
               'default'
             }
           >

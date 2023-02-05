@@ -132,7 +132,7 @@ query getItems {
   }
 }
 
-fragment AccountParts on PlaidAccount {
+fragment AccountParts on Account {
   id
   name
   mask
@@ -144,14 +144,14 @@ fragment AccountParts on PlaidAccount {
   totalTransactions
 }
 
-fragment BalanceParts on PlaidAccountBalance {
+fragment BalanceParts on AccountBalance {
   balanceCents
   limitCents
   lastUpdateDate
   availableCents
 }
 
-fragment InstitutionParts on PlaidInstitution {
+fragment InstitutionParts on Institution {
   id
   url
   name
