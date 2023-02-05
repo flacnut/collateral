@@ -186,22 +186,27 @@ export async function createInvestmentHolding(
   return await holding.save();
 }
 
-export async function createInvestmentTransaction(
+export async function createOrUpdateInvestmentTransaction(
   rawIT: PlaidInvestementTransaction,
 ): Promise<InvestmentTransaction> {
   // verify Account ID & security
-  const holdingTransaction = new InvestmentTransaction();
-  holdingTransaction.id = rawIT.investment_transaction_id;
-  holdingTransaction.accountId = rawIT.account_id;
-  holdingTransaction.securityId = rawIT.security_id ?? '';
-  holdingTransaction.description = rawIT.name;
-  holdingTransaction.amountCents = Math.floor(rawIT.amount * 100);
-  holdingTransaction.feesCents = Math.floor(rawIT.fees ?? 0 * 100);
-  holdingTransaction.unitPriceCents = Math.floor(rawIT.price * 100);
-  holdingTransaction.quantity = rawIT.quantity;
-  holdingTransaction.currency = rawIT.iso_currency_code;
-  holdingTransaction.date = rawIT.date;
-  holdingTransaction.type = rawIT.type;
-  holdingTransaction.subType = rawIT.subtype;
-  return await holdingTransaction.save();
+  const existingTransaction = await InvestmentTransaction.findOne({
+    id: rawIT.transaction_id,
+  });
+  const investmentTransaction = existingTransaction ?? new InvestmentTransaction();
+
+  investmentTransaction.id = rawIT.investment_transaction_id;
+  investmentTransaction.accountId = rawIT.account_id;
+  investmentTransaction.securityId = rawIT.security_id ?? '';
+  investmentTransaction.description = rawIT.name;
+  investmentTransaction.amountCents = Math.floor(rawIT.amount * 100);
+  investmentTransaction.feesCents = Math.floor(rawIT.fees ?? 0 * 100);
+  investmentTransaction.unitPriceCents = Math.floor(rawIT.price * 100);
+  investmentTransaction.quantity = rawIT.quantity;
+  investmentTransaction.currency = rawIT.iso_currency_code;
+  investmentTransaction.date = rawIT.date;
+  investmentTransaction.type = rawIT.type;
+  investmentTransaction.subType = rawIT.subtype;
+  
+  return await investmentTransaction.save();
 }

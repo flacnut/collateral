@@ -1,6 +1,6 @@
 import {
   createAccount,
-  createInvestmentTransaction,
+  createOrUpdateInvestmentTransaction,
   createInstitution,
   createInvestmentHolding,
   createItem,
@@ -251,7 +251,7 @@ export class PlaidResolver {
     }
 
     const allItems = await Promise.all([
-      ...response.data.investment_transactions.map(createInvestmentTransaction),
+      ...response.data.investment_transactions.map(createOrUpdateInvestmentTransaction),
       ...response.data.securities.map(createOrUpdateSecurity),
     ]);
 

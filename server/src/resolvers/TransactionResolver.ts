@@ -98,7 +98,7 @@ export class TransactionResolver {
       options.where = { accountId };
     }
 
-    return await CoreTransaction.find(options);
+    return await CoreTransaction.find();//(options);
   }
 
   @Query(() => [InvestmentTransaction])

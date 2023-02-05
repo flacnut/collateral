@@ -1,6 +1,6 @@
 import {
   createOrUpdateBalance,
-  createInvestmentTransaction,
+  createOrUpdateInvestmentTransaction,
   createOrUpdateSecurity,
 } from './PlaidEntityHelper';
 import {
@@ -88,7 +88,7 @@ export default {
       }
 
       await Promise.all([
-        ...investment_transactions.map(createInvestmentTransaction),
+        ...investment_transactions.map(createOrUpdateInvestmentTransaction),
         ...investment_securities.map(createOrUpdateSecurity),
       ]);
     } catch (_ignore) {
