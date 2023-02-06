@@ -1,13 +1,10 @@
 import { Helmet } from 'react-helmet-async';
 import { SetStateAction, useEffect, useState } from 'react';
-import sumBy from 'lodash/sumBy';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import Chart from 'react-apexcharts';
 // @mui
 import { useTheme } from '@mui/material/styles';
 import {
-  Tab,
-  Tabs,
   Card,
   Table,
   Stack,
@@ -65,15 +62,6 @@ import { merge } from 'lodash';
 import { ColorSchema } from 'src/theme/palette';
 
 // ----------------------------------------------------------------------
-
-const SERVICE_OPTIONS = [
-  'all',
-  'full stack development',
-  'backend development',
-  'ui design',
-  'ui/ux design',
-  'front end development',
-];
 
 const TABLE_HEAD = [
   { id: 'description', label: 'Description', align: 'left' },
@@ -150,8 +138,7 @@ const Classifications = ['Duplicate', 'Income', 'Expense', 'Recurring', 'Transfe
 // ----------------------------------------------------------------------
 
 export default function PageOne() {
-  const theme = useTheme();
-  const { loading, data, refetch } = useQuery(transactionsQuery, {
+  const { data } = useQuery(transactionsQuery, {
     variables: { offset: 0, limit: 500 },
   });
   useEffect(() => {
@@ -173,7 +160,7 @@ export default function PageOne() {
 
   const { themeStretch } = useSettingsContext();
 
-  const navigate = useNavigate();
+  //const navigate = useNavigate();
 
   const {
     dense,
@@ -230,18 +217,6 @@ export default function PageOne() {
     (!dataFiltered.length && !!filterClassification) ||
     (!dataFiltered.length && !!filterEndDate) ||
     (!dataFiltered.length && !!filterStartDate);
-
-  const getLengthByStatus = (classification: string) =>
-    tableData.filter((transaction) => transaction.classification === classification).length;
-
-  const getTotalPriceByStatus = (classification: string) =>
-    sumBy(
-      tableData.filter((transaction) => transaction.classification === classification),
-      'totalPrice'
-    );
-
-  const getPercentByStatus = (status: string) =>
-    (getLengthByStatus(status) / tableData.length) * 100;
 
   const handleOpenConfirm = () => {
     setOpenConfirm(true);
@@ -792,7 +767,7 @@ function TransactionTableRow({
   onEditRow: VoidFunction;
   onDeleteRow: VoidFunction;
 }) {
-  const { date, description, amount, __typename, classification, accountId } = row;
+  const { date, description, amount, __typename, classification } = row;
 
   const [openConfirm, setOpenConfirm] = useState(false);
 
