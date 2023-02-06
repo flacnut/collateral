@@ -15,6 +15,7 @@ const ICONS = {
   analytics: icon('ic_analytics'),
   dashboard: icon('ic_dashboard'),
   banking: icon('ic_banking'),
+  transfers: icon('ic_transfer'),
 };
 
 const navConfig = [
@@ -26,6 +27,7 @@ const navConfig = [
       { title: 'Dashboard', path: PATH_DASHBOARD.dashboard, icon: ICONS.dashboard },
       { title: 'Items', path: PATH_DASHBOARD.items, icon: ICONS.banking },
       { title: 'Transactions', path: PATH_DASHBOARD.transactions, icon: ICONS.analytics },
+      { title: 'Transfers', path: PATH_DASHBOARD.transfers, icon: ICONS.transfers },
     ],
   },
 

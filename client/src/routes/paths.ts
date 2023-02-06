@@ -17,6 +17,7 @@ export const PATH_DASHBOARD = {
   transactions: path(ROOTS_DASHBOARD, '/transactions'),
   items: path(ROOTS_DASHBOARD, '/items'),
   dashboard: path(ROOTS_DASHBOARD, '/dashboard'),
+  transfers: path(ROOTS_DASHBOARD, '/transfers'),
   user: {
     root: path(ROOTS_DASHBOARD, '/user'),
     four: path(ROOTS_DASHBOARD, '/user/four'),

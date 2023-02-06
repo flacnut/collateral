@@ -17,6 +17,7 @@ import {
   PageFive,
   LoginPage,
   Dashboard,
+  Transfers,
 } from './elements';
 
 // ----------------------------------------------------------------------
@@ -49,6 +50,7 @@ export default function Router() {
         { path: 'dashboard', element: <Dashboard /> },
         { path: 'items', element: <ItemsPage /> },
         { path: 'transactions', element: <Transactions /> },
+        { path: 'transfers', element: <Transfers /> },
         {
           path: 'user',
           children: [
