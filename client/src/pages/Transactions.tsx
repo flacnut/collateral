@@ -68,7 +68,7 @@ const TABLE_HEAD = [
   { id: 'amount', label: 'Amount', align: 'right' },
   { id: 'date', label: 'Date', align: 'left', width: 140 },
   { id: '__typename', label: 'Type', align: 'center', width: 140 },
-  { id: 'classification', label: 'Category', align: 'center', width: 240 },
+  { id: 'classification', label: 'Classification', align: 'center', width: 240 },
   { id: '' },
 ];
 
