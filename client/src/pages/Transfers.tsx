@@ -42,7 +42,8 @@ import {
 import { gql } from 'src/__generated__/gql';
 import { CustomAvatar } from 'src/components/custom-avatar';
 import { fCurrency } from 'src/utils/formatNumber';
-import { useQuery } from '@apollo/client';
+import { useMutation, useQuery } from '@apollo/client';
+import { UnsavedTransfer } from 'src/__generated__/graphql';
 
 // ----------------------------------------------------------------------
 
@@ -137,10 +138,24 @@ fragment parts on CoreTransaction {
   classification
 }`);
 
+const saveTransfersMutationGQL = gql(`
+mutation saveTransfers($transfers: [UnsavedTransfer!]!) {
+  saveTransfers(transfers:$transfers) {
+    to {
+      ...parts
+    }
+    from {
+      ...parts
+    }
+  }
+}`);
+
 // ----------------------------------------------------------------------
 
 export default function Transfers() {
-  const { loading, data } = useQuery(getTransfersQuery);
+  const { loading, data, refetch } = useQuery(getTransfersQuery);
+  const [saveTransfersMutation, saveTransfersResult] = useMutation(saveTransfersMutationGQL);
+
   useEffect(() => {
     const maybedata = data?.getPossibleTransfers as unknown[] | null;
     const transferData = (maybedata ?? []) as ITransfer[];
@@ -175,6 +190,20 @@ export default function Transfers() {
       setInstitutions(Object.values(institutions));
     }
   }, [data]);
+
+  const saveTransfers = async () => {
+    let transfers: UnsavedTransfer[] = selected.map((transferId) => {
+      return {
+        toId: transferId.split('__')[0],
+        fromId: transferId.split('__')[1],
+      } as UnsavedTransfer;
+    });
+    console.dir({ variables: { transfers } });
+
+    await saveTransfersMutation({ variables: { transfers } });
+    await refetch();
+    onSelectAllRows(false, []); // clear selection
+  };
 
   const { themeStretch } = useSettingsContext();
 
@@ -265,9 +294,7 @@ export default function Transfers() {
             <Button
               variant="contained"
               startIcon={<Iconify icon="material-symbols:save" />}
-              onClick={() => {
-                /* SAVE TRANSFERS */
-              }}
+              onClick={saveTransfers}
               disabled={selected.length === 0}
             >
               Save Transfers
