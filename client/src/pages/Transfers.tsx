@@ -1,43 +1,31 @@
 import { Helmet } from 'react-helmet-async';
-import { SetStateAction, useEffect, useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
-import Chart from 'react-apexcharts';
-// @mui
-import { useTheme } from '@mui/material/styles';
+import { useEffect, useState } from 'react';
+
 import {
   Card,
   Table,
   Stack,
   Button,
-  Tooltip,
-  Divider,
   TableBody,
   Container,
-  IconButton,
   TableContainer,
   TextField,
   MenuItem,
-  TextFieldProps,
   InputAdornment,
   TableRow,
   TableCell,
   Typography,
   Link,
   Checkbox,
-  CardProps,
-  alpha,
-  Box,
 } from '@mui/material';
 // routes
 import { PATH_DASHBOARD } from '../routes/paths';
 // utils
-import { fDate, fTimestamp } from '../utils/formatTime';
+import { fDate } from '../utils/formatTime';
 
 // components
-import Label from '../components/label';
 import Iconify from '../components/iconify';
 import Scrollbar from '../components/scrollbar';
-import ConfirmDialog from '../components/confirm-dialog';
 import CustomBreadcrumbs from '../components/custom-breadcrumbs';
 import { useSettingsContext } from '../components/settings';
 import {
@@ -52,14 +40,9 @@ import {
 } from '../components/table';
 // sections
 import { gql } from 'src/__generated__/gql';
-import { DatePicker } from '@mui/x-date-pickers';
-import MenuPopover from 'src/components/menu-popover';
 import { CustomAvatar } from 'src/components/custom-avatar';
-import { fCurrency, fPercent } from 'src/utils/formatNumber';
+import { fCurrency } from 'src/utils/formatNumber';
 import { useQuery } from '@apollo/client';
-import { ApexOptions } from 'apexcharts';
-import { merge } from 'lodash';
-import { ColorSchema } from 'src/theme/palette';
 
 // ----------------------------------------------------------------------
 
@@ -160,7 +143,37 @@ export default function Transfers() {
   const { loading, data } = useQuery(getTransfersQuery);
   useEffect(() => {
     const maybedata = data?.getPossibleTransfers as unknown[] | null;
-    setTableData((maybedata ?? []) as ITransfer[]);
+    const transferData = (maybedata ?? []) as ITransfer[];
+
+    if (maybedata) {
+      const accounts = transferData.reduce(
+        (accounts: { [key: string]: IBasicAccount }, transfer) => {
+          if (!accounts[transfer.to.accountId]) {
+            accounts[transfer.to.accountId] = transfer.to.account;
+          }
+
+          if (!accounts[transfer.from.accountId]) {
+            accounts[transfer.from.accountId] = transfer.from.account;
+          }
+          return accounts;
+        },
+        {}
+      );
+
+      const institutions = Object.values(accounts).reduce(
+        (institutions: { [key: string]: IInstitution }, account) => {
+          if (!institutions[account.institution.id]) {
+            institutions[account.institution.id] = account.institution;
+          }
+          return institutions;
+        },
+        {}
+      );
+
+      setTableData(transferData);
+      setAccounts(Object.values(accounts));
+      setInstitutions(Object.values(institutions));
+    }
   }, [data]);
 
   const { themeStretch } = useSettingsContext();
@@ -171,6 +184,7 @@ export default function Transfers() {
     order,
     orderBy,
     rowsPerPage,
+    setPage,
     //
     selected,
     onSelectRow,
@@ -183,6 +197,46 @@ export default function Transfers() {
   } = useTable({ defaultRowsPerPage: 50, defaultOrderBy: 'createDate' });
 
   const [tableData, setTableData] = useState<ITransfer[]>([]);
+  const [accounts, setAccounts] = useState<IBasicAccount[]>([]);
+  const [institutions, setInstitutions] = useState<IInstitution[]>([]);
+
+  const [filterAccount, setFilterAccount] = useState('all');
+  const [filterDescription, setFilterDescription] = useState('');
+  const [filterInstitution, setFilterInstitution] = useState('all');
+
+  const handleFilterDescription = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setPage(0);
+    setFilterDescription(event.target.value);
+  };
+
+  const handleFilterAccount = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setPage(0);
+    setFilterAccount(event.target.value);
+  };
+
+  const handleFilterInstitution = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setPage(0);
+    setFilterInstitution(event.target.value);
+  };
+
+  const handleResetFilter = () => {
+    setFilterAccount('all');
+    setFilterDescription('');
+    setFilterInstitution('all');
+  };
+
+  const dataFiltered = applyFilter({
+    inputData: tableData,
+    comparator: getComparator(order, orderBy),
+    filterAccount,
+    filterDescription,
+    filterInstitution,
+  });
+
+  const isFiltered =
+    filterInstitution !== 'all' || filterDescription !== '' || filterAccount !== 'all';
+  const isNotFound = !dataFiltered.length && isFiltered;
+
   const denseHeight = dense ? 56 : 76;
 
   return (
@@ -214,6 +268,7 @@ export default function Transfers() {
               onClick={() => {
                 /* SAVE TRANSFERS */
               }}
+              disabled={selected.length === 0}
             >
               Save Transfers
             </Button>
@@ -221,15 +276,28 @@ export default function Transfers() {
         />
 
         <Card>
+          <TransferTableToolbar
+            accounts={accounts}
+            institutions={institutions}
+            filterAccount={filterAccount}
+            filterDescription={filterDescription}
+            filterInstitution={filterInstitution}
+            isFiltered={isFiltered}
+            onResetFilter={handleResetFilter}
+            onFilterAccount={handleFilterAccount}
+            onFilterDescription={handleFilterDescription}
+            onFilterInstitution={handleFilterInstitution}
+          />
+
           <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
             <TableSelectedAction
               dense={dense}
               numSelected={selected.length}
-              rowCount={tableData.length}
+              rowCount={dataFiltered.length}
               onSelectAllRows={(checked: any) =>
                 onSelectAllRows(
                   checked,
-                  tableData.map((row: ITransfer) => `${row.to.id}__${row.from.id}`)
+                  dataFiltered.map((row: ITransfer) => `${row.to.id}__${row.from.id}`)
                 )
               }
             />
@@ -240,19 +308,19 @@ export default function Transfers() {
                   order={order}
                   orderBy={orderBy}
                   headLabel={TABLE_HEAD}
-                  rowCount={tableData.length}
+                  rowCount={dataFiltered.length}
                   numSelected={selected.length}
                   onSort={onSort}
                   onSelectAllRows={(checked: any) =>
                     onSelectAllRows(
                       checked,
-                      tableData.map((row: ITransfer) => `${row.to.id}__${row.from.id}`)
+                      dataFiltered.map((row: ITransfer) => `${row.to.id}__${row.from.id}`)
                     )
                   }
                 />
 
                 <TableBody>
-                  {tableData
+                  {dataFiltered
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     .map((row) => (
                       <TransferTableRow
@@ -268,14 +336,14 @@ export default function Transfers() {
                     emptyRows={emptyRows(page, rowsPerPage, tableData.length)}
                   />
 
-                  <TableNoData isNotFound={loading} />
+                  <TableNoData isNotFound={loading || isNotFound} />
                 </TableBody>
               </Table>
             </Scrollbar>
           </TableContainer>
 
           <TablePaginationCustom
-            count={tableData.length}
+            count={dataFiltered.length}
             page={page}
             rowsPerPage={rowsPerPage}
             onPageChange={onChangePage}
@@ -291,6 +359,220 @@ export default function Transfers() {
 }
 
 // ----------------------------------------------------------------------
+
+function applyFilter({
+  inputData,
+  comparator,
+  filterDescription,
+  filterAccount,
+  filterInstitution,
+}: {
+  inputData: ITransfer[];
+  comparator: (a: any, b: any) => number;
+  filterDescription: string;
+  filterInstitution: string;
+  filterAccount: string;
+}) {
+  const stabilizedThis = inputData.map((el, index) => [el, index] as const);
+
+  stabilizedThis.sort((a, b) => {
+    const order = comparator(a[0], b[0]);
+    if (order !== 0) return order;
+    return a[1] - b[1];
+  });
+
+  inputData = stabilizedThis.map((el) => el[0]);
+
+  if (filterDescription) {
+    inputData = inputData.filter(
+      (transfer) =>
+        transfer.to.description.toLowerCase().indexOf(filterDescription.toLowerCase()) !== -1 ||
+        transfer.from.description.toLowerCase().indexOf(filterDescription.toLowerCase()) !== -1
+    );
+  }
+
+  if (filterAccount !== 'all') {
+    inputData = inputData.filter(
+      (transfer) =>
+        transfer.to.account.name === filterAccount || transfer.from.account.name === filterAccount
+    );
+  }
+
+  if (filterInstitution !== 'all') {
+    inputData = inputData.filter(
+      (transfer) =>
+        transfer.to.account.institution.name === filterInstitution ||
+        transfer.from.account.institution.name === filterInstitution
+    );
+  }
+
+  return inputData;
+}
+
+function TransferTableToolbar({
+  accounts,
+  institutions,
+  filterAccount,
+  filterDescription,
+  filterInstitution,
+  isFiltered,
+  onResetFilter,
+  onFilterAccount,
+  onFilterDescription,
+  onFilterInstitution,
+}: {
+  accounts: IBasicAccount[];
+  institutions: IInstitution[];
+  filterDescription: string;
+  filterInstitution: string;
+  filterAccount: string;
+  isFiltered: boolean;
+  onResetFilter: VoidFunction;
+  onFilterAccount: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onFilterDescription: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onFilterInstitution: (event: React.ChangeEvent<HTMLInputElement>) => void;
+}) {
+  return (
+    <Stack
+      spacing={2}
+      alignItems="center"
+      direction={{
+        xs: 'column',
+        md: 'row',
+      }}
+      sx={{ px: 2.5, py: 3 }}
+    >
+      <TextField
+        fullWidth
+        select
+        label="Account"
+        value={filterAccount}
+        onChange={onFilterAccount}
+        SelectProps={{
+          MenuProps: {
+            PaperProps: {
+              sx: { maxHeight: 220 },
+            },
+          },
+        }}
+        sx={{
+          maxWidth: { md: 160 },
+          textTransform: 'capitalize',
+        }}
+      >
+        <MenuItem
+          key={'all'}
+          value={'all'}
+          sx={{
+            mx: 1,
+            my: 0.5,
+            borderRadius: 0.75,
+            typography: 'body2',
+            textTransform: 'capitalize',
+            '&:first-of-type': { mt: 0 },
+            '&:last-of-type': { mb: 0 },
+          }}
+        >
+          All
+        </MenuItem>
+        {accounts.map((account) => (
+          <MenuItem
+            key={account.id}
+            value={account.name}
+            sx={{
+              mx: 1,
+              my: 0.5,
+              borderRadius: 0.75,
+              typography: 'body2',
+              textTransform: 'capitalize',
+              '&:first-of-type': { mt: 0 },
+              '&:last-of-type': { mb: 0 },
+            }}
+          >
+            {account.name}
+          </MenuItem>
+        ))}
+      </TextField>
+
+      <TextField
+        fullWidth
+        select
+        label="Institutions"
+        value={filterInstitution}
+        onChange={onFilterInstitution}
+        SelectProps={{
+          MenuProps: {
+            PaperProps: {
+              sx: { maxHeight: 220 },
+            },
+          },
+        }}
+        sx={{
+          maxWidth: { md: 160 },
+          textTransform: 'capitalize',
+        }}
+      >
+        <MenuItem
+          key={'all'}
+          value={'all'}
+          sx={{
+            mx: 1,
+            my: 0.5,
+            borderRadius: 0.75,
+            typography: 'body2',
+            textTransform: 'capitalize',
+            '&:first-of-type': { mt: 0 },
+            '&:last-of-type': { mb: 0 },
+          }}
+        >
+          All
+        </MenuItem>
+        {institutions.map((option) => (
+          <MenuItem
+            key={option.id}
+            value={option.name}
+            sx={{
+              mx: 1,
+              my: 0.5,
+              borderRadius: 0.75,
+              typography: 'body2',
+              textTransform: 'capitalize',
+              '&:first-of-type': { mt: 0 },
+              '&:last-of-type': { mb: 0 },
+            }}
+          >
+            {option.name}
+          </MenuItem>
+        ))}
+      </TextField>
+
+      <TextField
+        fullWidth
+        value={filterDescription}
+        onChange={onFilterDescription}
+        placeholder="Search client or transaction number..."
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
+            </InputAdornment>
+          ),
+        }}
+      />
+
+      {isFiltered && (
+        <Button
+          color="error"
+          sx={{ flexShrink: 0 }}
+          onClick={onResetFilter}
+          startIcon={<Iconify icon="eva:trash-2-outline" />}
+        >
+          Clear
+        </Button>
+      )}
+    </Stack>
+  );
+}
 
 function TransferTableRow({
   row,
