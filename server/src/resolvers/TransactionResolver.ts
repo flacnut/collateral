@@ -22,8 +22,9 @@ import {
   DateAmountAccountTuple,
   MatchTransfers,
 } from '../../src/utils/AccountUtils';
+import { TransactionClassification } from 'src/entity/CoreTransaction';
 import { UnsavedTransfer } from '../../src/entity/Transfer';
-import { FindManyOptions } from 'typeorm';
+import { FindManyOptions, IsNull, Not } from 'typeorm';
 
 @InputType()
 class QueryAggregationOptions {
@@ -98,7 +99,7 @@ export class TransactionResolver {
       options.where = { accountId };
     }
 
-    return await CoreTransaction.find();//(options);
+    return await CoreTransaction.find(); //(options);
   }
 
   @Query(() => [InvestmentTransaction])
@@ -206,7 +207,18 @@ export class TransactionResolver {
 
   @Query(() => [Transfer])
   async getPossibleTransfers() {
-    const transactions = await CoreTransaction.find();
+    const transactions = await CoreTransaction.find({
+      where: [
+        {
+          classification: Not(TransactionClassification.Transfer),
+        },
+        {
+          classification: IsNull(),
+        },
+      ],
+    });
+
+    console.dir(Not(TransactionClassification.Transfer));
 
     const rawTransfers = MatchTransfers(
       transactions.map((t) => {
@@ -267,7 +279,13 @@ export class TransactionResolver {
       })
       .filter((t) => t != null) as Transfer[];
 
+    transactions.forEach(
+      (t) => (t.classification = TransactionClassification.Transfer),
+    );
+
+    await CoreTransaction.getRepository().save(transactions);
     await Transfer.getRepository().save(transferWrites);
+
     return transferWrites;
   }
 }

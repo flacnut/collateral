@@ -13,13 +13,14 @@ import { Field, Int, ObjectType, registerEnumType } from 'type-graphql';
 import { Account } from '@entities';
 import { Tag } from '@entities';
 
-enum TransactionClassification {
-  Duplicate,
-  Income,
-  Expense,
-  Recurring,
-  Transfer,
-  Investment,
+export enum TransactionClassification {
+  Duplicate = 'duplicate',
+  Income = 'income',
+  Expense = 'expense',
+  Recurring = 'recurring',
+  Transfer = 'transfer',
+  Investment = 'investment',
+  Hidden = 'hidden',
 }
 
 registerEnumType(TransactionClassification, {
