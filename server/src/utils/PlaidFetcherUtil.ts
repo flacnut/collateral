@@ -31,31 +31,35 @@ export default {
   async refreshAllItems() {
     const allItems = await PlaidItem.find();
 
-    await Promise.all(
-      allItems.map(async (item: PlaidItem) => {
-        const accountResponse = await client.accountsGet({
-          access_token: item.accessToken,
-        });
+    try {
+      await Promise.all(
+        allItems.map(async (item: PlaidItem) => {
+          const accountResponse = await client.accountsGet({
+            access_token: item.accessToken,
+          });
 
-        // balances
-        await Promise.all(
-          accountResponse.data?.accounts?.map((acc) =>
-            createOrUpdateBalance(acc.account_id, acc.balances),
-          ),
-        );
+          // balances
+          await Promise.all(
+            accountResponse.data?.accounts?.map((acc) =>
+              createOrUpdateBalance(acc.account_id, acc.balances),
+            ),
+          );
 
-        // transactions
-        await this.syncTransactions(item);
+          // transactions
+          await this.syncTransactions(item);
 
-        // holding transactions & securities
-        let institution = await Institution.findOne({
-          id: item.institutionId,
-        });
-        if (institution?.products.split(',').includes('investments')) {
-          await this.fetchHoldingTransactions(item);
-        }
-      }),
-    );
+          // holding transactions & securities
+          let institution = await Institution.findOne({
+            id: item.institutionId,
+          });
+          if (institution?.products.split(',').includes('investments')) {
+            await this.fetchHoldingTransactions(item);
+          }
+        }),
+      );
+    } catch (err) {
+      console.error(err);
+    }
   },
 
   async fetchHoldingTransactions(item: PlaidItem) {

@@ -18,12 +18,15 @@ import {
   InvestmentTransaction,
 } from '@entities';
 
-export async function createItem(
+export async function createOrUpdateItem(
   itemId: string,
   accessToken: string,
   institutionId: string,
 ): Promise<PlaidItem> {
-  const item = new PlaidItem();
+  const existingItem = await PlaidItem.findOne({
+    id: itemId,
+  });
+  const item = existingItem ?? new PlaidItem();
   item.id = itemId;
   item.accessToken = accessToken;
   item.institutionId = institutionId;
@@ -193,7 +196,8 @@ export async function createOrUpdateInvestmentTransaction(
   const existingTransaction = await InvestmentTransaction.findOne({
     id: rawIT.transaction_id,
   });
-  const investmentTransaction = existingTransaction ?? new InvestmentTransaction();
+  const investmentTransaction =
+    existingTransaction ?? new InvestmentTransaction();
 
   investmentTransaction.id = rawIT.investment_transaction_id;
   investmentTransaction.accountId = rawIT.account_id;
@@ -207,6 +211,6 @@ export async function createOrUpdateInvestmentTransaction(
   investmentTransaction.date = rawIT.date;
   investmentTransaction.type = rawIT.type;
   investmentTransaction.subType = rawIT.subtype;
-  
+
   return await investmentTransaction.save();
 }

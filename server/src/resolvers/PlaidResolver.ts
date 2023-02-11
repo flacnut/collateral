@@ -3,7 +3,7 @@ import {
   createOrUpdateInvestmentTransaction,
   createInstitution,
   createInvestmentHolding,
-  createItem,
+  createOrUpdateItem,
   createOrUpdateSecurity,
   createTransaction,
 } from '../../src/utils/PlaidEntityHelper';
@@ -15,6 +15,7 @@ import {
   Products,
   TransactionsGetRequest,
   InvestmentsTransactionsGetRequest,
+  LinkTokenCreateRequest,
 } from 'plaid';
 import {
   Transaction,
@@ -73,20 +74,32 @@ class PlaidLinkResponse {
 @Resolver()
 export class PlaidResolver {
   @Query(() => LinkTokenResult)
-  async getLinkToken() {
-    return client
-      .linkTokenCreate({
-        user: {
-          client_user_id: '4325',
-        },
-        client_name: 'Plaid Test App',
-        products: [Products.Transactions],
-        country_codes: [CountryCode.Us],
-        language: 'en',
-        webhook: 'https://sample-web-hook.com',
-        redirect_uri: 'https://localhost:3000/oauth',
-        //access_token: "<item access token>",
-      })
+  async getLinkToken(@Arg('itemId', { nullable: true }) itemId: string) {
+    const linkTokenRequestOptions = {
+      user: {
+        client_user_id: '4325',
+      },
+      client_name: 'Plaid Test App',
+      products: [Products.Transactions],
+      country_codes: [CountryCode.Us],
+      language: 'en',
+      webhook: 'https://sample-web-hook.com',
+      redirect_uri: 'https://localhost:3000/oauth',
+    } as LinkTokenCreateRequest;
+
+    if (itemId) {
+      const item = await PlaidItem.findOne(itemId);
+      if (!item?.accessToken) {
+        console.error(
+          'Plaid item without an access token, unable to re-establish connection.',
+        );
+      } else {
+        linkTokenRequestOptions.access_token = item?.accessToken;
+      }
+    }
+
+    return await client
+      .linkTokenCreate(linkTokenRequestOptions)
       .then((response) => {
         return {
           token: response.data.link_token,
@@ -112,7 +125,7 @@ export class PlaidResolver {
       });
 
       if (response.data != null) {
-        item = await createItem(
+        item = await createOrUpdateItem(
           response.data.item_id,
           response.data.access_token,
           linkResponse.institutionId,
@@ -251,7 +264,9 @@ export class PlaidResolver {
     }
 
     const allItems = await Promise.all([
-      ...response.data.investment_transactions.map(createOrUpdateInvestmentTransaction),
+      ...response.data.investment_transactions.map(
+        createOrUpdateInvestmentTransaction,
+      ),
       ...response.data.securities.map(createOrUpdateSecurity),
     ]);
 
