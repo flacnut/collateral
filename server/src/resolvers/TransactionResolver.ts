@@ -206,6 +206,19 @@ export class TransactionResolver {
   // *********
 
   @Query(() => [Transfer])
+  async getTransfers() {
+    const transfers = await Transfer.find({
+      relations: ['to', 'from'],
+      order: {
+        date: 'DESC',
+      },
+      take: 50,
+    });
+
+    return transfers;
+  }
+
+  @Query(() => [Transfer])
   async getPossibleTransfers() {
     const transactions = await CoreTransaction.find({
       where: [
@@ -217,8 +230,6 @@ export class TransactionResolver {
         },
       ],
     });
-
-    console.dir(Not(TransactionClassification.Transfer));
 
     const rawTransfers = MatchTransfers(
       transactions.map((t) => {
