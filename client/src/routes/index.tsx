@@ -49,8 +49,14 @@ export default function Router() {
         { element: <Navigate to={PATH_AFTER_LOGIN} replace />, index: true },
         { path: 'dashboard', element: <Dashboard /> },
         { path: 'items', element: <ItemsPage /> },
-        { path: 'transactions', element: <Transactions /> },
-        { path: 'transfers', element: <Transfers /> },
+        {
+          path: 'transactions',
+          children: [
+            { element: <Navigate to="/dashboard/invoice/list" replace />, index: true },
+            { path: 'list', element: <Transactions /> },
+            { path: 'transfers', element: <Transfers /> },
+          ],
+        },
         {
           path: 'user',
           children: [

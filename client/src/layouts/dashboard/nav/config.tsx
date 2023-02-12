@@ -26,8 +26,19 @@ const navConfig = [
     items: [
       { title: 'Dashboard', path: PATH_DASHBOARD.dashboard, icon: ICONS.dashboard },
       { title: 'Items', path: PATH_DASHBOARD.items, icon: ICONS.banking },
-      { title: 'Transactions', path: PATH_DASHBOARD.transactions, icon: ICONS.analytics },
-      { title: 'Transfers', path: PATH_DASHBOARD.transfers, icon: ICONS.transfers },
+      {
+        title: 'transactions',
+        path: PATH_DASHBOARD.transactions.root,
+        icon: ICONS.analytics,
+        children: [
+          { title: 'list', path: PATH_DASHBOARD.transactions.list },
+          {
+            title: 'transfers',
+            path: PATH_DASHBOARD.transactions.transfers,
+          },
+          //{ title: 'create', path: PATH_DASHBOARD.invoice.new },
+        ],
+      },
     ],
   },
 

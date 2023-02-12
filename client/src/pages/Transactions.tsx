@@ -310,7 +310,7 @@ export default function PageOne() {
           ]}
           action={
             <Button
-              to={PATH_DASHBOARD.transactions /*.transaction.new*/}
+              to={PATH_DASHBOARD.transactions.list /*.transaction.new*/}
               component={RouterLink}
               variant="contained"
               startIcon={<Iconify icon="eva:plus-fill" />}

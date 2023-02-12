@@ -14,10 +14,15 @@ export const PATH_AUTH = {
 
 export const PATH_DASHBOARD = {
   root: ROOTS_DASHBOARD,
-  transactions: path(ROOTS_DASHBOARD, '/transactions'),
-  items: path(ROOTS_DASHBOARD, '/items'),
   dashboard: path(ROOTS_DASHBOARD, '/dashboard'),
-  transfers: path(ROOTS_DASHBOARD, '/transfers'),
+  items: path(ROOTS_DASHBOARD, '/items'),
+  transactions: {
+    root: path(ROOTS_DASHBOARD, '/transactions'),
+    list: path(ROOTS_DASHBOARD, '/transactions/list'),
+    transfers: path(ROOTS_DASHBOARD, '/transactions/transfers'),
+    view: (id: string) => path(ROOTS_DASHBOARD, `/transactions/${id}`),
+    edit: (id: string) => path(ROOTS_DASHBOARD, `/transactions/${id}/edit`),
+  },
   user: {
     root: path(ROOTS_DASHBOARD, '/user'),
     four: path(ROOTS_DASHBOARD, '/user/four'),
