@@ -91,7 +91,7 @@ type IInstitution = {
   primaryColor: string;
 };
 
-const getTransfersQuery = gql(`
+const getPossibleTransfersQuery = gql(`
 query getPossibleTransfers {
   getPossibleTransfers {
     date
@@ -153,7 +153,7 @@ mutation saveTransfers($transfers: [UnsavedTransfer!]!) {
 // ----------------------------------------------------------------------
 
 export default function Transfers() {
-  const { loading, data, refetch } = useQuery(getTransfersQuery);
+  const { loading, data, refetch } = useQuery(getPossibleTransfersQuery);
   const [saveTransfersMutation, saveTransfersResult] = useMutation(saveTransfersMutationGQL);
 
   useEffect(() => {
