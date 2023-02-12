@@ -81,6 +81,11 @@ const AnyTransaction = createUnionType({
 
 @Resolver()
 export class TransactionResolver {
+  @Query(() => AnyTransaction, { nullable: true })
+  async getTransaction(@Arg('id') id: string) {
+    return (await CoreTransaction.findOne(id)) ?? null;
+  }
+
   @Query(() => [AnyTransaction])
   async getTransactions(
     @Arg('accountId', { nullable: true }) accountId: string,
