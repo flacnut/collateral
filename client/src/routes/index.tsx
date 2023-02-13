@@ -18,6 +18,7 @@ import {
   LoginPage,
   Dashboard,
   Transfers,
+  TransactionView,
 } from './elements';
 
 // ----------------------------------------------------------------------
@@ -52,9 +53,10 @@ export default function Router() {
         {
           path: 'transactions',
           children: [
-            { element: <Navigate to="/dashboard/invoice/list" replace />, index: true },
+            { element: <Navigate to="/dashboard/transactions/list" replace />, index: true },
             { path: 'list', element: <Transactions /> },
             { path: 'transfers', element: <Transfers /> },
+            { path: ':id', element: <TransactionView /> },
           ],
         },
         {

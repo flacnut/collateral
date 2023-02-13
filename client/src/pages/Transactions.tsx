@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 import { SetStateAction, useEffect, useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import Chart from 'react-apexcharts';
 // @mui
 import { useTheme } from '@mui/material/styles';
@@ -159,8 +159,7 @@ export default function PageOne() {
   }, [data]);
 
   const { themeStretch } = useSettingsContext();
-
-  //const navigate = useNavigate();
+  const navigate = useNavigate();
 
   const {
     dense,
@@ -275,7 +274,7 @@ export default function PageOne() {
   };
 
   const handleViewRow = (id: string) => {
-    //navigate(PATH_DASHBOARD.transaction.view(id));
+    navigate(PATH_DASHBOARD.transactions.view(id));
   };
 
   const handleResetFilter = () => {

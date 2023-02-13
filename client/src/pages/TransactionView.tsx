@@ -4,11 +4,11 @@ import { Container, Typography } from '@mui/material';
 // components
 import { useSettingsContext } from '../components/settings';
 import { gql } from 'src/__generated__/gql';
-import { GetTransactionQueryQuery } from 'src/__generated__/graphql';
 import { useQuery } from '@apollo/client';
 import { useEffect, useState } from 'react';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 import { PATH_DASHBOARD } from 'src/routes/paths';
+import { useParams } from 'react-router';
 
 // ----------------------------------------------------------------------
 
@@ -133,16 +133,14 @@ fragment ExtraInvestmentTransactionParts on InvestmentTransaction {
 
 export default function PageSix() {
   const { themeStretch } = useSettingsContext();
+  const { id } = useParams<string>();
+  const { data, loading, refetch } = useQuery(getTransactionQuery);
 
-  console.dir(getTransactionQuery);
-  // kLqby9QkzRCg1y7gzOJntegqLZd60wf3e4PoP -- purchase
-  const __transactionid = 'd1163y3wzxCKgJ3P4dyQtE0AkBPbx3I1geKee';
-
-  const { data, loading } = useQuery(getTransactionQuery, {
-    variables: {
-      transactionId: __transactionid,
-    },
-  });
+  useEffect(() => {
+    refetch({
+      transactionId: id,
+    });
+  }, [id]);
 
   useEffect(() => {
     const maybeTransaction = data?.getTransaction;
@@ -163,7 +161,7 @@ export default function PageSix() {
   return (
     <>
       <Helmet>
-        <title> Transaction | {transaction?.id}</title>
+        <title>{`Transaction | ${transaction?.id}`}</title>
       </Helmet>
 
       <Container maxWidth={themeStretch ? false : 'xl'}>
