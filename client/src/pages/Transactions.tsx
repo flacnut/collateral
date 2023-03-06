@@ -143,7 +143,6 @@ export default function PageOne() {
   });
   useEffect(() => {
     const maybedata = data?.getTransactions as unknown[] | null;
-    console.dir(data);
     const transactionData = (maybedata ?? []) as IBasicTransaction[];
     const accounts = transactionData.reduce(
       (accounts: { [key: string]: IBasicAccount }, transaction) => {
@@ -710,7 +709,6 @@ function TransactionTableToolbar({
         value={filterEndDate}
         onChange={onFilterEndDate}
         renderInput={(params: JSX.IntrinsicAttributes & TextFieldProps) => {
-          console.dir(params);
           return (
             <TextField
               {...params}
