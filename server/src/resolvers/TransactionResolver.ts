@@ -24,7 +24,7 @@ import {
 } from '../../src/utils/AccountUtils';
 import { TransactionClassification } from 'src/entity/CoreTransaction';
 import { UnsavedTransfer } from '../../src/entity/Transfer';
-import { FindManyOptions, IsNull, Not } from 'typeorm';
+import { FindManyOptions, In, IsNull, Not } from 'typeorm';
 
 @InputType()
 class QueryAggregationOptions {
@@ -303,5 +303,97 @@ export class TransactionResolver {
     await Transfer.getRepository().save(transferWrites);
 
     return transferWrites;
+  }
+
+  // *************
+  // EDIT / UPDATE
+  // *************
+
+  @Mutation(() => [AnyTransaction])
+  async updateTransactionDescription(
+    @Arg('transactionIds', () => [String]) transactionIds: string[],
+    @Arg('description', () => String)
+    description: string,
+  ) {
+    await CoreTransaction.getRepository()
+      .createQueryBuilder()
+      .update(CoreTransaction)
+      .set({ description })
+      .whereInIds(transactionIds)
+      .execute();
+
+    return await CoreTransaction.findByIds(transactionIds);
+  }
+
+  @Mutation(() => [Transaction])
+  async updateTransactionClassification(
+    @Arg('transactionIds', () => [String]) transactionIds: string[],
+    @Arg('classification', () => TransactionClassification)
+    classification: TransactionClassification,
+  ) {
+    await CoreTransaction.getRepository()
+      .createQueryBuilder()
+      .update(CoreTransaction)
+      .set({ classification: classification })
+      .whereInIds(transactionIds)
+      .execute();
+
+    return await CoreTransaction.findByIds(transactionIds);
+  }
+
+  @Mutation(() => [Transaction])
+  async updateTransactionTags(
+    @Arg('transactionIds', () => [String]) transactionIds: string[],
+    @Arg('addTags', () => [String]) addTags: string[],
+    @Arg('removeTags', () => [String]) removeTags: string[],
+    @Arg('force', () => Boolean) force: boolean,
+  ) {
+    try {
+      // ensure the tags exist (handle new tags)
+      const resolvedAddTags = await Promise.all(
+        addTags.map(this.getOrCreateTag),
+      );
+      const resolvedRemoveTags = await Tag.find({
+        name: In(removeTags),
+      });
+
+      // Edit these transaction tags per each transaction.
+      const transactions = await CoreTransaction.findByIds(transactionIds);
+
+      const removeIds = resolvedRemoveTags.map((t) => t.id);
+      const shouldRemoveId = (id: number) => removeIds.indexOf(id) > -1;
+
+      // add/remove tags
+      // Force: Ignore removeTags, because we'll set all transactions to ONLY have
+      // addTags. This wipes out all existing tags, and ensures all these transactions
+      // have exactly the same tag values.
+      const updates = transactions.map(async (transaction) => {
+        let tags = (await transaction.tags) ?? [];
+        let newTags = force
+          ? resolvedAddTags
+          : tags
+              .filter((tag) => !shouldRemoveId(tag.id))
+              .concat(resolvedAddTags);
+
+        transaction.tags = Promise.resolve(newTags);
+        return await transaction.save();
+      });
+
+      await Promise.all(updates);
+      return await CoreTransaction.findByIds(transactionIds);
+    } catch (error) {
+      console.error(error);
+      return [];
+    }
+  }
+
+  // TODO: this doesn't belong here
+  async getOrCreateTag(name: string) {
+    const existingTag = await Tag.findOne({ name });
+    if (existingTag) {
+      return existingTag;
+    }
+
+    return await Tag.create({ name }).save();
   }
 }

@@ -59,7 +59,7 @@ export class CoreTransaction extends BaseEntity {
   @DeleteDateColumn()
   deletedDate: Date;
 
-  @Field(() => [Tag])
+  @Field(() => [Tag], { nullable: true })
   @JoinTable()
   @ManyToMany(() => Tag, { onDelete: 'NO ACTION' })
   tags: Promise<Tag[]>;
