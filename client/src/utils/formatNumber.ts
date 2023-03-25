@@ -8,10 +8,10 @@ export function fNumber(number: InputValue) {
   return numeral(number).format();
 }
 
-export function fCurrency(number: InputValue) {
-  const format = number ? numeral(number).format('$ 0,0.00') : '';
+export function fCurrency(number: InputValue, alwaysShowCents = false) {
+  const format = number ? numeral(number).format('$0,0.00') : '';
 
-  return result(format, '.00');
+  return alwaysShowCents ? format : result(format, '.00');
 }
 
 export function fPercent(number: InputValue) {

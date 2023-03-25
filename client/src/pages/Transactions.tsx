@@ -1,9 +1,9 @@
 import { Helmet } from 'react-helmet-async';
 import { SetStateAction, useEffect, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import Chart from 'react-apexcharts';
+//import Chart from 'react-apexcharts';
 // @mui
-import { useTheme } from '@mui/material/styles';
+//import { useTheme } from '@mui/material/styles';
 import {
   Card,
   Table,
@@ -24,9 +24,6 @@ import {
   Typography,
   Link,
   Checkbox,
-  CardProps,
-  alpha,
-  Box,
 } from '@mui/material';
 // routes
 import { PATH_DASHBOARD } from '../routes/paths';
@@ -55,20 +52,21 @@ import { gql } from 'src/__generated__/gql';
 import { DatePicker } from '@mui/x-date-pickers';
 import MenuPopover from 'src/components/menu-popover';
 import { CustomAvatar } from 'src/components/custom-avatar';
-import { fCurrency, fPercent } from 'src/utils/formatNumber';
+import { fCurrency } from 'src/utils/formatNumber';
 import { useQuery } from '@apollo/client';
-import { ApexOptions } from 'apexcharts';
+/*import { ApexOptions } from 'apexcharts';
 import { merge } from 'lodash';
 import { ColorSchema } from 'src/theme/palette';
-
+*/
 // ----------------------------------------------------------------------
 
 const TABLE_HEAD = [
   { id: 'description', label: 'Description', align: 'left' },
-  { id: 'amount', label: 'Amount', align: 'right' },
+  { id: 'amount', label: 'Amount', align: 'right', width: 180 },
   { id: 'date', label: 'Date', align: 'left', width: 140 },
   { id: '__typename', label: 'Type', align: 'center', width: 140 },
   { id: 'classification', label: 'Classification', align: 'center', width: 240 },
+  { id: 'tags', label: 'Tags', align: 'left' },
   { id: '' },
 ];
 
@@ -139,7 +137,7 @@ const Classifications = ['Duplicate', 'Income', 'Expense', 'Recurring', 'Transfe
 
 export default function PageOne() {
   const { data } = useQuery(transactionsQuery, {
-    variables: { offset: 0, limit: 500 },
+    variables: { offset: 0, limit: 100 },
   });
   useEffect(() => {
     const maybedata = data?.getTransactions as unknown[] | null;
@@ -317,7 +315,7 @@ export default function PageOne() {
             </Button>
           }
         />
-
+        {/*
         <BankingWidgetSummary
           title="Income"
           icon="eva:diagonal-arrow-left-down-fill"
@@ -342,7 +340,7 @@ export default function PageOne() {
           chart={{
             series: [111, 136, 76, 108, 74, 54, 57, 84],
           }}
-        />
+        /> */}
 
         <Card>
           <TransactionTableToolbar
@@ -797,30 +795,36 @@ function TransactionTableRow({
           <Stack direction="row" alignItems="center" spacing={2}>
             <CustomAvatar name={description} />
 
-            <div>
-              <Typography variant="subtitle2" noWrap>
-                {description}
-              </Typography>
+            <Link
+              onClick={onViewRow}
+              sx={{
+                color: 'text.disabled',
+                cursor: 'pointer',
+                ':hover': {
+                  textDecoration: 'none',
+                },
+              }}
+            >
+              <div>
+                <Typography variant="subtitle2" noWrap color="MenuText">
+                  {description}
+                </Typography>
 
-              <Link
-                noWrap
-                variant="body2"
-                onClick={onViewRow}
-                sx={{ color: 'text.disabled', cursor: 'pointer' }}
-              >
-                {row.account.name}
-              </Link>
-            </div>
+                <Typography noWrap variant="body2">
+                  {row.account.name}
+                </Typography>
+              </div>
+            </Link>
           </Stack>
         </TableCell>
 
         <TableCell align="right">
           <Typography
-            fontFamily="Lucida Sans Typewriter"
+            fontFamily="Menlo"
             color={amount > 0 ? '#36B37E' : '#FF5630'}
             fontWeight="bold"
           >
-            {fCurrency(amount)}
+            {fCurrency(Math.abs(amount), true)}
           </Typography>
         </TableCell>
 
@@ -840,7 +844,27 @@ function TransactionTableRow({
         </TableCell>
 
         <TableCell align="center" sx={{ textTransform: 'capitalize' }}>
-          {classification}
+          {classification !== null ? (
+            <Label
+              variant="soft"
+              color={
+                (classification === 'Expense' && 'error') ||
+                (classification === 'Income' && 'success') ||
+                (classification === 'Duplicate' && 'secondary') ||
+                (classification === 'Recurring' && 'warning') ||
+                (classification === 'Transfer' && 'secondary') ||
+                (classification === 'Investment' && 'primary') ||
+                (classification === 'Hidden' && 'secondary') ||
+                'default'
+              }
+            >
+              {classification}
+            </Label>
+          ) : null}
+        </TableCell>
+
+        <TableCell align="left" sx={{ textTransform: 'capitalize' }}>
+          tagsssss
         </TableCell>
 
         <TableCell align="right">
@@ -904,7 +928,7 @@ function TransactionTableRow({
     </>
   );
 }
-
+/*
 // ----------------------------------------------------------------------
 
 interface Props extends CardProps {
@@ -1230,3 +1254,4 @@ function useChart(options?: ApexOptions) {
 
   return merge(baseOptions, options);
 }
+*/
