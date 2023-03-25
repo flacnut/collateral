@@ -28,19 +28,19 @@ registerEnumType(TransactionClassification, {
   description: 'Some general transaction classifications', // this one is optional
 });
 
-@ObjectType() 
+@ObjectType()
 class ChangeEvent {
-    @Field()
-    date: string;
+  @Field()
+  date: string;
 
-    @Field()
-    column: string;
+  @Field()
+  column: string;
 
-    @Field(() => String, {nullable: true})
-    oldValue: string | null;
+  @Field(() => String, { nullable: true })
+  oldValue: string | null;
 
-    @Field()
-    newValue: string;
+  @Field()
+  newValue: string;
 }
 
 @ObjectType()
@@ -83,7 +83,7 @@ export class CoreTransaction extends BaseEntity {
   @Field(() => TransactionClassification, { nullable: true })
   classification: TransactionClassification;
 
-  @Column('text', {default: '[]', nullable: false})
+  @Column('text', { default: '[]', nullable: false })
   serializedChangeLog: string;
 
   // Do not directly change this! Use appendChangeLog
@@ -114,7 +114,9 @@ export class CoreTransaction extends BaseEntity {
   }
 
   async appendChangeLog(change: ChangeEvent) {
-    this.changeLog = this.changeLog?.length ? this.changeLog.concat([change]): [change];
+    this.changeLog = this.changeLog?.length
+      ? this.changeLog.concat([change])
+      : [change];
     this.serializedChangeLog = JSON.stringify(this.changeLog);
   }
 
@@ -125,8 +127,6 @@ export class CoreTransaction extends BaseEntity {
       cache: true,
     });
   }
-
-  
 
   // TODO: Balance in dollars
   // TODO: Invert account transactions (and balance)
