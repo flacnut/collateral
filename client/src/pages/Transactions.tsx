@@ -159,6 +159,7 @@ export default function PageOne() {
   const navigate = useNavigate();
 
   const {
+    safe,
     dense,
     page,
     order,
@@ -173,6 +174,7 @@ export default function PageOne() {
     //
     onSort,
     onChangeDense,
+    onChangeSafe,
     onChangePage,
     onChangeRowsPerPage,
   } = useTable({ defaultRowsPerPage: 50, defaultOrderBy: 'createDate' });
@@ -427,6 +429,7 @@ export default function PageOne() {
                       <TransactionTableRow
                         key={row.id}
                         row={row}
+                        safe={safe}
                         selected={selected.includes(row.id)}
                         onSelectRow={() => onSelectRow(row.id)}
                         onViewRow={() => handleViewRow(row.id)}
@@ -455,6 +458,8 @@ export default function PageOne() {
             //
             dense={dense}
             onChangeDense={onChangeDense}
+            safe={safe}
+            onChangeSafe={onChangeSafe}
           />
         </Card>
       </Container>
@@ -749,6 +754,7 @@ function TransactionTableToolbar({
 
 function TransactionTableRow({
   row,
+  safe,
   selected,
   onSelectRow,
   onViewRow,
@@ -756,6 +762,7 @@ function TransactionTableRow({
   onDeleteRow,
 }: {
   row: IBasicTransaction;
+  safe: boolean;
   selected: boolean;
   onSelectRow: VoidFunction;
   onViewRow: VoidFunction;
@@ -824,7 +831,7 @@ function TransactionTableRow({
             color={amount > 0 ? '#36B37E' : '#FF5630'}
             fontWeight="bold"
           >
-            {fCurrency(Math.abs(amount), true)}
+            {safe ? 'X,XXX.XX' : fCurrency(Math.abs(amount), true)}
           </Typography>
         </TableCell>
 

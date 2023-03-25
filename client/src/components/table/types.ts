@@ -1,6 +1,7 @@
 // ----------------------------------------------------------------------
 
 export type TableProps = {
+  safe: boolean;
   dense: boolean;
   page: number;
   rowsPerPage: number;
@@ -15,6 +16,7 @@ export type TableProps = {
   onChangePage: (event: unknown, newPage: number) => void;
   onChangeRowsPerPage: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onChangeDense: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onChangeSafe: (event: React.ChangeEvent<HTMLInputElement>) => void;
   //
   setPage: React.Dispatch<React.SetStateAction<number>>;
   setDense: React.Dispatch<React.SetStateAction<boolean>>;

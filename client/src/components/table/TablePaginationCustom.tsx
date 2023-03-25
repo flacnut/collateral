@@ -15,19 +15,40 @@ import {
 type Props = {
   dense?: boolean;
   onChangeDense?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  safe?: boolean;
+  onChangeSafe?: (event: React.ChangeEvent<HTMLInputElement>) => void;
   sx?: SxProps<Theme>;
 };
 
 export default function TablePaginationCustom({
   dense,
   onChangeDense,
+  safe,
+  onChangeSafe,
   rowsPerPageOptions = [5, 10, 25, 50],
   sx,
   ...other
 }: Props & TablePaginationProps) {
   return (
-    <Box sx={{ position: 'relative', ...sx }}>
-      <TablePagination rowsPerPageOptions={rowsPerPageOptions} component="div" {...other} />
+    <Box
+      sx={{
+        position: 'relative',
+        display: 'flex',
+        justifyContent: 'flex-end',
+        ...sx,
+      }}
+    >
+      {onChangeSafe && (
+        <FormControlLabel
+          label="Safe"
+          control={<Switch checked={safe} onChange={onChangeSafe} />}
+          sx={{
+            pl: 2,
+            py: 1.5,
+            top: 0,
+          }}
+        />
+      )}
 
       {onChangeDense && (
         <FormControlLabel
@@ -37,12 +58,11 @@ export default function TablePaginationCustom({
             pl: 2,
             py: 1.5,
             top: 0,
-            position: {
-              md: 'absolute',
-            },
           }}
         />
       )}
+      <Box sx={{ flexGrow: 1 }} />
+      <TablePagination rowsPerPageOptions={rowsPerPageOptions} component="div" {...other} />
     </Box>
   );
 }

@@ -7,6 +7,7 @@ import { TableProps } from './types';
 type ReturnType = TableProps;
 
 export type UseTableProps = {
+  defaultSafe?: boolean;
   defaultDense?: boolean;
   defaultOrder?: 'asc' | 'desc';
   defaultOrderBy?: string;
@@ -16,6 +17,8 @@ export type UseTableProps = {
 };
 
 export default function useTable(props?: UseTableProps): ReturnType {
+  const [safe, setSafe] = useState(!!props?.defaultSafe);
+
   const [dense, setDense] = useState(!!props?.defaultDense);
 
   const [orderBy, setOrderBy] = useState(props?.defaultOrderBy || 'name');
@@ -83,7 +86,12 @@ export default function useTable(props?: UseTableProps): ReturnType {
     setDense(event.target.checked);
   }, []);
 
+  const onChangeSafe = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setSafe(event.target.checked);
+  }, []);
+
   return {
+    safe,
     dense,
     order,
     page,
@@ -97,6 +105,7 @@ export default function useTable(props?: UseTableProps): ReturnType {
     onSort,
     onChangePage,
     onChangeDense,
+    onChangeSafe,
     onChangeRowsPerPage,
     //
     setPage,
