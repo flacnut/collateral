@@ -315,12 +315,25 @@ export class TransactionResolver {
     @Arg('description', () => String)
     description: string,
   ) {
+    const changes = (await CoreTransaction.findByIds(transactionIds)).map(t => {
+      return {id: t.id, column: 'description', oldValue: t.description, newValue: description};
+    });
+
     await CoreTransaction.getRepository()
       .createQueryBuilder()
       .update(CoreTransaction)
       .set({ description })
       .whereInIds(transactionIds)
       .execute();
+
+    await Promise.all(
+      changes.map(async change => this.recordUpdateEvent(
+        change.id, 
+        change.column, 
+        change.oldValue, 
+        change.newValue,
+      )),
+    );
 
     return await CoreTransaction.findByIds(transactionIds);
   }
@@ -331,6 +344,11 @@ export class TransactionResolver {
     @Arg('classification', () => TransactionClassification)
     classification: TransactionClassification,
   ) {
+
+    const changes = (await CoreTransaction.findByIds(transactionIds)).map(t => {
+      return {id: t.id, column: 'description', oldValue: t.classification, newValue: classification};
+    });
+
     await CoreTransaction.getRepository()
       .createQueryBuilder()
       .update(CoreTransaction)
@@ -338,7 +356,16 @@ export class TransactionResolver {
       .whereInIds(transactionIds)
       .execute();
 
-    return await CoreTransaction.findByIds(transactionIds);
+      await Promise.all(
+        changes.map(async change => this.recordUpdateEvent(
+          change.id, 
+          change.column, 
+          change.oldValue, 
+          change.newValue,
+        )),
+      );
+  
+      return await CoreTransaction.findByIds(transactionIds);
   }
 
   @Mutation(() => [Transaction])
@@ -395,5 +422,21 @@ export class TransactionResolver {
     }
 
     return await Tag.create({ name }).save();
+  }
+
+  async recordUpdateEvent(transactionId: string, column: string, oldValue: string, newValue: string) {
+    const date = (new Date()).toLocaleDateString();
+    const transaction = await CoreTransaction.findOne(transactionId);
+    if (!transaction) {
+      // TODO: handle
+      console.error("Not Transaction");
+      return;
+    }
+
+    transaction.appendChangeLog({
+      date, column, oldValue, newValue
+    });
+
+    return await transaction.save();
   }
 }
