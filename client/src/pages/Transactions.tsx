@@ -25,6 +25,7 @@ import {
   Link,
   Checkbox,
   Chip,
+  Autocomplete,
 } from '@mui/material';
 // routes
 import { PATH_DASHBOARD } from '../routes/paths';
@@ -54,18 +55,35 @@ import { DatePicker } from '@mui/x-date-pickers';
 import MenuPopover from 'src/components/menu-popover';
 import { CustomAvatar } from 'src/components/custom-avatar';
 import { fCurrency } from 'src/utils/formatNumber';
-import { useQuery } from '@apollo/client';
+import { useLazyQuery, useQuery } from '@apollo/client';
+import { RHFAutocomplete } from '../components/hook-form';
+import { GetBasicTransactionsQuery } from 'src/__generated__/graphql';
 /*import { ApexOptions } from 'apexcharts';
 import { merge } from 'lodash';
 import { ColorSchema } from 'src/theme/palette';
 */
 // ----------------------------------------------------------------------
 
+const TAGS_OPTION = [
+  'Toy Story 3',
+  'Logan',
+  'Full Metal Jacket',
+  'Dangal',
+  'The Sting',
+  '2001: A Space Odyssey',
+  "Singin' in the Rain",
+  'Toy Story',
+  'Bicycle Thieves',
+  'The Kid',
+  'Inglourious Basterds',
+  'Snatch',
+  '3 Idiots',
+];
+
 const TABLE_HEAD = [
   { id: 'description', label: 'Description', align: 'left' },
   { id: 'amount', label: 'Amount', align: 'right', width: 180 },
   { id: 'date', label: 'Date', align: 'left', width: 140 },
-  { id: '__typename', label: 'Type', align: 'center', width: 140 },
   { id: 'classification', label: 'Classification', align: 'center', width: 240 },
   { id: 'tags', label: 'Tags', align: 'left' },
   { id: '' },
@@ -148,11 +166,31 @@ const Classifications = ['Duplicate', 'Income', 'Expense', 'Recurring', 'Transfe
 // ----------------------------------------------------------------------
 
 export default function PageOne() {
-  const { data } = useQuery(transactionsQuery, {
-    variables: { offset: 0, limit: 100 },
-  });
-  useEffect(() => {
-    const maybedata = data?.getTransactions as unknown[] | null;
+  const FETCH_LIMIT = 50;
+  const [offset, setOffset] = useState(0);
+
+  const [refetch, additionalTransactions] = useLazyQuery(transactionsQuery);
+
+  const fetchMoreTransacitons = () => {
+    if (additionalTransactions.loading) {
+      console.dir('stuff is loading');
+      return;
+    }
+
+    refetch({
+      variables: {
+        offset: offset,
+        limit: 50,
+      },
+    });
+
+    setOffset(offset + FETCH_LIMIT);
+  };
+
+  const extractTransactions = (
+    queryResultData: GetBasicTransactionsQuery | undefined
+  ): [IBasicTransaction[], IBasicAccount[]] => {
+    const maybedata = queryResultData?.getTransactions as unknown[] | null;
     const transactionData = (maybedata ?? []) as IBasicTransaction[];
     const accounts = transactionData.reduce(
       (accounts: { [key: string]: IBasicAccount }, transaction) => {
@@ -163,9 +201,24 @@ export default function PageOne() {
       },
       {}
     );
-    setTableData(transactionData);
-    setAccounts(Object.values(accounts));
-  }, [data]);
+    return [transactionData, Object.values(accounts)];
+  };
+
+  useEffect(() => {
+    let [transactionData, additionalAccounts] = extractTransactions(additionalTransactions.data);
+    const dedupedAccounts = [...accounts, ...additionalAccounts].reduce(
+      (accounts: { [key: string]: IBasicAccount }, account) => {
+        if (!accounts[account.id]) {
+          accounts[account.id] = account;
+        }
+        return accounts;
+      },
+      {}
+    );
+    console.dir('Set additional data');
+    setTableData([...tableData, ...transactionData]);
+    setAccounts(Object.values(dedupedAccounts));
+  }, [additionalTransactions.data]);
 
   const { themeStretch } = useSettingsContext();
   const navigate = useNavigate();
@@ -192,6 +245,7 @@ export default function PageOne() {
   } = useTable({ defaultRowsPerPage: 50, defaultOrderBy: 'createDate' });
 
   const [tableData, setTableData] = useState<IBasicTransaction[]>([]);
+  const [filteredData, setFilteredData] = useState<IBasicTransaction[]>([]);
   const [accounts, setAccounts] = useState<IBasicAccount[]>([]);
 
   const [openConfirm, setOpenConfirm] = useState(false);
@@ -202,17 +256,32 @@ export default function PageOne() {
   const [filterEndDate, setFilterEndDate] = useState<Date | null>(null);
   const [filterStartDate, setFilterStartDate] = useState<Date | null>(null);
 
-  const dataFiltered = applyFilter({
-    inputData: tableData,
-    comparator: getComparator(order, orderBy),
-    filterDescription,
+  useEffect(() => {
+    const dataFiltered = applyFilter({
+      inputData: tableData,
+      comparator: getComparator(order, orderBy),
+      filterDescription,
+      filterClassification,
+      filterStartDate,
+      filterEndDate,
+      filterAccount,
+    });
+
+    if (dataFiltered.length < 50) {
+      fetchMoreTransacitons();
+    }
+
+    setFilteredData(dataFiltered);
+  }, [
+    tableData,
+    filterAccount,
     filterClassification,
+    filterDescription,
     filterStartDate,
     filterEndDate,
-    filterAccount,
-  });
+  ]);
 
-  const dataInPage = dataFiltered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  const dataInPage = filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   const denseHeight = dense ? 56 : 76;
 
@@ -223,10 +292,10 @@ export default function PageOne() {
     (!!filterStartDate && !!filterEndDate);
 
   const isNotFound =
-    (!dataFiltered.length && !!filterDescription) ||
-    (!dataFiltered.length && !!filterClassification) ||
-    (!dataFiltered.length && !!filterEndDate) ||
-    (!dataFiltered.length && !!filterStartDate);
+    (!filteredData.length && !!filterDescription) ||
+    (!filteredData.length && !!filterClassification) ||
+    (!filteredData.length && !!filterEndDate) ||
+    (!filteredData.length && !!filterStartDate);
 
   const handleOpenConfirm = () => {
     setOpenConfirm(true);
@@ -271,7 +340,7 @@ export default function PageOne() {
     if (page > 0) {
       if (selected.length === dataInPage.length) {
         setPage(page - 1);
-      } else if (selected.length === dataFiltered.length) {
+      } else if (selected.length === filteredData.length) {
         setPage(0);
       } else if (selected.length > dataInPage.length) {
         const newPage = Math.ceil((tableData.length - selected.length) / rowsPerPage) - 1;
@@ -356,6 +425,32 @@ export default function PageOne() {
           }}
         /> */}
 
+        <Card sx={{ marginBottom: 2 }}>
+          <Stack
+            spacing={2}
+            alignItems="center"
+            direction={{
+              xs: 'column',
+              md: 'row',
+            }}
+            sx={{ px: 2.5, py: 3 }}
+          >
+            <Autocomplete
+              sx={{ width: '200px' }}
+              multiple
+              freeSolo
+              onChange={(event, newValue) => console.dir('tags')}
+              options={TAGS_OPTION.map((option) => option)}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => (
+                  <Chip {...getTagProps({ index })} key={option} size="small" label={option} />
+                ))
+              }
+              renderInput={(params) => <TextField label="Tags" {...params} />}
+            />
+          </Stack>
+        </Card>
+
         <Card>
           <TransactionTableToolbar
             accounts={accounts}
@@ -385,7 +480,7 @@ export default function PageOne() {
               onSelectAllRows={(checked: any) =>
                 onSelectAllRows(
                   checked,
-                  dataFiltered.map((row: { id: any }) => row.id)
+                  filteredData.map((row: { id: any }) => row.id)
                 )
               }
               action={
@@ -429,13 +524,13 @@ export default function PageOne() {
                   onSelectAllRows={(checked: any) =>
                     onSelectAllRows(
                       checked,
-                      dataFiltered.map((row: { id: any }) => row.id)
+                      filteredData.map((row: { id: any }) => row.id)
                     )
                   }
                 />
 
                 <TableBody>
-                  {dataFiltered
+                  {filteredData
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     .map((row) => (
                       <TransactionTableRow
@@ -462,7 +557,7 @@ export default function PageOne() {
           </TableContainer>
 
           <TablePaginationCustom
-            count={dataFiltered.length}
+            count={filteredData.length}
             page={page}
             rowsPerPage={rowsPerPage}
             onPageChange={onChangePage}
@@ -781,7 +876,7 @@ function TransactionTableRow({
   onEditRow: VoidFunction;
   onDeleteRow: VoidFunction;
 }) {
-  const { date, description, amount, __typename, classification } = row;
+  const { date, description, amount, tags, classification } = row;
 
   const [openConfirm, setOpenConfirm] = useState(false);
 
@@ -849,19 +944,6 @@ function TransactionTableRow({
 
         <TableCell align="left">{fDate(date)}</TableCell>
 
-        <TableCell align="left">
-          <Label
-            variant="soft"
-            color={
-              (__typename === 'InvestmentTransaction' && 'primary') ||
-              (__typename === 'Transaction' && 'secondary') ||
-              'default'
-            }
-          >
-            {__typename}
-          </Label>
-        </TableCell>
-
         <TableCell align="center" sx={{ textTransform: 'capitalize' }}>
           {classification !== null ? (
             <Label
@@ -883,7 +965,7 @@ function TransactionTableRow({
         </TableCell>
 
         <TableCell align="left" sx={{ textTransform: 'capitalize' }}>
-          {row.tags.map((tag, index) => (
+          {tags.map((tag, index) => (
             <Chip
               key={index}
               size={'small'}
