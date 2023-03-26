@@ -65,18 +65,27 @@ export type AggregatedTransaction = {
 
 export type AnyTransaction = InvestmentTransaction | Transaction;
 
+export type ChangeEvent = {
+  __typename?: 'ChangeEvent';
+  column: Scalars['String'];
+  date: Scalars['String'];
+  newValue: Scalars['String'];
+  oldValue?: Maybe<Scalars['String']>;
+};
+
 export type CoreTransaction = {
   __typename?: 'CoreTransaction';
   account: Account;
   accountId: Scalars['String'];
   amount: Scalars['Float'];
   amountCents: Scalars['Int'];
+  changeLog: Array<ChangeEvent>;
   classification?: Maybe<TransactionClassification>;
   currency?: Maybe<Scalars['String']>;
   date: Scalars['String'];
   description: Scalars['String'];
   id: Scalars['String'];
-  tags: Array<Tag>;
+  tags?: Maybe<Array<Tag>>;
 };
 
 export type Institution = {
@@ -108,6 +117,7 @@ export type InvestmentTransaction = {
   accountId: Scalars['String'];
   amount: Scalars['Float'];
   amountCents: Scalars['Int'];
+  changeLog: Array<ChangeEvent>;
   classification?: Maybe<TransactionClassification>;
   currency?: Maybe<Scalars['String']>;
   date: Scalars['String'];
@@ -118,7 +128,7 @@ export type InvestmentTransaction = {
   security: Security;
   securityId: Scalars['String'];
   subType: Scalars['String'];
-  tags: Array<Tag>;
+  tags?: Maybe<Array<Tag>>;
   type: Scalars['String'];
   unitPriceCents: Scalars['Int'];
 };
@@ -136,6 +146,9 @@ export type Mutation = {
   deleteTag: Scalars['Boolean'];
   saveTransfers: Array<Transfer>;
   setPlaidLinkResponse: PlaidItem;
+  updateTransactionClassification: Array<Transaction>;
+  updateTransactionDescription: Array<AnyTransaction>;
+  updateTransactionTags: Array<Transaction>;
 };
 
 
@@ -161,6 +174,26 @@ export type MutationSaveTransfersArgs = {
 
 export type MutationSetPlaidLinkResponseArgs = {
   plaidLinkResponse: PlaidLinkResponse;
+};
+
+
+export type MutationUpdateTransactionClassificationArgs = {
+  classification: TransactionClassification;
+  transactionIds: Array<Scalars['String']>;
+};
+
+
+export type MutationUpdateTransactionDescriptionArgs = {
+  description: Scalars['String'];
+  transactionIds: Array<Scalars['String']>;
+};
+
+
+export type MutationUpdateTransactionTagsArgs = {
+  addTags: Array<Scalars['String']>;
+  force: Scalars['Boolean'];
+  removeTags: Array<Scalars['String']>;
+  transactionIds: Array<Scalars['String']>;
 };
 
 export type PlaidItem = {
@@ -306,6 +339,7 @@ export type Transaction = {
   authorizedDateTime: Scalars['String'];
   category: Scalars['String'];
   categoryId: Scalars['String'];
+  changeLog: Array<ChangeEvent>;
   classification?: Maybe<TransactionClassification>;
   currency?: Maybe<Scalars['String']>;
   date: Scalars['String'];
@@ -318,7 +352,7 @@ export type Transaction = {
   paymentChannel: Scalars['String'];
   paymentMetaJson: Scalars['String'];
   pending: Scalars['Boolean'];
-  tags: Array<Tag>;
+  tags?: Maybe<Array<Tag>>;
   transactionCode: Scalars['String'];
 };
 
@@ -421,10 +455,10 @@ export type GetBasicTransactionsQueryVariables = Exact<{
 
 
 export type GetBasicTransactionsQuery = { __typename?: 'Query', getTransactions: Array<(
-    { __typename: 'InvestmentTransaction', account: { __typename?: 'Account', id: string, name: string } }
+    { __typename: 'InvestmentTransaction', account: { __typename?: 'Account', id: string, name: string }, tags?: Array<{ __typename?: 'Tag', name: string }> | null }
     & { ' $fragmentRefs'?: { 'CoreInvestmentTransactionPartsFragment': CoreInvestmentTransactionPartsFragment } }
   ) | (
-    { __typename: 'Transaction', account: { __typename?: 'Account', id: string, name: string } }
+    { __typename: 'Transaction', account: { __typename?: 'Account', id: string, name: string }, tags?: Array<{ __typename?: 'Tag', name: string }> | null }
     & { ' $fragmentRefs'?: { 'CoreTransactionPartsFragment': CoreTransactionPartsFragment } }
   )> };
 
@@ -467,6 +501,6 @@ export const GetTokenDocument = {"kind":"Document","definitions":[{"kind":"Opera
 export const SetPlaidLinkResponseDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"setPlaidLinkResponse"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"plaidLinkResponse"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"PlaidLinkResponse"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"setPlaidLinkResponse"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"plaidLinkResponse"},"value":{"kind":"Variable","name":{"kind":"Name","value":"plaidLinkResponse"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"institutionId"}}]}}]}}]} as unknown as DocumentNode<SetPlaidLinkResponseMutation, SetPlaidLinkResponseMutationVariables>;
 export const DeletAccountDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"deletAccount"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"accountId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteAccount"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"accountId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"accountId"}}}]}]}}]} as unknown as DocumentNode<DeletAccountMutation, DeletAccountMutationVariables>;
 export const GetTransactionQueryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getTransactionQuery"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"transactionId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getTransaction"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"transactionId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Transaction"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"CoreTransactionParts"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"ExtraTransactionParts"}},{"kind":"Field","name":{"kind":"Name","value":"account"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"InvestmentTransaction"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"CoreInvestmentTransactionParts"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"ExtraInvestmentTransactionParts"}},{"kind":"Field","name":{"kind":"Name","value":"account"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}},...CoreTransactionPartsFragmentDoc.definitions,...ExtraTransactionPartsFragmentDoc.definitions,...CoreInvestmentTransactionPartsFragmentDoc.definitions,...ExtraInvestmentTransactionPartsFragmentDoc.definitions]} as unknown as DocumentNode<GetTransactionQueryQuery, GetTransactionQueryQueryVariables>;
-export const GetBasicTransactionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getBasicTransactions"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"accountId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getTransactions"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"accountId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"accountId"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"after"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Transaction"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"CoreTransactionParts"}},{"kind":"Field","name":{"kind":"Name","value":"account"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"InvestmentTransaction"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"CoreInvestmentTransactionParts"}},{"kind":"Field","name":{"kind":"Name","value":"account"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}},...CoreTransactionPartsFragmentDoc.definitions,...CoreInvestmentTransactionPartsFragmentDoc.definitions]} as unknown as DocumentNode<GetBasicTransactionsQuery, GetBasicTransactionsQueryVariables>;
+export const GetBasicTransactionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getBasicTransactions"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"accountId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getTransactions"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"accountId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"accountId"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"after"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Transaction"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"CoreTransactionParts"}},{"kind":"Field","name":{"kind":"Name","value":"account"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"tags"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"InvestmentTransaction"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"CoreInvestmentTransactionParts"}},{"kind":"Field","name":{"kind":"Name","value":"account"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"tags"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}},...CoreTransactionPartsFragmentDoc.definitions,...CoreInvestmentTransactionPartsFragmentDoc.definitions]} as unknown as DocumentNode<GetBasicTransactionsQuery, GetBasicTransactionsQueryVariables>;
 export const GetPossibleTransfersDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getPossibleTransfers"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getPossibleTransfers"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"date"}},{"kind":"Field","name":{"kind":"Name","value":"amountCents"}},{"kind":"Field","name":{"kind":"Name","value":"to"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"parts"}},{"kind":"Field","name":{"kind":"Name","value":"account"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"mask"}},{"kind":"Field","name":{"kind":"Name","value":"institution"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"logo"}},{"kind":"Field","name":{"kind":"Name","value":"primaryColor"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"from"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"parts"}},{"kind":"Field","name":{"kind":"Name","value":"account"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"mask"}},{"kind":"Field","name":{"kind":"Name","value":"institution"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"logo"}},{"kind":"Field","name":{"kind":"Name","value":"primaryColor"}}]}}]}}]}}]}}]}},...PartsFragmentDoc.definitions]} as unknown as DocumentNode<GetPossibleTransfersQuery, GetPossibleTransfersQueryVariables>;
 export const SaveTransfersDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"saveTransfers"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"transfers"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UnsavedTransfer"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"saveTransfers"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"transfers"},"value":{"kind":"Variable","name":{"kind":"Name","value":"transfers"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"to"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"parts"}}]}},{"kind":"Field","name":{"kind":"Name","value":"from"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"parts"}}]}}]}}]}},...PartsFragmentDoc.definitions]} as unknown as DocumentNode<SaveTransfersMutation, SaveTransfersMutationVariables>;

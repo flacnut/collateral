@@ -24,6 +24,7 @@ import {
   Typography,
   Link,
   Checkbox,
+  Chip,
 } from '@mui/material';
 // routes
 import { PATH_DASHBOARD } from '../routes/paths';
@@ -81,6 +82,11 @@ type IBasicTransaction = {
   currency: string | null;
   classification: string;
   account: IBasicAccount;
+  tags: ITag[];
+};
+
+type ITag = {
+  name: String;
 };
 
 type IBasicAccount = {
@@ -98,11 +104,17 @@ query getBasicTransactions($accountId: String, $limit: Int, $offset: Int) {
         id
         name
       }
+      tags {
+        name
+      }
     }
     ... on InvestmentTransaction {
       ...CoreInvestmentTransactionParts
       account {
         id
+        name
+      }
+      tags {
         name
       }
     }
@@ -871,7 +883,14 @@ function TransactionTableRow({
         </TableCell>
 
         <TableCell align="left" sx={{ textTransform: 'capitalize' }}>
-          tagsssss
+          {row.tags.map((tag, index) => (
+            <Chip
+              key={index}
+              size={'small'}
+              label={tag.name}
+              sx={{ marginRight: 1, borderRadius: 1 }}
+            />
+          ))}
         </TableCell>
 
         <TableCell align="right">
