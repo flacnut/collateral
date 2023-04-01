@@ -1,5 +1,5 @@
 import { Helmet } from 'react-helmet-async';
-import { SetStateAction, useEffect, useState } from 'react';
+import { SetStateAction, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 //import Chart from 'react-apexcharts';
 // @mui
@@ -58,6 +58,7 @@ import { fCurrency } from 'src/utils/formatNumber';
 import { useLazyQuery, useQuery } from '@apollo/client';
 import { RHFAutocomplete } from '../components/hook-form';
 import { GetBasicTransactionsQuery } from 'src/__generated__/graphql';
+import { useDebounce } from 'use-debounce';
 /*import { ApexOptions } from 'apexcharts';
 import { merge } from 'lodash';
 import { ColorSchema } from 'src/theme/palette';
@@ -74,6 +75,10 @@ const TABLE_HEAD = [
   { id: 'tags', label: 'Tags', align: 'left' },
   { id: '' },
 ];
+
+interface RowIdCallbackFunction {
+  (id: string): void;
+}
 
 type IBasicTransaction = {
   __typename: string;
@@ -185,7 +190,7 @@ const Classifications = ['Duplicate', 'Income', 'Expense', 'Recurring', 'Transfe
 
 // ----------------------------------------------------------------------
 
-export default function PageOne() {
+export default function Transactions() {
   const FETCH_LIMIT = PAGE_SIZE;
   const [offset, setOffset] = useState(0);
   const [tags, setTags] = useState<string[]>([]);
@@ -202,7 +207,7 @@ export default function PageOne() {
     if (!fetchAccountsResponse?.loading) {
       fetchAccounts();
     }
-  });
+  }, []);
 
   useEffect(() => {
     setTags(Object.values(fetchTagResponse?.data?.tags ?? {}).map((t) => t.name));
@@ -212,7 +217,7 @@ export default function PageOne() {
     setAccounts((fetchAccountsResponse?.data?.getAccounts ?? []) as IBasicAccount[]);
   }, [fetchTagResponse.data]);
 
-  const fetchMoreTransacitons = () => {
+  const fetchMoreTransacitons = useCallback(() => {
     if (additionalTransactions.loading) {
       return;
     }
@@ -225,15 +230,16 @@ export default function PageOne() {
     });
 
     setOffset(offset + FETCH_LIMIT);
-  };
+  }, [refetch, offset, additionalTransactions.loading]);
 
-  const extractTransactions = (
-    queryResultData: GetBasicTransactionsQuery | undefined
-  ): IBasicTransaction[] => {
-    const maybedata = queryResultData?.getTransactions as unknown[] | null;
-    const transactionData = (maybedata ?? []) as IBasicTransaction[];
-    return transactionData;
-  };
+  const extractTransactions = useCallback(
+    (queryResultData: GetBasicTransactionsQuery | undefined): IBasicTransaction[] => {
+      const maybedata = queryResultData?.getTransactions as unknown[] | null;
+      const transactionData = (maybedata ?? []) as IBasicTransaction[];
+      return transactionData;
+    },
+    []
+  );
 
   useEffect(() => {
     let transactionData = extractTransactions(additionalTransactions.data);
@@ -275,6 +281,8 @@ export default function PageOne() {
   const [filterEndDate, setFilterEndDate] = useState<Date | null>(null);
   const [filterStartDate, setFilterStartDate] = useState<Date | null>(null);
 
+  const [debounceFilterDescription] = useDebounce(filterDescription, 250);
+
   useEffect(() => {
     const dataFiltered = applyFilter({
       inputData: tableData,
@@ -285,7 +293,6 @@ export default function PageOne() {
       filterEndDate,
       filterAccount,
     });
-
     if (dataFiltered.length < 100) {
       fetchMoreTransacitons();
     }
@@ -295,12 +302,65 @@ export default function PageOne() {
     tableData,
     filterAccount,
     filterClassification,
-    filterDescription,
+    debounceFilterDescription,
     filterStartDate,
     filterEndDate,
   ]);
 
-  const dataInPage = filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  const handleEditRow = useCallback((id: string) => {
+    //navigate(PATH_DASHBOARD.transaction.edit(id));
+  }, []);
+
+  const handleViewRow = useCallback(
+    (id: string) => {
+      navigate(PATH_DASHBOARD.transactions.view(id));
+    },
+    [navigate]
+  );
+
+  const handleDeleteRow = useCallback(
+    (id: string) => {
+      const deleteRow = tableData.filter((row: { id: string }) => row.id !== id);
+      setSelected([]);
+      setTableData(deleteRow);
+
+      if (page > 0) {
+        if (dataInPage.length < 2) {
+          setPage(page - 1);
+        }
+      }
+    },
+    [setSelected, setTableData, tableData, setPage]
+  );
+
+  const dataInPage = useMemo(
+    () =>
+      filteredData
+        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+        .map((row) => (
+          <TransactionTableRow
+            key={row.id}
+            row={row}
+            safe={safe}
+            selected={selected.includes(row.id)}
+            onSelectRow={onSelectRow}
+            onViewRow={handleViewRow}
+            onEditRow={handleEditRow}
+            onDeleteRow={handleDeleteRow}
+          />
+        )),
+    [
+      filteredData,
+      page,
+      rowsPerPage,
+      safe,
+      selected,
+      onSelectRow,
+      handleViewRow,
+      handleEditRow,
+      handleDeleteRow,
+    ]
+  );
 
   const denseHeight = dense ? 56 : 76;
 
@@ -316,42 +376,39 @@ export default function PageOne() {
     (!filteredData.length && !!filterEndDate) ||
     (!filteredData.length && !!filterStartDate);
 
-  const handleOpenConfirm = () => {
+  const handleOpenConfirm = useCallback(() => {
     setOpenConfirm(true);
-  };
+  }, [setOpenConfirm]);
 
-  const handleCloseConfirm = () => {
+  const handleCloseConfirm = useCallback(() => {
     setOpenConfirm(false);
-  };
+  }, [setOpenConfirm]);
 
-  const handleFilterClassification = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setPage(0);
-    setFilterClassification(event.target.value);
-  };
+  const handleFilterClassification = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setPage(0);
+      setFilterClassification(event.target.value);
+    },
+    [setPage, setFilterClassification]
+  );
 
-  const handleFilterDescription = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setPage(0);
-    setFilterDescription(event.target.value);
-  };
+  const handleFilterDescription = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setPage(0);
+      setFilterDescription(event.target.value);
+    },
+    [setPage, setFilterDescription]
+  );
 
-  const handleFilterAccount = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setPage(0);
-    setFilterAccount(event.target.value);
-  };
+  const handleFilterAccount = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setPage(0);
+      setFilterAccount(event.target.value);
+    },
+    [setPage, setFilterAccount]
+  );
 
-  const handleDeleteRow = (id: string) => {
-    const deleteRow = tableData.filter((row: { id: string }) => row.id !== id);
-    setSelected([]);
-    setTableData(deleteRow);
-
-    if (page > 0) {
-      if (dataInPage.length < 2) {
-        setPage(page - 1);
-      }
-    }
-  };
-
-  const handleDeleteRows = (selected: string[]) => {
+  const handleDeleteRows = useCallback((selected: string[]) => {
     const deleteRows = tableData.filter((row: { id: string }) => !selected.includes(row.id));
     setSelected([]);
     setTableData(deleteRows);
@@ -366,23 +423,21 @@ export default function PageOne() {
         setPage(newPage);
       }
     }
-  };
+  }, []);
 
-  const handleEditRow = (id: string) => {
-    //navigate(PATH_DASHBOARD.transaction.edit(id));
-  };
-
-  const handleViewRow = (id: string) => {
-    navigate(PATH_DASHBOARD.transactions.view(id));
-  };
-
-  const handleResetFilter = () => {
+  const handleResetFilter = useCallback(() => {
     setFilterDescription('');
     setFilterClassification('all');
     setFilterAccount('all');
     setFilterEndDate(null);
     setFilterStartDate(null);
-  };
+  }, [
+    setFilterAccount,
+    setFilterClassification,
+    setFilterDescription,
+    setFilterStartDate,
+    setFilterEndDate,
+  ]);
 
   return (
     <>
@@ -549,21 +604,7 @@ export default function PageOne() {
                 />
 
                 <TableBody>
-                  {filteredData
-                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                    .map((row) => (
-                      <TransactionTableRow
-                        key={row.id}
-                        row={row}
-                        safe={safe}
-                        selected={selected.includes(row.id)}
-                        onSelectRow={() => onSelectRow(row.id)}
-                        onViewRow={() => handleViewRow(row.id)}
-                        onEditRow={() => handleEditRow(row.id)}
-                        onDeleteRow={() => handleDeleteRow(row.id)}
-                      />
-                    ))}
-
+                  {dataInPage}
                   <TableEmptyRows
                     height={denseHeight}
                     emptyRows={emptyRows(page, rowsPerPage, tableData.length)}
@@ -890,12 +931,12 @@ function TransactionTableRow({
   row: IBasicTransaction;
   safe: boolean;
   selected: boolean;
-  onSelectRow: VoidFunction;
-  onViewRow: VoidFunction;
-  onEditRow: VoidFunction;
-  onDeleteRow: VoidFunction;
+  onSelectRow: RowIdCallbackFunction;
+  onViewRow: RowIdCallbackFunction;
+  onEditRow: RowIdCallbackFunction;
+  onDeleteRow: RowIdCallbackFunction;
 }) {
-  const { date, description, amount, tags, classification } = row;
+  const { id, date, description, amount, tags, classification } = row;
 
   const [openConfirm, setOpenConfirm] = useState(false);
 
@@ -917,11 +958,13 @@ function TransactionTableRow({
     setOpenPopover(null);
   };
 
+  console.dir('render row');
+
   return (
     <>
       <TableRow hover selected={selected}>
         <TableCell padding="checkbox">
-          <Checkbox checked={selected} onClick={onSelectRow} />
+          <Checkbox checked={selected} onClick={() => onSelectRow(id)} />
         </TableCell>
 
         <TableCell>
@@ -929,7 +972,7 @@ function TransactionTableRow({
             <CustomAvatar name={description} />
 
             <Link
-              onClick={onViewRow}
+              onClick={() => onViewRow(id)}
               sx={{
                 color: 'text.disabled',
                 cursor: 'pointer',
@@ -1009,7 +1052,7 @@ function TransactionTableRow({
       >
         <MenuItem
           onClick={() => {
-            onViewRow();
+            onViewRow(id);
             handleClosePopover();
           }}
         >
@@ -1019,7 +1062,7 @@ function TransactionTableRow({
 
         <MenuItem
           onClick={() => {
-            onEditRow();
+            onEditRow(id);
             handleClosePopover();
           }}
         >
@@ -1047,7 +1090,7 @@ function TransactionTableRow({
         title="Delete"
         content="Are you sure want to delete?"
         action={
-          <Button variant="contained" color="error" onClick={onDeleteRow}>
+          <Button variant="contained" color="error" onClick={() => onDeleteRow(id)}>
             Delete
           </Button>
         }
