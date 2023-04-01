@@ -64,21 +64,7 @@ import { ColorSchema } from 'src/theme/palette';
 */
 // ----------------------------------------------------------------------
 
-const TAGS_OPTION = [
-  'Toy Story 3',
-  'Logan',
-  'Full Metal Jacket',
-  'Dangal',
-  'The Sting',
-  '2001: A Space Odyssey',
-  "Singin' in the Rain",
-  'Toy Story',
-  'Bicycle Thieves',
-  'The Kid',
-  'Inglourious Basterds',
-  'Snatch',
-  '3 Idiots',
-];
+const PAGE_SIZE = 100;
 
 const TABLE_HEAD = [
   { id: 'description', label: 'Description', align: 'left' },
@@ -111,6 +97,12 @@ type IBasicAccount = {
   id: string;
   name: string;
 };
+
+const tagsQuery = gql(`query getTags {
+  tags {
+    name
+  }
+}`);
 
 const transactionsQuery = gql(`
 query getBasicTransactions($accountId: String, $limit: Int, $offset: Int) {
@@ -187,21 +179,33 @@ const Classifications = ['Duplicate', 'Income', 'Expense', 'Recurring', 'Transfe
 // ----------------------------------------------------------------------
 
 export default function PageOne() {
-  const FETCH_LIMIT = 50;
+  const FETCH_LIMIT = PAGE_SIZE;
   const [offset, setOffset] = useState(0);
+  const [tags, setTags] = useState<string[]>([]);
 
   const [refetch, additionalTransactions] = useLazyQuery(transactionsQuery);
+  const [fetchTags, fetchTagResponse] = useLazyQuery(tagsQuery);
+
+  useEffect(() => {
+    if (fetchTagResponse?.loading) {
+      return;
+    }
+    fetchTags();
+  });
+
+  useEffect(() => {
+    setTags(Object.values(fetchTagResponse?.data?.tags ?? {}).map((t) => t.name));
+  }, [fetchTagResponse.data]);
 
   const fetchMoreTransacitons = () => {
     if (additionalTransactions.loading) {
-      console.dir('stuff is loading');
       return;
     }
 
     refetch({
       variables: {
         offset: offset,
-        limit: 50,
+        limit: PAGE_SIZE,
       },
     });
 
@@ -236,7 +240,7 @@ export default function PageOne() {
       },
       {}
     );
-    console.dir('Set additional data');
+
     setTableData([...tableData, ...transactionData]);
     setAccounts(Object.values(dedupedAccounts));
   }, [additionalTransactions.data]);
@@ -263,7 +267,7 @@ export default function PageOne() {
     onChangeSafe,
     onChangePage,
     onChangeRowsPerPage,
-  } = useTable({ defaultRowsPerPage: 50, defaultOrderBy: 'createDate' });
+  } = useTable({ defaultRowsPerPage: PAGE_SIZE, defaultOrderBy: 'createDate' });
 
   const [tableData, setTableData] = useState<IBasicTransaction[]>([]);
   const [filteredData, setFilteredData] = useState<IBasicTransaction[]>([]);
@@ -288,7 +292,7 @@ export default function PageOne() {
       filterAccount,
     });
 
-    if (dataFiltered.length < 50) {
+    if (dataFiltered.length < 100) {
       fetchMoreTransacitons();
     }
 
@@ -461,7 +465,7 @@ export default function PageOne() {
               multiple
               freeSolo
               onChange={(event, newValue) => console.dir('tags')}
-              options={TAGS_OPTION.map((option) => option)}
+              options={tags.map((option) => option)}
               renderTags={(value, getTagProps) =>
                 value.map((option, index) => (
                   <Chip {...getTagProps({ index })} key={option} size="small" label={option} />

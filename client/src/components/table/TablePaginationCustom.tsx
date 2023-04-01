@@ -25,7 +25,7 @@ export default function TablePaginationCustom({
   onChangeDense,
   safe,
   onChangeSafe,
-  rowsPerPageOptions = [5, 10, 25, 50],
+  rowsPerPageOptions = [5, 10, 25, 50, 100],
   sx,
   ...other
 }: Props & TablePaginationProps) {
