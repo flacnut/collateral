@@ -27,6 +27,10 @@ type IBasicTransaction = {
   account: IBasicAccount;
 };
 
+type IBackfilledTransaction = {
+  __typename: 'BackfilledTransaction';
+} & IBasicTransaction;
+
 type IInvestmentTransaction = {
   __typename: 'InvestmentTransaction';
   securityId: string;
@@ -70,6 +74,13 @@ query getTransactionQuery($transactionId: String!) {
         name
       }
     }
+    ...on BackfilledTransaction {
+      ...CoreBackfilledTransactionParts
+      account {
+        id
+        name
+      }
+    }
     ... on InvestmentTransaction {
       ...CoreInvestmentTransactionParts
       ...ExtraInvestmentTransactionParts
@@ -82,6 +93,17 @@ query getTransactionQuery($transactionId: String!) {
 }
 
 fragment CoreTransactionParts on Transaction {
+  id
+  accountId
+  description
+  amountCents
+  amount
+  date
+  currency
+  classification
+}
+
+fragment CoreBackfilledTransactionParts on BackfilledTransaction {
   id
   accountId
   description
@@ -154,15 +176,18 @@ export default function PageSix() {
       case 'Transaction':
         setTransaction(maybeTransaction as ITransaction);
         break;
+      case 'BackfilledTransaction':
+        setTransaction(maybeTransaction as IBackfilledTransaction);
+        break;
       case 'InvestmentTransaction':
         setTransaction(maybeTransaction as IInvestmentTransaction);
         break;
     }
   }, [data]);
 
-  const [transaction, setTransaction] = useState<ITransaction | IInvestmentTransaction | null>(
-    null
-  );
+  const [transaction, setTransaction] = useState<
+    ITransaction | IInvestmentTransaction | IBackfilledTransaction | null
+  >(null);
 
   return (
     <>
@@ -195,7 +220,7 @@ export default function PageSix() {
 }
 
 function TransactionDetailsView(props: {
-  transaction: IInvestmentTransaction | ITransaction | null;
+  transaction: IInvestmentTransaction | ITransaction | IBackfilledTransaction | null;
   loading: boolean;
 }) {
   if (props.loading || !props.transaction) {

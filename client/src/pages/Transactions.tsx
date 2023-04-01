@@ -116,8 +116,18 @@ const transactionsQuery = gql(`
 query getBasicTransactions($accountId: String, $limit: Int, $offset: Int) {
   getTransactions(accountId: $accountId, limit: $limit, after: $offset) {
     __typename
-  	...on Transaction {
+    ...on Transaction {
       ...CoreTransactionParts
+      account {
+        id
+        name
+      }
+      tags {
+        name
+      }
+    }
+    ...on BackfilledTransaction {
+      ...CoreBackfilledTransactionParts
       account {
         id
         name
@@ -140,6 +150,17 @@ query getBasicTransactions($accountId: String, $limit: Int, $offset: Int) {
 }
 
 fragment CoreTransactionParts on Transaction {
+  id
+  accountId
+  description
+  amountCents
+  amount
+  date
+  currency
+  classification
+}
+
+fragment CoreBackfilledTransactionParts on BackfilledTransaction {
   id
   accountId
   description
