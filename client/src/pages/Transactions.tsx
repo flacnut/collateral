@@ -104,6 +104,13 @@ const tagsQuery = gql(`query getTags {
   }
 }`);
 
+const accountsQuery = gql(`query getAccounts {
+  getAccounts {
+    id
+    name
+  }
+}`);
+
 const transactionsQuery = gql(`
 query getBasicTransactions($accountId: String, $limit: Int, $offset: Int) {
   getTransactions(accountId: $accountId, limit: $limit, after: $offset) {
@@ -182,19 +189,27 @@ export default function PageOne() {
   const FETCH_LIMIT = PAGE_SIZE;
   const [offset, setOffset] = useState(0);
   const [tags, setTags] = useState<string[]>([]);
+  const [accounts, setAccounts] = useState<IBasicAccount[]>([]);
 
   const [refetch, additionalTransactions] = useLazyQuery(transactionsQuery);
   const [fetchTags, fetchTagResponse] = useLazyQuery(tagsQuery);
+  const [fetchAccounts, fetchAccountsResponse] = useLazyQuery(accountsQuery);
 
   useEffect(() => {
-    if (fetchTagResponse?.loading) {
-      return;
+    if (!fetchTagResponse?.loading) {
+      fetchTags();
     }
-    fetchTags();
+    if (!fetchAccountsResponse?.loading) {
+      fetchAccounts();
+    }
   });
 
   useEffect(() => {
     setTags(Object.values(fetchTagResponse?.data?.tags ?? {}).map((t) => t.name));
+  }, [fetchTagResponse.data]);
+
+  useEffect(() => {
+    setAccounts((fetchAccountsResponse?.data?.getAccounts ?? []) as IBasicAccount[]);
   }, [fetchTagResponse.data]);
 
   const fetchMoreTransacitons = () => {
@@ -214,35 +229,15 @@ export default function PageOne() {
 
   const extractTransactions = (
     queryResultData: GetBasicTransactionsQuery | undefined
-  ): [IBasicTransaction[], IBasicAccount[]] => {
+  ): IBasicTransaction[] => {
     const maybedata = queryResultData?.getTransactions as unknown[] | null;
     const transactionData = (maybedata ?? []) as IBasicTransaction[];
-    const accounts = transactionData.reduce(
-      (accounts: { [key: string]: IBasicAccount }, transaction) => {
-        if (!accounts[transaction.accountId]) {
-          accounts[transaction.accountId] = transaction.account;
-        }
-        return accounts;
-      },
-      {}
-    );
-    return [transactionData, Object.values(accounts)];
+    return transactionData;
   };
 
   useEffect(() => {
-    let [transactionData, additionalAccounts] = extractTransactions(additionalTransactions.data);
-    const dedupedAccounts = [...accounts, ...additionalAccounts].reduce(
-      (accounts: { [key: string]: IBasicAccount }, account) => {
-        if (!accounts[account.id]) {
-          accounts[account.id] = account;
-        }
-        return accounts;
-      },
-      {}
-    );
-
+    let transactionData = extractTransactions(additionalTransactions.data);
     setTableData([...tableData, ...transactionData]);
-    setAccounts(Object.values(dedupedAccounts));
   }, [additionalTransactions.data]);
 
   const { themeStretch } = useSettingsContext();
@@ -271,7 +266,6 @@ export default function PageOne() {
 
   const [tableData, setTableData] = useState<IBasicTransaction[]>([]);
   const [filteredData, setFilteredData] = useState<IBasicTransaction[]>([]);
-  const [accounts, setAccounts] = useState<IBasicAccount[]>([]);
 
   const [openConfirm, setOpenConfirm] = useState(false);
 
