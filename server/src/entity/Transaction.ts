@@ -6,47 +6,47 @@ import { ChildEntity, Column } from 'typeorm';
 @ObjectType()
 export class Transaction extends CoreTransaction {
   @Field()
-  @Column('text')
+  @Column('text', { default: '' })
   category: string;
 
   @Field()
-  @Column('text')
+  @Column('text', { default: '' })
   categoryId: string;
 
   @Field()
-  @Column('text')
+  @Column('text', { default: '' })
   dateTime: string;
 
   @Field()
-  @Column('text')
+  @Column('text', { default: '' })
   authorizedDate: string;
 
   @Field()
-  @Column('text')
+  @Column('text', { default: '' })
   authorizedDateTime: string;
 
   @Field()
-  @Column('text')
+  @Column('text', { default: '' })
   locationJson: string;
 
   @Field()
-  @Column('text')
+  @Column('text', { default: '' })
   paymentMetaJson: string;
 
   @Field()
-  @Column('text')
+  @Column('text', { default: '' })
   originalDescription: string;
 
   @Field()
-  @Column('text')
+  @Column('text', { default: '' })
   merchant: string;
 
   @Field()
-  @Column('text')
+  @Column('text', { default: '' })
   paymentChannel: string;
 
   @Field()
-  @Column('text')
+  @Column('text', { default: '' })
   transactionCode: string;
 
   @Field(() => Boolean)

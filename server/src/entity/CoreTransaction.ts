@@ -76,7 +76,7 @@ export class CoreTransaction extends BaseEntity {
 
   @Field(() => [Tag], { nullable: true })
   @JoinTable()
-  @ManyToMany(() => Tag, { onDelete: 'NO ACTION' })
+  @ManyToMany(() => Tag)
   tags: Promise<Tag[]>;
 
   @Column('text', { nullable: true })
