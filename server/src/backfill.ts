@@ -1,5 +1,5 @@
 import { createConnection, getConnectionOptions } from 'typeorm';
-import { Account, Transaction } from '@entities';
+import { Account, BackfilledTransaction } from '@entities';
 import { v4 as uuidv4 } from 'uuid';
 import data from './../data.json';
 
@@ -29,8 +29,11 @@ function getCreditCents(credit: string, debit: string) {
   return !!creditCents ? Math.abs(creditCents) : Math.abs(debitCents) * -1;
 }
 
-function mapRowToTransaction(data: any, account: Account): Transaction {
-  const t = new Transaction();
+function mapRowToTransaction(
+  data: any,
+  account: Account,
+): BackfilledTransaction {
+  const t = new BackfilledTransaction();
   let creditCents = getCreditCents(data.Credit, data.Debit);
 
   if (account.invertTransactions) {
@@ -42,6 +45,7 @@ function mapRowToTransaction(data: any, account: Account): Transaction {
   t.amountCents = creditCents;
   t.description = data.Description;
   t.date = data.Date;
+  t.backfillDate = new Date().toLocaleDateString();
 
   return t;
 }

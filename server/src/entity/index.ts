@@ -1,4 +1,5 @@
 import { InvestmentTransaction } from './InvestmentTransaction';
+import { BackfilledTransaction } from './BackfilledTransaction';
 import { InvestmentHolding } from './InvestmentHolding';
 import { CoreTransaction } from './CoreTransaction';
 import { AccountBalance } from './AccountBalance';
@@ -13,6 +14,7 @@ import { Tag } from './Tag';
 export {
   Account,
   AccountBalance,
+  BackfilledTransaction,
   CoreTransaction,
   Institution,
   InvestmentTransaction,
