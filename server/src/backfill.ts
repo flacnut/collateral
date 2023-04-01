@@ -2,7 +2,7 @@ import { Account, BackfilledTransaction, CoreTransaction } from '@entities';
 import { createConnection, getConnectionOptions } from 'typeorm';
 import { createInterface } from 'readline';
 import { v4 as uuidv4 } from 'uuid';
-import data from './../data.json';
+//import data from './../data.json';
 
 type ExistingTransactions = {
   raw: CoreTransaction[];
@@ -50,7 +50,8 @@ async function backfill(): Promise<[number, number]> {
     accountId,
   );
 
-  let transactions = data.map((row) => {
+  // data
+  let transactions = [].map((row: any) => {
     return mapRowToTransaction(row, account);
   });
 
