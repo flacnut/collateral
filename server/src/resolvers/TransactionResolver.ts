@@ -12,6 +12,7 @@ import {
 
 import {
   Account,
+  BackfilledTransaction,
   CoreTransaction,
   InvestmentTransaction,
   Tag,
@@ -76,7 +77,8 @@ class AggregatedTransaction {
 
 const AnyTransaction = createUnionType({
   name: 'AnyTransaction',
-  types: () => [Transaction, InvestmentTransaction] as const,
+  types: () =>
+    [Transaction, InvestmentTransaction, BackfilledTransaction] as const,
 });
 
 @Resolver()
