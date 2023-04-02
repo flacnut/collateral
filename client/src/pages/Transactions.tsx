@@ -55,7 +55,7 @@ import { DatePicker } from '@mui/x-date-pickers';
 import MenuPopover from 'src/components/menu-popover';
 import { CustomAvatar } from 'src/components/custom-avatar';
 import { fCurrency } from 'src/utils/formatNumber';
-import { useLazyQuery, useQuery } from '@apollo/client';
+import { useLazyQuery, useMutation, useQuery } from '@apollo/client';
 import { RHFAutocomplete } from '../components/hook-form';
 import { GetBasicTransactionsQuery } from 'src/__generated__/graphql';
 import { useDebounce } from 'use-debounce';
@@ -102,6 +102,26 @@ type IBasicAccount = {
   id: string;
   name: string;
 };
+
+const updateTransactionTagsQuery = gql(`
+mutation updateTransactionTags(
+  $force:Boolean!, 
+  $addTags:[String!]!, 
+  $removeTags:[String!]!, 
+  $transactionIds:[String!]!
+) {
+  updateTransactionTags(
+    force: $force, 
+    addTags: $addTags, 
+    removeTags: $removeTags, 
+    transactionIds: $transactionIds
+  ) {
+    id
+    tags {
+      name
+    }
+  }
+}`);
 
 const tagsQuery = gql(`query getTags {
   tags {
@@ -200,9 +220,17 @@ export default function Transactions() {
   const [fetchTags, fetchTagResponse] = useLazyQuery(tagsQuery);
   const [fetchAccounts, fetchAccountsResponse] = useLazyQuery(accountsQuery);
 
+  const [updateTransactionTags, updateTransactionTagsResult] = useMutation(
+    updateTransactionTagsQuery
+  );
+
+  const [modifiedTags, setModifiedTags] = useState<string[]>([]);
+
   useEffect(() => {
     if (!fetchTagResponse?.loading) {
-      fetchTags();
+      fetchTags({
+        fetchPolicy: 'no-cache',
+      });
     }
     if (!fetchAccountsResponse?.loading) {
       fetchAccounts();
@@ -227,6 +255,7 @@ export default function Transactions() {
         offset: offset,
         limit: PAGE_SIZE,
       },
+      fetchPolicy: 'no-cache',
     });
 
     setOffset(offset + FETCH_LIMIT);
@@ -269,6 +298,20 @@ export default function Transactions() {
     onChangePage,
     onChangeRowsPerPage,
   } = useTable({ defaultRowsPerPage: PAGE_SIZE, defaultOrderBy: 'createDate' });
+
+  const saveChanges = useCallback(async () => {
+    await updateTransactionTags({
+      variables: {
+        force: false,
+        addTags: modifiedTags,
+        removeTags: [],
+        transactionIds: selected,
+      },
+    });
+    await fetchTags({
+      fetchPolicy: 'no-cache',
+    });
+  }, [updateTransactionTags, selected, modifiedTags]);
 
   const [tableData, setTableData] = useState<IBasicTransaction[]>([]);
   const [filteredData, setFilteredData] = useState<IBasicTransaction[]>([]);
@@ -510,10 +553,10 @@ export default function Transactions() {
             sx={{ px: 2.5, py: 3 }}
           >
             <Autocomplete
-              sx={{ width: '200px' }}
+              sx={{ width: '400px' }}
               multiple
               freeSolo
-              onChange={(event, newValue) => console.dir('tags')}
+              onChange={(event, newValue) => setModifiedTags(newValue)}
               options={tags.map((option) => option)}
               renderTags={(value, getTagProps) =>
                 value.map((option, index) => (
@@ -522,6 +565,14 @@ export default function Transactions() {
               }
               renderInput={(params) => <TextField label="Tags" {...params} />}
             />
+
+            <Button
+              variant="contained"
+              startIcon={<Iconify icon="eva:save-outline" />}
+              onClick={saveChanges}
+            >
+              Save{selected.length > 0 ? ` (${selected.length})` : ''}
+            </Button>
           </Stack>
         </Card>
 
