@@ -57,7 +57,7 @@ import { CustomAvatar } from 'src/components/custom-avatar';
 import { fCurrency } from 'src/utils/formatNumber';
 import { useLazyQuery, useMutation, useQuery } from '@apollo/client';
 import { RHFAutocomplete } from '../components/hook-form';
-import { GetBasicTransactionsQuery } from 'src/__generated__/graphql';
+import { GetBasicTransactionsQuery, TransactionClassification } from 'src/__generated__/graphql';
 import { useDebounce } from 'use-debounce';
 /*import { ApexOptions } from 'apexcharts';
 import { merge } from 'lodash';
@@ -120,6 +120,17 @@ mutation updateTransactionTags(
     tags {
       name
     }
+  }
+}`);
+
+const updateTransactionClassificationQuery = gql(`
+mutation updateClassification(
+  $transactionIds: [String!]!, 
+  $classification: TransactionClassification!) {
+  updateTransactionClassification(
+    transactionIds: $transactionIds,
+    classification: $classification) {
+    id
   }
 }`);
 
@@ -206,7 +217,15 @@ fragment CoreInvestmentTransactionParts on InvestmentTransaction {
   classification
 }`);
 
-const Classifications = ['Duplicate', 'Income', 'Expense', 'Recurring', 'Transfer', 'Investment'];
+const Classifications = [
+  'Duplicate',
+  'Income',
+  'Expense',
+  'Recurring',
+  'Transfer',
+  'Investment',
+  'Hidden',
+];
 
 // ----------------------------------------------------------------------
 
@@ -223,8 +242,12 @@ export default function Transactions() {
   const [updateTransactionTags, updateTransactionTagsResult] = useMutation(
     updateTransactionTagsQuery
   );
+  const [updateTransactionClassification, updateTransactionClassificationResult] = useMutation(
+    updateTransactionClassificationQuery
+  );
 
   const [modifiedTags, setModifiedTags] = useState<string[]>([]);
+  const [modifiedClassification, setModifiedClassification] = useState<string | null>(null);
 
   useEffect(() => {
     if (!fetchTagResponse?.loading) {
@@ -300,18 +323,36 @@ export default function Transactions() {
   } = useTable({ defaultRowsPerPage: PAGE_SIZE, defaultOrderBy: 'createDate' });
 
   const saveChanges = useCallback(async () => {
-    await updateTransactionTags({
-      variables: {
-        force: false,
-        addTags: modifiedTags,
-        removeTags: [],
-        transactionIds: selected,
-      },
-    });
+    if (!!modifiedTags.length) {
+      await updateTransactionTags({
+        variables: {
+          force: false,
+          addTags: modifiedTags,
+          removeTags: [],
+          transactionIds: selected,
+        },
+      });
+    }
+    if (!!modifiedClassification) {
+      await updateTransactionClassification({
+        variables: {
+          transactionIds: selected,
+          classification: modifiedClassification as TransactionClassification,
+        },
+      });
+    }
     await fetchTags({
       fetchPolicy: 'no-cache',
     });
-  }, [updateTransactionTags, selected, modifiedTags]);
+    setSelected([]);
+  }, [
+    setSelected,
+    updateTransactionTags,
+    updateTransactionClassification,
+    modifiedClassification,
+    selected,
+    modifiedTags,
+  ]);
 
   const [tableData, setTableData] = useState<IBasicTransaction[]>([]);
   const [filteredData, setFilteredData] = useState<IBasicTransaction[]>([]);
@@ -433,6 +474,13 @@ export default function Transactions() {
       setFilterClassification(event.target.value);
     },
     [setPage, setFilterClassification]
+  );
+
+  const handleModifyClassification = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setModifiedClassification(event.target.value);
+    },
+    [setModifiedClassification]
   );
 
   const handleFilterDescription = useCallback(
@@ -560,16 +608,60 @@ export default function Transactions() {
               options={tags.map((option) => option)}
               renderTags={(value, getTagProps) =>
                 value.map((option, index) => (
-                  <Chip {...getTagProps({ index })} key={option} size="small" label={option} />
+                  <Chip
+                    {...getTagProps({ index })}
+                    key={option}
+                    size="small"
+                    label={option}
+                    sx={{ marginRight: 1, borderRadius: 1 }}
+                  />
                 ))
               }
               renderInput={(params) => <TextField label="Tags" {...params} />}
             />
 
+            <TextField
+              fullWidth
+              select
+              label="Classification type"
+              value={modifiedClassification}
+              onChange={handleModifyClassification}
+              SelectProps={{
+                MenuProps: {
+                  PaperProps: {
+                    sx: { maxHeight: 240 },
+                  },
+                },
+              }}
+              sx={{
+                maxWidth: { md: '250px' },
+                textTransform: 'capitalize',
+              }}
+            >
+              {Classifications.map((option) => (
+                <MenuItem
+                  key={option}
+                  value={option}
+                  sx={{
+                    mx: 1,
+                    my: 0.5,
+                    borderRadius: 0.75,
+                    typography: 'body2',
+                    textTransform: 'capitalize',
+                    '&:first-of-type': { mt: 0 },
+                    '&:last-of-type': { mb: 0 },
+                  }}
+                >
+                  {option}
+                </MenuItem>
+              ))}
+            </TextField>
+
             <Button
               variant="contained"
               startIcon={<Iconify icon="eva:save-outline" />}
               onClick={saveChanges}
+              size="large"
             >
               Save{selected.length > 0 ? ` (${selected.length})` : ''}
             </Button>
