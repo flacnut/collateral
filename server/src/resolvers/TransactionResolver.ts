@@ -43,6 +43,9 @@ class QueryAggregationOptions {
 
   @Field(() => Boolean, { nullable: true })
   tags: boolean;
+
+  @Field(() => Boolean, { nullable: true })
+  unclassifiedOnly: boolean;
 }
 
 @ObjectType()
@@ -168,8 +171,18 @@ export class TransactionResolver {
       return key;
     };
 
-    const allTransactions = await CoreTransaction.find();
+    let allTransactions = await CoreTransaction.find({
+      where: {
+        classification: options.unclassifiedOnly ? IsNull() : null,
+      },
+    });
     let groups: { [key: string]: AggregatedTransaction } = {};
+
+    if (!!options.unclassifiedOnly) {
+      allTransactions = allTransactions.filter(
+        async (t) => (await t.tags).length === 0,
+      );
+    }
 
     await Promise.all(
       allTransactions.map(async (t) => {
