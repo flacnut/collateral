@@ -1,9 +1,13 @@
 import { Helmet } from 'react-helmet-async';
 // @mui
-import { Container, Typography } from '@mui/material';
+import { Button, Card, Container, Grid, Stack, Typography } from '@mui/material';
 // components
 import { useSettingsContext } from '../components/settings';
 import { gql } from 'src/__generated__/gql';
+import { useLazyQuery } from '@apollo/client';
+import { GetAggregatedTransactionsQuery } from 'src/__generated__/graphql';
+import { useCallback, useEffect, useState } from 'react';
+import { fCurrency } from 'src/utils/formatNumber';
 
 // ----------------------------------------------------------------------
 
@@ -18,10 +22,39 @@ query getAggregatedTransactions($options: QueryAggregationOptions!) {
   }
 }`);
 
-console.dir(unclassifiedTransactionsQuery);
-
 export default function TransactionClassifier() {
   const { themeStretch } = useSettingsContext();
+  const [resultIndex, setResultIndex] = useState<number>(0);
+  const [unclassifiedTransactions, setunclassifiedTransactions] = useState<
+    GetAggregatedTransactionsQuery['getAggregatedTransactions']
+  >([]);
+
+  const [refetch, { loading, data }] = useLazyQuery(unclassifiedTransactionsQuery);
+
+  useEffect(() => {
+    if (!(data?.getAggregatedTransactions || loading)) {
+      refetch({
+        variables: {
+          options: {
+            description: true,
+            unclassifiedOnly: true,
+          },
+        },
+      });
+    }
+  });
+
+  useEffect(() => {
+    setunclassifiedTransactions(data?.getAggregatedTransactions ?? []);
+  }, [data]);
+
+  const prev = useCallback(() => {
+    setResultIndex(Math.max(resultIndex - 1, 0));
+  }, [setResultIndex, resultIndex]);
+
+  const next = useCallback(() => {
+    setResultIndex(Math.min(resultIndex + 1, unclassifiedTransactions.length - 1));
+  }, [setResultIndex, resultIndex, unclassifiedTransactions]);
 
   return (
     <>
@@ -34,24 +67,101 @@ export default function TransactionClassifier() {
           Transaction: Classify
         </Typography>
 
-        <Typography gutterBottom>
-          Curabitur turpis. Vestibulum facilisis, purus nec pulvinar iaculis, ligula mi congue nunc,
-          vitae euismod ligula urna in dolor. Nam quam nunc, blandit vel, luctus pulvinar, hendrerit
-          id, lorem. Phasellus blandit leo ut odio. Vestibulum ante ipsum primis in faucibus orci
-          luctus et ultrices posuere cubilia Curae; Fusce id purus. Aliquam lorem ante, dapibus in,
-          viverra quis, feugiat a, tellus. In consectetuer turpis ut velit. Aenean posuere, tortor
-          sed cursus feugiat, nunc augue blandit nunc, eu sollicitudin urna dolor sagittis lacus.
-          Vestibulum suscipit nulla quis orci. Nam commodo suscipit quam. Sed a libero.
-        </Typography>
+        <Card sx={{ marginBottom: 2 }}>
+          <Stack
+            spacing={2}
+            alignItems="center"
+            direction={{
+              xs: 'column',
+              md: 'row',
+            }}
+            sx={{ px: 2.5, py: 3 }}
+          >
+            <Button variant="contained" onClick={prev} size="large">
+              Previous
+            </Button>
+            <Button variant="contained" onClick={next} size="large">
+              Next
+            </Button>
+          </Stack>
+        </Card>
 
-        <Typography>
-          Praesent ac sem eget est egestas volutpat. Phasellus viverra nulla ut metus varius
-          laoreet. Curabitur ullamcorper ultricies nisi. Ut non enim eleifend felis pretium feugiat.
-          Donec mi odio, faucibus at, scelerisque quis, convallis in, nisi. Fusce vel dui. Quisque
-          libero metus, condimentum nec, tempor a, commodo mollis, magna. In enim justo, rhoncus ut,
-          imperdiet a, venenatis vitae, justo. Cras dapibus.
-        </Typography>
+        <TransactionView {...getAggregatedSet(unclassifiedTransactions ?? [], resultIndex)} />
       </Container>
     </>
   );
+
+  function TransactionView(props: {
+    description: string;
+    totalExpenseCents: number;
+    totalDepositCents: number;
+    transactionCount: number;
+    transactionIds: string[];
+  }) {
+    return (
+      <>
+        <Card sx={{ pt: 5, px: 5 }}>
+          <Grid container>
+            <Grid item xs={8} sm={9} sx={{ mb: 5 }}>
+              <Typography variant="h5" sx={{ display: 'inline-flex', marginLeft: 3 }}>
+                {`(${props.transactionCount}) ${props.description}`}
+              </Typography>
+            </Grid>
+
+            <Grid item xs={4} sm={3} sx={{ mb: 5, textAlign: 'right' }}>
+              {props.totalDepositCents > 0 ? (
+                <Typography
+                  variant="h5"
+                  sx={{ display: 'inline-flex', marginLeft: 3 }}
+                  color={'#36B37E'}
+                >
+                  {/* TODO: CENTS!!!! */}
+                  {fCurrency(props.totalDepositCents)}
+                </Typography>
+              ) : null}
+              {props.totalExpenseCents > 0 ? (
+                <Typography
+                  variant="h5"
+                  sx={{ display: 'inline-flex', marginLeft: 3 }}
+                  color={'#FF5630'}
+                >
+                  {/* TODO: CENTS!!!! */}
+                  {fCurrency(props.totalExpenseCents)}
+                </Typography>
+              ) : null}
+            </Grid>
+          </Grid>
+        </Card>
+      </>
+    );
+  }
+}
+
+function getAggregatedSet(
+  data: GetAggregatedTransactionsQuery['getAggregatedTransactions'],
+  index: number
+): {
+  description: string;
+  totalExpenseCents: number;
+  totalDepositCents: number;
+  transactionCount: number;
+  transactionIds: string[];
+} {
+  if (!data[index]) {
+    return {
+      description: '',
+      totalExpenseCents: 0,
+      totalDepositCents: 0,
+      transactionCount: 0,
+      transactionIds: [],
+    };
+  }
+
+  return {
+    description: data[index].description ?? '',
+    totalDepositCents: data[index].totalDepositCents ?? 0,
+    totalExpenseCents: data[index].totalExpenseCents ?? 0,
+    transactionCount: data[index].transactionCount ?? 0,
+    transactionIds: data[index].transactionIds ?? [],
+  };
 }
