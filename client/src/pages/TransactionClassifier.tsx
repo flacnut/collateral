@@ -276,14 +276,14 @@ export default function TransactionClassifier() {
         </Card>
 
         <Card sx={{ marginBottom: 2 }}>
-          <BasicTransactionTableView
-            transactionIds={unclassifiedTransactions[resultIndex]?.transactionIds ?? []}
+          <SimilarTransactionsTableView
+            description={unclassifiedTransactions[resultIndex]?.description}
           />
         </Card>
 
         <Card>
-          <SimilarTransactionsTableView
-            description={unclassifiedTransactions[resultIndex]?.description}
+          <BasicTransactionTableView
+            transactionIds={unclassifiedTransactions[resultIndex]?.transactionIds ?? []}
           />
         </Card>
       </Container>
@@ -351,8 +351,30 @@ function SimilarTransactionsTableView(props: { description: string | undefined |
   useEffect(() => {
     let maybeTransactions = [...(getByPropertyResponse.data?.getTransactionsByProperty ?? [])];
     setTransactions(
-      (maybeTransactions as unknown as IBasicTransaction[]).sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      Object.values(
+        (maybeTransactions as unknown as IBasicTransaction[]).reduce(
+          (prev: { [key: string]: IBasicTransaction }, transaction) => {
+            let key =
+              transaction.classification +
+              '::' +
+              transaction.tags
+                .map((tag) => tag.name)
+                .sort()
+                .join(':');
+
+            if (!prev[key]) {
+              prev[key] = { ...transaction };
+              prev[key].date = '1';
+              return prev;
+            }
+
+            prev[key].date = (Number(prev[key].date) + 1).toString();
+            prev[key].amount += transaction.amount;
+            prev[key].amountCents += transaction.amountCents;
+            return prev;
+          },
+          {}
+        )
       )
     );
   }, [getByPropertyResponse.data]);
