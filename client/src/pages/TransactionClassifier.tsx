@@ -1,6 +1,19 @@
 import { Helmet } from 'react-helmet-async';
 // @mui
-import { Button, Card, Container, Grid, Stack, Typography } from '@mui/material';
+import {
+  Button,
+  Card,
+  Chip,
+  Container,
+  Grid,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableRow,
+  Typography,
+} from '@mui/material';
 // components
 import { useSettingsContext } from '../components/settings';
 import { gql } from 'src/__generated__/gql';
@@ -8,6 +21,17 @@ import { useLazyQuery } from '@apollo/client';
 import { GetAggregatedTransactionsQuery } from 'src/__generated__/graphql';
 import { useCallback, useEffect, useState } from 'react';
 import { fCurrency } from 'src/utils/formatNumber';
+import {
+  TableEmptyRows,
+  TableHeadCustom,
+  TablePaginationCustom,
+  emptyRows,
+  useTable,
+} from 'src/components/table';
+import Scrollbar from 'src/components/scrollbar';
+import { CustomAvatar } from 'src/components/custom-avatar';
+import { fDate } from 'src/utils/formatTime';
+import Label from 'src/components/label';
 
 // ----------------------------------------------------------------------
 
@@ -81,6 +105,23 @@ fragment CoreInvestmentTransactionParts on InvestmentTransaction {
   classification
 }`);
 
+type IBasicTransaction = {
+  __typename: string;
+  id: string;
+  accountId: string;
+  description: string;
+  amountCents: number;
+  amount: number;
+  date: string;
+  currency: string | null;
+  classification: string;
+  tags: ITag[];
+};
+
+type ITag = {
+  name: String;
+};
+
 export default function TransactionClassifier() {
   const { themeStretch } = useSettingsContext();
   const [resultIndex, setResultIndex] = useState<number>(-1);
@@ -89,8 +130,6 @@ export default function TransactionClassifier() {
   >([]);
 
   const [refetchUnclassified, unclassifiedResponse] = useLazyQuery(unclassifiedTransactionsQuery);
-  const [refetchByIds, getByIdsResponse] = useLazyQuery(transactionsByIdQuery);
-
   useEffect(() => {
     if (!(unclassifiedResponse?.data?.getAggregatedTransactions || unclassifiedResponse?.loading)) {
       refetchUnclassified({
@@ -111,17 +150,6 @@ export default function TransactionClassifier() {
       setResultIndex(0);
     }
   }, [unclassifiedResponse?.data, setResultIndex]);
-
-  useEffect(() => {
-    if (resultIndex === -1) {
-      return;
-    }
-    refetchByIds({
-      variables: {
-        ids: unclassifiedTransactions[resultIndex].transactionIds,
-      },
-    });
-  }, [resultIndex, refetchByIds, unclassifiedTransactions]);
 
   const prev = useCallback(() => {
     setResultIndex(Math.max(resultIndex - 1, 0));
@@ -161,55 +189,200 @@ export default function TransactionClassifier() {
           </Stack>
         </Card>
 
-        <TransactionView {...getAggregatedSet(unclassifiedTransactions ?? [], resultIndex)} />
+        <Card sx={{ pt: 5, px: 5, marginBottom: 2 }}>
+          <TransactionView {...getAggregatedSet(unclassifiedTransactions ?? [], resultIndex)} />
+        </Card>
+
+        <Card>
+          <BasicTransactionTableView
+            transactionIds={unclassifiedTransactions[resultIndex]?.transactionIds ?? []}
+          />
+        </Card>
       </Container>
     </>
   );
+}
 
-  function TransactionView(props: {
-    description: string;
-    totalExpenseCents: number;
-    totalDepositCents: number;
-    transactionCount: number;
-    transactionIds: string[];
-  }) {
-    return (
-      <>
-        <Card sx={{ pt: 5, px: 5 }}>
-          <Grid container>
-            <Grid item xs={8} sm={9} sx={{ mb: 5 }}>
-              <Typography variant="h5" sx={{ display: 'inline-flex', marginLeft: 3 }}>
-                {`(${props.transactionCount}) ${props.description}`}
-              </Typography>
-            </Grid>
+function TransactionView(props: {
+  description: string;
+  totalExpenseCents: number;
+  totalDepositCents: number;
+  transactionCount: number;
+  transactionIds: string[];
+}) {
+  return (
+    <>
+      <Grid container>
+        <Grid item xs={8} sm={9} sx={{ mb: 5 }}>
+          <Typography variant="h5" sx={{ display: 'inline-flex', marginLeft: 3 }}>
+            {`(${props.transactionCount}) ${props.description}`}
+          </Typography>
+        </Grid>
 
-            <Grid item xs={4} sm={3} sx={{ mb: 5, textAlign: 'right' }}>
-              {props.totalDepositCents > 0 ? (
-                <Typography
-                  variant="h5"
-                  sx={{ display: 'inline-flex', marginLeft: 3 }}
-                  color={'#36B37E'}
-                >
-                  {/* TODO: CENTS!!!! */}
-                  {fCurrency(props.totalDepositCents / 100)}
-                </Typography>
-              ) : null}
-              {props.totalExpenseCents > 0 ? (
-                <Typography
-                  variant="h5"
-                  sx={{ display: 'inline-flex', marginLeft: 3 }}
-                  color={'#FF5630'}
-                >
-                  {/* TODO: CENTS!!!! */}
-                  {fCurrency(props.totalExpenseCents / 100)}
-                </Typography>
-              ) : null}
-            </Grid>
-          </Grid>
-        </Card>
-      </>
+        <Grid item xs={4} sm={3} sx={{ mb: 5, textAlign: 'right' }}>
+          {props.totalDepositCents > 0 ? (
+            <Typography
+              variant="h5"
+              sx={{ display: 'inline-flex', marginLeft: 3 }}
+              color={'#36B37E'}
+            >
+              {/* TODO: CENTS!!!! */}
+              {fCurrency(props.totalDepositCents / 100)}
+            </Typography>
+          ) : null}
+          {props.totalExpenseCents > 0 ? (
+            <Typography
+              variant="h5"
+              sx={{ display: 'inline-flex', marginLeft: 3 }}
+              color={'#FF5630'}
+            >
+              {/* TODO: CENTS!!!! */}
+              {fCurrency(props.totalExpenseCents / 100)}
+            </Typography>
+          ) : null}
+        </Grid>
+      </Grid>
+    </>
+  );
+}
+
+function BasicTransactionTableView(props: { transactionIds: string[] }) {
+  const TABLE_HEAD = [
+    { id: 'description', label: 'Description', align: 'left' },
+    { id: 'amount', label: 'Amount', align: 'right', width: 180 },
+    { id: 'date', label: 'Date', align: 'left', width: 140 },
+    { id: 'classification', label: 'Classification', align: 'center', width: 240 },
+    { id: 'tags', label: 'Tags', align: 'left' },
+  ];
+
+  const [refetchByIds, getByIdsResponse] = useLazyQuery(transactionsByIdQuery);
+  const [transactions, setTransactions] = useState<IBasicTransaction[]>([]);
+
+  useEffect(() => {
+    refetchByIds({
+      variables: {
+        ids: props.transactionIds,
+      },
+    });
+  }, [props.transactionIds, refetchByIds]);
+
+  useEffect(() => {
+    let maybeTransactions = [...(getByIdsResponse.data?.getTransactionsById ?? [])];
+    setTransactions(
+      (maybeTransactions as unknown as IBasicTransaction[]).sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      )
     );
-  }
+  }, [getByIdsResponse.data]);
+
+  const { safe, page, order, orderBy, onSort, onChangeSafe, onChangePage } = useTable({
+    defaultRowsPerPage: 25,
+    defaultOrderBy: 'date',
+  });
+
+  return (
+    <>
+      <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
+        <Scrollbar>
+          <Table size={'small'} sx={{ minWidth: 800 }}>
+            <TableHeadCustom
+              order={order}
+              orderBy={orderBy}
+              headLabel={TABLE_HEAD}
+              rowCount={transactions.length}
+              onSort={onSort}
+            />
+
+            <TableBody>
+              {transactions.slice(page * 25, page * 25 + 25).map((transaction) => (
+                <TransactionTableRow key={transaction.id} transaction={transaction} safe={safe} />
+              ))}
+              <TableEmptyRows height={56} emptyRows={emptyRows(page, 25, transactions.length)} />
+            </TableBody>
+          </Table>
+        </Scrollbar>
+      </TableContainer>
+
+      <TablePaginationCustom
+        count={transactions.length}
+        page={page}
+        rowsPerPage={25}
+        onPageChange={onChangePage}
+        safe={safe}
+        onChangeSafe={onChangeSafe}
+      />
+    </>
+  );
+}
+
+function TransactionTableRow(props: {
+  key: string;
+  transaction: IBasicTransaction;
+  safe: boolean;
+}) {
+  const { transaction, safe } = props;
+  return (
+    <TableRow hover>
+      <TableCell>
+        <Stack direction="row" alignItems="center" spacing={2}>
+          <CustomAvatar name={transaction.description} />
+
+          <div>
+            <Typography variant="subtitle2" noWrap color="MenuText">
+              {transaction.description}
+            </Typography>
+
+            <Typography noWrap variant="body2">
+              {transaction.accountId}
+            </Typography>
+          </div>
+        </Stack>
+      </TableCell>
+
+      <TableCell align="right">
+        <Typography
+          fontFamily="Menlo"
+          color={transaction.amount > 0 ? '#36B37E' : '#FF5630'}
+          fontWeight="bold"
+        >
+          {safe ? 'X,XXX.XX' : fCurrency(Math.abs(transaction.amount), true)}
+        </Typography>
+      </TableCell>
+
+      <TableCell align="left">{fDate(transaction.date)}</TableCell>
+
+      <TableCell align="center" sx={{ textTransform: 'capitalize' }}>
+        {transaction.classification !== null ? (
+          <Label
+            variant="soft"
+            color={
+              (transaction.classification === 'Expense' && 'error') ||
+              (transaction.classification === 'Income' && 'success') ||
+              (transaction.classification === 'Duplicate' && 'secondary') ||
+              (transaction.classification === 'Recurring' && 'warning') ||
+              (transaction.classification === 'Transfer' && 'secondary') ||
+              (transaction.classification === 'Investment' && 'primary') ||
+              (transaction.classification === 'Hidden' && 'secondary') ||
+              'default'
+            }
+          >
+            {transaction.classification}
+          </Label>
+        ) : null}
+      </TableCell>
+
+      <TableCell align="left" sx={{ textTransform: 'capitalize' }}>
+        {transaction.tags.map((tag, index) => (
+          <Chip
+            key={index}
+            size={'small'}
+            label={tag.name}
+            sx={{ marginRight: 1, borderRadius: 1 }}
+          />
+        ))}
+      </TableCell>
+    </TableRow>
+  );
 }
 
 function getAggregatedSet(

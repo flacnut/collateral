@@ -1101,8 +1101,6 @@ function TransactionTableRow({
     setOpenPopover(null);
   };
 
-  console.dir('render row');
-
   return (
     <>
       <TableRow hover selected={selected}>
