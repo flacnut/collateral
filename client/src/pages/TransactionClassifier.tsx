@@ -114,6 +114,73 @@ fragment CoreInvestmentTransactionParts on InvestmentTransaction {
   classification
 }`);
 
+const transactionsByPropertyQuery = gql(`
+query getTransactionsByProperty($properties: QueryTransactionsByPropertyOptions!){
+  getTransactionsByProperty(properties: $properties) {
+    __typename
+  	...on Transaction {
+      ...CoreTransactionParts
+      account {
+        name
+      }
+      tags {
+        name
+      }
+    }
+    ...on BackfilledTransaction {
+      ...CoreBackfilledTransactionParts
+      account {
+        name
+      }
+      tags {
+        name
+      }
+    }
+    ... on InvestmentTransaction {
+      ...CoreInvestmentTransactionParts
+      account {
+        name
+      }
+      tags {
+        name
+      }
+    }
+  }
+}
+
+fragment CoreTransactionParts on Transaction {
+  id
+  accountId
+  description
+  amountCents
+  amount
+  date
+  currency
+  classification
+}
+
+fragment CoreBackfilledTransactionParts on BackfilledTransaction {
+  id
+  accountId
+  description
+  amountCents
+  amount
+  date
+  currency
+  classification
+}
+
+fragment CoreInvestmentTransactionParts on InvestmentTransaction {
+  id
+  accountId
+  description
+  amountCents
+  amount
+  date
+  currency
+  classification
+}`);
+
 type IBasicTransaction = {
   __typename: string;
   id: string;
@@ -208,9 +275,15 @@ export default function TransactionClassifier() {
           <TransactionView {...getAggregatedSet(unclassifiedTransactions ?? [], resultIndex)} />
         </Card>
 
-        <Card>
+        <Card sx={{ marginBottom: 2 }}>
           <BasicTransactionTableView
             transactionIds={unclassifiedTransactions[resultIndex]?.transactionIds ?? []}
+          />
+        </Card>
+
+        <Card>
+          <SimilarTransactionsTableView
+            description={unclassifiedTransactions[resultIndex]?.description}
           />
         </Card>
       </Container>
@@ -241,7 +314,6 @@ function TransactionView(props: {
               sx={{ display: 'inline-flex', marginLeft: 3 }}
               color={'#36B37E'}
             >
-              {/* TODO: CENTS!!!! */}
               {fCurrency(props.totalDepositCents / 100)}
             </Typography>
           ) : null}
@@ -251,7 +323,6 @@ function TransactionView(props: {
               sx={{ display: 'inline-flex', marginLeft: 3 }}
               color={'#FF5630'}
             >
-              {/* TODO: CENTS!!!! */}
               {fCurrency(props.totalExpenseCents / 100)}
             </Typography>
           ) : null}
@@ -261,15 +332,35 @@ function TransactionView(props: {
   );
 }
 
-function BasicTransactionTableView(props: { transactionIds: string[] }) {
-  const TABLE_HEAD = [
-    { id: 'description', label: 'Description', align: 'left' },
-    { id: 'amount', label: 'Amount', align: 'right', width: 180 },
-    { id: 'date', label: 'Date', align: 'left', width: 140 },
-    { id: 'classification', label: 'Classification', align: 'center', width: 240 },
-    { id: 'tags', label: 'Tags', align: 'left' },
-  ];
+function SimilarTransactionsTableView(props: { description: string | undefined | null }) {
+  const [refetchByProperty, getByPropertyResponse] = useLazyQuery(transactionsByPropertyQuery);
+  const [transactions, setTransactions] = useState<IBasicTransaction[]>([]);
 
+  useEffect(() => {
+    if (!props.description || props.description === '') {
+      return;
+    }
+
+    refetchByProperty({
+      variables: {
+        properties: { description: props.description },
+      },
+    });
+  }, [props.description, refetchByProperty]);
+
+  useEffect(() => {
+    let maybeTransactions = [...(getByPropertyResponse.data?.getTransactionsByProperty ?? [])];
+    setTransactions(
+      (maybeTransactions as unknown as IBasicTransaction[]).sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      )
+    );
+  }, [getByPropertyResponse.data]);
+
+  return <BasicTransactionTable transactions={transactions} />;
+}
+
+function BasicTransactionTableView(props: { transactionIds: string[] }) {
   const [refetchByIds, getByIdsResponse] = useLazyQuery(transactionsByIdQuery);
   const [transactions, setTransactions] = useState<IBasicTransaction[]>([]);
 
@@ -289,6 +380,19 @@ function BasicTransactionTableView(props: { transactionIds: string[] }) {
       )
     );
   }, [getByIdsResponse.data]);
+
+  return <BasicTransactionTable transactions={transactions} />;
+}
+
+function BasicTransactionTable(props: { transactions: IBasicTransaction[] }) {
+  const { transactions } = props;
+  const TABLE_HEAD = [
+    { id: 'description', label: 'Description', align: 'left' },
+    { id: 'amount', label: 'Amount', align: 'right', width: 180 },
+    { id: 'date', label: 'Date', align: 'left', width: 140 },
+    { id: 'classification', label: 'Classification', align: 'center', width: 240 },
+    { id: 'tags', label: 'Tags', align: 'left' },
+  ];
 
   const { safe, page, order, orderBy, onSort, onChangeSafe, onChangePage } = useTable({
     defaultRowsPerPage: 25,
