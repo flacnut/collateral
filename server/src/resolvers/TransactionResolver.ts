@@ -28,6 +28,15 @@ import { UnsavedTransfer } from '../../src/entity/Transfer';
 import { FindManyOptions, In, IsNull, Not } from 'typeorm';
 
 @InputType()
+class QueryTransactionsByPropertyOptions {
+  @Field(() => String, { nullable: true })
+  accountId: string;
+
+  @Field(() => String, { nullable: true })
+  description: string;
+}
+
+@InputType()
 class QueryAggregationOptions {
   @Field(() => Boolean, { nullable: true })
   account: boolean;
@@ -89,6 +98,19 @@ export class TransactionResolver {
   @Query(() => AnyTransaction, { nullable: true })
   async getTransaction(@Arg('id') id: string) {
     return (await CoreTransaction.findOne(id)) ?? null;
+  }
+
+  @Query(() => [AnyTransaction], { nullable: false })
+  async getTransactionsById(@Arg('ids', () => [String]) ids: string[]) {
+    return await CoreTransaction.findByIds(ids);
+  }
+
+  @Query(() => [AnyTransaction], { nullable: false })
+  async getTransactionsByProperty(
+    @Arg('properties', () => QueryTransactionsByPropertyOptions)
+    properties: QueryTransactionsByPropertyOptions,
+  ) {
+    return await CoreTransaction.find({ where: properties });
   }
 
   @Query(() => [AnyTransaction])
