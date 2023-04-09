@@ -22,18 +22,78 @@ query getAggregatedTransactions($options: QueryAggregationOptions!) {
   }
 }`);
 
+const transactionsByIdQuery = gql(`
+query getTransactionsbyId($ids:[String!]!) {
+  getTransactionsById(ids:$ids) {
+  
+  __typename
+  	...on Transaction {
+      ...CoreTransactionParts
+      tags {
+        name
+      }
+    }
+    ...on BackfilledTransaction {
+      ...CoreBackfilledTransactionParts
+      tags {
+        name
+      }
+    }
+    ... on InvestmentTransaction {
+      ...CoreInvestmentTransactionParts
+      tags {
+        name
+      }
+    }
+  }
+}
+
+fragment CoreTransactionParts on Transaction {
+  id
+  accountId
+  description
+  amountCents
+  amount
+  date
+  currency
+  classification
+}
+
+fragment CoreBackfilledTransactionParts on BackfilledTransaction {
+  id
+  accountId
+  description
+  amountCents
+  amount
+  date
+  currency
+  classification
+}
+
+fragment CoreInvestmentTransactionParts on InvestmentTransaction {
+  id
+  accountId
+  description
+  amountCents
+  amount
+  date
+  currency
+  classification
+}`);
+
 export default function TransactionClassifier() {
   const { themeStretch } = useSettingsContext();
-  const [resultIndex, setResultIndex] = useState<number>(0);
-  const [unclassifiedTransactions, setunclassifiedTransactions] = useState<
+  const [resultIndex, setResultIndex] = useState<number>(-1);
+  const [unclassifiedTransactions, setUnclassifiedTransactions] = useState<
     GetAggregatedTransactionsQuery['getAggregatedTransactions']
   >([]);
 
-  const [refetch, { loading, data }] = useLazyQuery(unclassifiedTransactionsQuery);
+  const [refetchUnclassified, unclassifiedResponse] = useLazyQuery(unclassifiedTransactionsQuery);
+  const [refetchByIds, getByIdsResponse] = useLazyQuery(transactionsByIdQuery);
 
   useEffect(() => {
-    if (!(data?.getAggregatedTransactions || loading)) {
-      refetch({
+    if (!(unclassifiedResponse?.data?.getAggregatedTransactions || unclassifiedResponse?.loading)) {
+      refetchUnclassified({
         variables: {
           options: {
             description: true,
@@ -45,8 +105,23 @@ export default function TransactionClassifier() {
   });
 
   useEffect(() => {
-    setunclassifiedTransactions(data?.getAggregatedTransactions ?? []);
-  }, [data]);
+    const aggregateResponse = unclassifiedResponse?.data?.getAggregatedTransactions ?? [];
+    if (aggregateResponse.length > 0) {
+      setUnclassifiedTransactions(aggregateResponse);
+      setResultIndex(0);
+    }
+  }, [unclassifiedResponse?.data, setResultIndex]);
+
+  useEffect(() => {
+    if (resultIndex === -1) {
+      return;
+    }
+    refetchByIds({
+      variables: {
+        ids: unclassifiedTransactions[resultIndex].transactionIds,
+      },
+    });
+  }, [resultIndex, refetchByIds, unclassifiedTransactions]);
 
   const prev = useCallback(() => {
     setResultIndex(Math.max(resultIndex - 1, 0));
@@ -116,7 +191,7 @@ export default function TransactionClassifier() {
                   color={'#36B37E'}
                 >
                   {/* TODO: CENTS!!!! */}
-                  {fCurrency(props.totalDepositCents)}
+                  {fCurrency(props.totalDepositCents / 100)}
                 </Typography>
               ) : null}
               {props.totalExpenseCents > 0 ? (
@@ -126,7 +201,7 @@ export default function TransactionClassifier() {
                   color={'#FF5630'}
                 >
                   {/* TODO: CENTS!!!! */}
-                  {fCurrency(props.totalExpenseCents)}
+                  {fCurrency(props.totalExpenseCents / 100)}
                 </Typography>
               ) : null}
             </Grid>
