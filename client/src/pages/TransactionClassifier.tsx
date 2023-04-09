@@ -53,18 +53,27 @@ query getTransactionsbyId($ids:[String!]!) {
   __typename
   	...on Transaction {
       ...CoreTransactionParts
+      account {
+        name
+      }
       tags {
         name
       }
     }
     ...on BackfilledTransaction {
       ...CoreBackfilledTransactionParts
+      account {
+        name
+      }
       tags {
         name
       }
     }
     ... on InvestmentTransaction {
       ...CoreInvestmentTransactionParts
+      account {
+        name
+      }
       tags {
         name
       }
@@ -115,11 +124,17 @@ type IBasicTransaction = {
   date: string;
   currency: string | null;
   classification: string;
+  account: IBasicAccount;
   tags: ITag[];
 };
 
 type ITag = {
   name: String;
+};
+
+type IBasicAccount = {
+  id: string;
+  name: string;
 };
 
 export default function TransactionClassifier() {
@@ -333,7 +348,7 @@ function TransactionTableRow(props: {
             </Typography>
 
             <Typography noWrap variant="body2">
-              {transaction.accountId}
+              {transaction.account.name}
             </Typography>
           </div>
         </Stack>
