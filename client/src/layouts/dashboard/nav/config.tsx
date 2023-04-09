@@ -32,6 +32,7 @@ const navConfig = [
         icon: ICONS.analytics,
         children: [
           { title: 'list', path: PATH_DASHBOARD.transactions.list },
+          { title: 'classify', path: PATH_DASHBOARD.transactions.classify },
           {
             title: 'transfers',
             path: PATH_DASHBOARD.transactions.transfers,

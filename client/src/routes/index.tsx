@@ -19,6 +19,7 @@ import {
   Dashboard,
   Transfers,
   TransactionView,
+  TransactionClassifier,
 } from './elements';
 
 // ----------------------------------------------------------------------
@@ -56,6 +57,7 @@ export default function Router() {
             { element: <Navigate to="/dashboard/transactions/list" replace />, index: true },
             { path: 'list', element: <Transactions /> },
             { path: 'transfers', element: <Transfers /> },
+            { path: 'classify', element: <TransactionClassifier /> },
             { path: ':id', element: <TransactionView /> },
           ],
         },

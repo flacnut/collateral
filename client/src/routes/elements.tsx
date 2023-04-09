@@ -20,6 +20,7 @@ export const Dashboard = Loadable(lazy(() => import('../pages/Dashboard')));
 export const Transactions = Loadable(lazy(() => import('../pages/Transactions')));
 export const Transfers = Loadable(lazy(() => import('../pages/Transfers')));
 export const TransactionView = Loadable(lazy(() => import('../pages/TransactionView')));
+export const TransactionClassifier = Loadable(lazy(() => import('../pages/TransactionClassifier')));
 
 export const PageFour = Loadable(lazy(() => import('../pages/PageFour')));
 export const PageFive = Loadable(lazy(() => import('../pages/PageFive')));
