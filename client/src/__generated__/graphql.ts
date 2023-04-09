@@ -242,6 +242,8 @@ export type Query = {
   getPossibleTransfers: Array<Transfer>;
   getTransaction?: Maybe<AnyTransaction>;
   getTransactions: Array<AnyTransaction>;
+  getTransactionsById: Array<AnyTransaction>;
+  getTransactionsByProperty: Array<AnyTransaction>;
   getTransfers: Array<Transfer>;
   refreshPlaidItems: Scalars['Boolean'];
   tags: Array<Tag>;
@@ -308,6 +310,16 @@ export type QueryGetTransactionsArgs = {
 };
 
 
+export type QueryGetTransactionsByIdArgs = {
+  ids: Array<Scalars['String']>;
+};
+
+
+export type QueryGetTransactionsByPropertyArgs = {
+  properties: QueryTransactionsByPropertyOptions;
+};
+
+
 export type QueryTransactionDetailsArgs = {
   accountId?: InputMaybe<Scalars['String']>;
 };
@@ -318,6 +330,12 @@ export type QueryAggregationOptions = {
   description?: InputMaybe<Scalars['Boolean']>;
   month?: InputMaybe<Scalars['Boolean']>;
   tags?: InputMaybe<Scalars['Boolean']>;
+  unclassifiedOnly?: InputMaybe<Scalars['Boolean']>;
+};
+
+export type QueryTransactionsByPropertyOptions = {
+  accountId?: InputMaybe<Scalars['String']>;
+  description?: InputMaybe<Scalars['String']>;
 };
 
 export type Security = {
@@ -442,6 +460,13 @@ export type DeletAccountMutationVariables = Exact<{
 
 export type DeletAccountMutation = { __typename?: 'Mutation', deleteAccount: boolean };
 
+export type GetAggregatedTransactionsQueryVariables = Exact<{
+  options: QueryAggregationOptions;
+}>;
+
+
+export type GetAggregatedTransactionsQuery = { __typename?: 'Query', getAggregatedTransactions: Array<{ __typename?: 'AggregatedTransaction', description?: string | null, totalExpenseCents: number, totalDepositCents: number, transactionCount: number, transactionIds: Array<string> }> };
+
 export type GetTransactionQueryQueryVariables = Exact<{
   transactionId: Scalars['String'];
 }>;
@@ -553,6 +578,7 @@ export const GetItemsDocument = {"kind":"Document","definitions":[{"kind":"Opera
 export const GetTokenDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getToken"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getLinkToken"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"token"}},{"kind":"Field","name":{"kind":"Name","value":"error"}}]}}]}}]} as unknown as DocumentNode<GetTokenQuery, GetTokenQueryVariables>;
 export const SetPlaidLinkResponseDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"setPlaidLinkResponse"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"plaidLinkResponse"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"PlaidLinkResponse"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"setPlaidLinkResponse"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"plaidLinkResponse"},"value":{"kind":"Variable","name":{"kind":"Name","value":"plaidLinkResponse"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"institutionId"}}]}}]}}]} as unknown as DocumentNode<SetPlaidLinkResponseMutation, SetPlaidLinkResponseMutationVariables>;
 export const DeletAccountDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"deletAccount"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"accountId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteAccount"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"accountId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"accountId"}}}]}]}}]} as unknown as DocumentNode<DeletAccountMutation, DeletAccountMutationVariables>;
+export const GetAggregatedTransactionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getAggregatedTransactions"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"options"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"QueryAggregationOptions"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getAggregatedTransactions"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"options"},"value":{"kind":"Variable","name":{"kind":"Name","value":"options"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"totalExpenseCents"}},{"kind":"Field","name":{"kind":"Name","value":"totalDepositCents"}},{"kind":"Field","name":{"kind":"Name","value":"transactionCount"}},{"kind":"Field","name":{"kind":"Name","value":"transactionIds"}}]}}]}}]} as unknown as DocumentNode<GetAggregatedTransactionsQuery, GetAggregatedTransactionsQueryVariables>;
 export const GetTransactionQueryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getTransactionQuery"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"transactionId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getTransaction"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"transactionId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Transaction"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"CoreTransactionParts"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"ExtraTransactionParts"}},{"kind":"Field","name":{"kind":"Name","value":"account"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BackfilledTransaction"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"CoreBackfilledTransactionParts"}},{"kind":"Field","name":{"kind":"Name","value":"account"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"InvestmentTransaction"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"CoreInvestmentTransactionParts"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"ExtraInvestmentTransactionParts"}},{"kind":"Field","name":{"kind":"Name","value":"account"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}},...CoreTransactionPartsFragmentDoc.definitions,...ExtraTransactionPartsFragmentDoc.definitions,...CoreBackfilledTransactionPartsFragmentDoc.definitions,...CoreInvestmentTransactionPartsFragmentDoc.definitions,...ExtraInvestmentTransactionPartsFragmentDoc.definitions]} as unknown as DocumentNode<GetTransactionQueryQuery, GetTransactionQueryQueryVariables>;
 export const UpdateTransactionTagsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"updateTransactionTags"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"force"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"addTags"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"removeTags"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"transactionIds"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateTransactionTags"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"force"},"value":{"kind":"Variable","name":{"kind":"Name","value":"force"}}},{"kind":"Argument","name":{"kind":"Name","value":"addTags"},"value":{"kind":"Variable","name":{"kind":"Name","value":"addTags"}}},{"kind":"Argument","name":{"kind":"Name","value":"removeTags"},"value":{"kind":"Variable","name":{"kind":"Name","value":"removeTags"}}},{"kind":"Argument","name":{"kind":"Name","value":"transactionIds"},"value":{"kind":"Variable","name":{"kind":"Name","value":"transactionIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"tags"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]} as unknown as DocumentNode<UpdateTransactionTagsMutation, UpdateTransactionTagsMutationVariables>;
 export const UpdateClassificationDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"updateClassification"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"transactionIds"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"classification"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"TransactionClassification"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateTransactionClassification"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"transactionIds"},"value":{"kind":"Variable","name":{"kind":"Name","value":"transactionIds"}}},{"kind":"Argument","name":{"kind":"Name","value":"classification"},"value":{"kind":"Variable","name":{"kind":"Name","value":"classification"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<UpdateClassificationMutation, UpdateClassificationMutationVariables>;

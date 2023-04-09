@@ -3,8 +3,22 @@ import { Helmet } from 'react-helmet-async';
 import { Container, Typography } from '@mui/material';
 // components
 import { useSettingsContext } from '../components/settings';
+import { gql } from 'src/__generated__/gql';
 
 // ----------------------------------------------------------------------
+
+const unclassifiedTransactionsQuery = gql(`
+query getAggregatedTransactions($options: QueryAggregationOptions!) {
+  getAggregatedTransactions(options:$options) {
+    description
+    totalExpenseCents
+    totalDepositCents
+    transactionCount
+    transactionIds
+  }
+}`);
+
+console.dir(unclassifiedTransactionsQuery);
 
 export default function TransactionClassifier() {
   const { themeStretch } = useSettingsContext();
