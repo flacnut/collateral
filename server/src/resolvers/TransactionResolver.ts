@@ -394,7 +394,7 @@ export class TransactionResolver {
       (t) => {
         return {
           id: t.id,
-          column: 'description',
+          column: 'classification',
           oldValue: t.classification,
           newValue: classification,
         };
@@ -466,6 +466,27 @@ export class TransactionResolver {
       console.error(error);
       return [];
     }
+  }
+
+  @Mutation(() => [AnyTransaction])
+  async invertTransactionAmount(
+    @Arg('transactionIds', () => [String]) transactionIds: string[],
+  ) {
+    const transactions = await CoreTransaction.findByIds(transactionIds);
+    const updates = transactions.map(async (t) => {
+      const oldAmount = t.amountCents;
+      t.amountCents = oldAmount * -1;
+      await t.save();
+      await this.recordUpdateEvent(
+        t.id,
+        'amountCents',
+        oldAmount.toString(),
+        t.amountCents.toString(),
+      );
+    });
+
+    await Promise.all(updates);
+    return await CoreTransaction.findByIds(transactionIds);
   }
 
   // TODO: this doesn't belong here

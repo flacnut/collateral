@@ -66,7 +66,7 @@ export default {
     try {
       const h_options = {
         access_token: item.accessToken,
-        start_date: moment().subtract(2, 'years').format('YYYY-MM-DD'),
+        start_date: '2023-01-01',
         end_date: moment().add(3, 'days').format('YYYY-MM-DD'),
         options: {
           offset: 0,
