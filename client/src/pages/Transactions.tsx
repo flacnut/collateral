@@ -357,8 +357,6 @@ export default function Transactions() {
   const [tableData, setTableData] = useState<IBasicTransaction[]>([]);
   const [filteredData, setFilteredData] = useState<IBasicTransaction[]>([]);
 
-  const [openConfirm, setOpenConfirm] = useState(false);
-
   const [filterDescription, setFilterDescription] = useState('');
   const [filterAccount, setFilterAccount] = useState('all');
   const [filterClassification, setFilterClassification] = useState('all');
@@ -402,21 +400,6 @@ export default function Transactions() {
     [navigate]
   );
 
-  const handleDeleteRow = useCallback(
-    (id: string) => {
-      const deleteRow = tableData.filter((row: { id: string }) => row.id !== id);
-      setSelected([]);
-      setTableData(deleteRow);
-
-      if (page > 0) {
-        if (dataInPage.length < 2) {
-          setPage(page - 1);
-        }
-      }
-    },
-    [setSelected, setTableData, tableData, setPage]
-  );
-
   const dataInPage = useMemo(
     () =>
       filteredData
@@ -430,20 +413,9 @@ export default function Transactions() {
             onSelectRow={onSelectRow}
             onViewRow={handleViewRow}
             onEditRow={handleEditRow}
-            onDeleteRow={handleDeleteRow}
           />
         )),
-    [
-      filteredData,
-      page,
-      rowsPerPage,
-      safe,
-      selected,
-      onSelectRow,
-      handleViewRow,
-      handleEditRow,
-      handleDeleteRow,
-    ]
+    [filteredData, page, rowsPerPage, safe, selected, onSelectRow, handleViewRow, handleEditRow]
   );
 
   const denseHeight = dense ? 56 : 76;
@@ -459,14 +431,6 @@ export default function Transactions() {
     (!filteredData.length && !!filterClassification) ||
     (!filteredData.length && !!filterEndDate) ||
     (!filteredData.length && !!filterStartDate);
-
-  const handleOpenConfirm = useCallback(() => {
-    setOpenConfirm(true);
-  }, [setOpenConfirm]);
-
-  const handleCloseConfirm = useCallback(() => {
-    setOpenConfirm(false);
-  }, [setOpenConfirm]);
 
   const handleFilterClassification = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -499,22 +463,13 @@ export default function Transactions() {
     [setPage, setFilterAccount]
   );
 
-  const handleDeleteRows = useCallback((selected: string[]) => {
-    const deleteRows = tableData.filter((row: { id: string }) => !selected.includes(row.id));
-    setSelected([]);
-    setTableData(deleteRows);
+  const handleDeleteRows = useCallback(() => {
+    // TODO
+  }, [selected]);
 
-    if (page > 0) {
-      if (selected.length === dataInPage.length) {
-        setPage(page - 1);
-      } else if (selected.length === filteredData.length) {
-        setPage(0);
-      } else if (selected.length > dataInPage.length) {
-        const newPage = Math.ceil((tableData.length - selected.length) / rowsPerPage) - 1;
-        setPage(newPage);
-      }
-    }
-  }, []);
+  const handleInvertRows = useCallback(() => {
+    // TODO
+  }, [selected]);
 
   const handleResetFilter = useCallback(() => {
     setFilterDescription('');
@@ -702,26 +657,20 @@ export default function Transactions() {
               }
               action={
                 <Stack direction="row">
-                  <Tooltip title="Sent">
+                  <Tooltip title="Clear Classification">
                     <IconButton color="primary">
-                      <Iconify icon="ic:round-send" />
+                      <Iconify icon="eva:slash-outline" />
                     </IconButton>
                   </Tooltip>
 
-                  <Tooltip title="Download">
-                    <IconButton color="primary">
-                      <Iconify icon="eva:download-outline" />
-                    </IconButton>
-                  </Tooltip>
-
-                  <Tooltip title="Print">
-                    <IconButton color="primary">
-                      <Iconify icon="eva:printer-fill" />
+                  <Tooltip title="Invert Amount">
+                    <IconButton color="primary" onClick={handleInvertRows}>
+                      <Iconify icon="eva:flip-outline" />
                     </IconButton>
                   </Tooltip>
 
                   <Tooltip title="Delete">
-                    <IconButton color="primary" onClick={handleOpenConfirm}>
+                    <IconButton color="primary" onClick={handleDeleteRows}>
                       <Iconify icon="eva:trash-2-outline" />
                     </IconButton>
                   </Tooltip>
@@ -773,29 +722,6 @@ export default function Transactions() {
           />
         </Card>
       </Container>
-
-      <ConfirmDialog
-        open={openConfirm}
-        onClose={handleCloseConfirm}
-        title="Delete"
-        content={
-          <>
-            Are you sure want to delete <strong> {selected.length} </strong> items?
-          </>
-        }
-        action={
-          <Button
-            variant="contained"
-            color="error"
-            onClick={() => {
-              handleDeleteRows(selected);
-              handleCloseConfirm();
-            }}
-          >
-            Delete
-          </Button>
-        }
-      />
     </>
   );
 }
@@ -1069,7 +995,6 @@ function TransactionTableRow({
   onSelectRow,
   onViewRow,
   onEditRow,
-  onDeleteRow,
 }: {
   row: IBasicTransaction;
   safe: boolean;
@@ -1077,7 +1002,6 @@ function TransactionTableRow({
   onSelectRow: RowIdCallbackFunction;
   onViewRow: RowIdCallbackFunction;
   onEditRow: RowIdCallbackFunction;
-  onDeleteRow: RowIdCallbackFunction;
 }) {
   const { id, date, description, amount, tags, classification } = row;
 
@@ -1210,32 +1134,7 @@ function TransactionTableRow({
           <Iconify icon="eva:edit-fill" />
           Edit
         </MenuItem>
-
-        <Divider sx={{ borderStyle: 'dashed' }} />
-
-        <MenuItem
-          onClick={() => {
-            handleOpenConfirm();
-            handleClosePopover();
-          }}
-          sx={{ color: 'error.main' }}
-        >
-          <Iconify icon="eva:trash-2-outline" />
-          Delete
-        </MenuItem>
       </MenuPopover>
-
-      <ConfirmDialog
-        open={openConfirm}
-        onClose={handleCloseConfirm}
-        title="Delete"
-        content="Are you sure want to delete?"
-        action={
-          <Button variant="contained" color="error" onClick={() => onDeleteRow(id)}>
-            Delete
-          </Button>
-        }
-      />
     </>
   );
 }
