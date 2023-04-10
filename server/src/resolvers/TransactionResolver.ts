@@ -489,6 +489,19 @@ export class TransactionResolver {
     return await CoreTransaction.findByIds(transactionIds);
   }
 
+  @Mutation(() => Boolean)
+  async deleteTransactions(
+    @Arg('transactionIds', () => [String]) transactionIds: string[],
+  ) {
+    const transactions = await CoreTransaction.findByIds(transactionIds);
+    const softRemoves = transactions.map(async (t) => {
+      await t.softRemove();
+    });
+
+    await Promise.all(softRemoves);
+    return true;
+  }
+
   // TODO: this doesn't belong here
   async getOrCreateTag(name: string) {
     const existingTag = await Tag.findOne({ name });
