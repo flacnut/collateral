@@ -5,9 +5,12 @@ import { format, getTime, formatDistanceToNow } from 'date-fns';
 type InputValue = Date | string | number | null;
 
 export function fDate(date: InputValue, newFormat?: string) {
-  const fm = newFormat || 'dd MMM yyyy';
-
-  return date ? format(new Date(date), fm) : '';
+  try {
+    const fm = newFormat || 'dd MMM yyyy';
+    return date ? format(new Date(date), fm) : '';
+  } catch (_e) {
+    return date?.toString();
+  }
 }
 
 export function fDateTime(date: InputValue, newFormat?: string) {
