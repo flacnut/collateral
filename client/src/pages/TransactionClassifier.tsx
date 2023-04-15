@@ -211,6 +211,35 @@ export default function TransactionClassifier() {
     GetAggregatedTransactionsQuery['getAggregatedTransactions']
   >([]);
 
+  const prev = useCallback(() => {
+    setResultIndex(Math.max(resultIndex - 1, 0));
+  }, [setResultIndex, resultIndex]);
+
+  const next = useCallback(() => {
+    setResultIndex(Math.min(resultIndex + 1, unclassifiedTransactions.length - 1));
+  }, [setResultIndex, resultIndex, unclassifiedTransactions]);
+
+  const handleKeyPress = useCallback(
+    (event: { key: any }) => {
+      switch (event.key) {
+        case 'ArrowRight':
+          next();
+          break;
+        case 'ArrowLeft':
+          prev();
+          break;
+      }
+    },
+    [next, prev]
+  );
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyPress);
+    return () => {
+      document.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [handleKeyPress]);
+
   const [refetchUnclassified, unclassifiedResponse] = useLazyQuery(unclassifiedTransactionsQuery);
   useEffect(() => {
     if (!(unclassifiedResponse?.data?.getAggregatedTransactions || unclassifiedResponse?.loading)) {
@@ -232,14 +261,6 @@ export default function TransactionClassifier() {
       setResultIndex(0);
     }
   }, [unclassifiedResponse?.data, setResultIndex]);
-
-  const prev = useCallback(() => {
-    setResultIndex(Math.max(resultIndex - 1, 0));
-  }, [setResultIndex, resultIndex]);
-
-  const next = useCallback(() => {
-    setResultIndex(Math.min(resultIndex + 1, unclassifiedTransactions.length - 1));
-  }, [setResultIndex, resultIndex, unclassifiedTransactions]);
 
   return (
     <>
