@@ -7,6 +7,7 @@ import {
   Chip,
   Container,
   Grid,
+  InputAdornment,
   MenuItem,
   Stack,
   Table,
@@ -39,6 +40,7 @@ import { CustomAvatar } from 'src/components/custom-avatar';
 import { fDate } from 'src/utils/formatTime';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
+import { useDebounce } from 'use-debounce';
 
 // ----------------------------------------------------------------------
 
@@ -265,6 +267,62 @@ export default function TransactionClassifier() {
   const [unclassifiedTransactions, setUnclassifiedTransactions] = useState<
     GetAggregatedTransactionsQuery['getAggregatedTransactions']
   >([]);
+  const [filteredTransactions, setFilteredTransactions] = useState<
+    GetAggregatedTransactionsQuery['getAggregatedTransactions']
+  >([]);
+
+  // navigation
+  const prev = useCallback(() => {
+    setResultIndex(Math.max(resultIndex - 1, 0));
+  }, [setResultIndex, resultIndex]);
+
+  const next = useCallback(() => {
+    setResultIndex(Math.min(resultIndex + 1, filteredTransactions.length - 1));
+  }, [setResultIndex, resultIndex, filteredTransactions]);
+
+  const handleKeyPress = useCallback(
+    (event: { key: any }) => {
+      switch (event.key) {
+        case 'ArrowRight':
+          next();
+          break;
+        case 'ArrowLeft':
+          prev();
+          break;
+      }
+    },
+    [next, prev]
+  );
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyPress);
+    return () => {
+      document.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [handleKeyPress]);
+
+  // filter
+  const [filterDescription, setFilterDescription] = useState('');
+  const [debounceFilterDescription] = useDebounce(filterDescription, 250);
+  const handleFilterDescription = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setResultIndex(0);
+      setFilterDescription(event.target.value);
+    },
+    [setResultIndex, setFilterDescription]
+  );
+
+  const applyFilter = useCallback(() => {
+    setResultIndex(0);
+    setFilteredTransactions(
+      unclassifiedTransactions.filter(
+        (t) =>
+          debounceFilterDescription === '' ||
+          (t.description &&
+            t.description.toLowerCase().indexOf(filterDescription.toLowerCase()) !== -1)
+      )
+    );
+  }, [debounceFilterDescription, unclassifiedTransactions]);
 
   // loading view
   const [fetchTags, fetchTagResponse] = useLazyQuery(tagsQuery);
@@ -297,38 +355,9 @@ export default function TransactionClassifier() {
     if (aggregateResponse.length > 0) {
       setUnclassifiedTransactions(aggregateResponse);
       setResultIndex(0);
+      applyFilter();
     }
-  }, [unclassifiedResponse?.data, setResultIndex]);
-
-  // navigation
-  const prev = useCallback(() => {
-    setResultIndex(Math.max(resultIndex - 1, 0));
-  }, [setResultIndex, resultIndex]);
-
-  const next = useCallback(() => {
-    setResultIndex(Math.min(resultIndex + 1, unclassifiedTransactions.length - 1));
-  }, [setResultIndex, resultIndex, unclassifiedTransactions]);
-
-  const handleKeyPress = useCallback(
-    (event: { key: any }) => {
-      switch (event.key) {
-        case 'ArrowRight':
-          next();
-          break;
-        case 'ArrowLeft':
-          prev();
-          break;
-      }
-    },
-    [next, prev]
-  );
-
-  useEffect(() => {
-    document.addEventListener('keydown', handleKeyPress);
-    return () => {
-      document.removeEventListener('keydown', handleKeyPress);
-    };
-  }, [handleKeyPress]);
+  }, [unclassifiedResponse?.data, setResultIndex, applyFilter]);
 
   // modifying data
   const [modifiedTags, setModifiedTags] = useState<string[]>([]);
@@ -355,14 +384,14 @@ export default function TransactionClassifier() {
           force: false,
           addTags: modifiedTags,
           removeTags: [],
-          transactionIds: unclassifiedTransactions[resultIndex]?.transactionIds,
+          transactionIds: filteredTransactions[resultIndex]?.transactionIds,
         },
       });
     }
     if (!!modifiedClassification) {
       await updateTransactionClassification({
         variables: {
-          transactionIds: unclassifiedTransactions[resultIndex]?.transactionIds,
+          transactionIds: filteredTransactions[resultIndex]?.transactionIds,
           classification: modifiedClassification as TransactionClassification,
         },
       });
@@ -371,6 +400,7 @@ export default function TransactionClassifier() {
       fetchPolicy: 'no-cache',
     });
   }, [
+    filteredTransactions,
     updateTransactionTags,
     updateTransactionClassification,
     modifiedClassification,
@@ -403,7 +433,7 @@ export default function TransactionClassifier() {
             </Button>
 
             <Autocomplete
-              sx={{ width: '400px' }}
+              sx={{ width: '500px' }}
               multiple
               freeSolo
               onChange={(event, newValue) => setModifiedTags(newValue)}
@@ -459,6 +489,20 @@ export default function TransactionClassifier() {
               ))}
             </TextField>
 
+            <TextField
+              fullWidth
+              value={filterDescription}
+              onChange={handleFilterDescription}
+              placeholder="Search client or transaction number..."
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
+                  </InputAdornment>
+                ),
+              }}
+            />
+
             <Button
               variant="contained"
               startIcon={<Iconify icon="eva:save-outline" />}
@@ -475,18 +519,18 @@ export default function TransactionClassifier() {
         </Card>
 
         <Card sx={{ pt: 5, px: 5, marginBottom: 2 }}>
-          <TransactionView {...getAggregatedSet(unclassifiedTransactions ?? [], resultIndex)} />
+          <TransactionView {...getAggregatedSet(filteredTransactions ?? [], resultIndex)} />
         </Card>
 
         <Card sx={{ marginBottom: 2 }}>
           <SimilarTransactionsTableView
-            description={unclassifiedTransactions[resultIndex]?.description}
+            description={filteredTransactions[resultIndex]?.description}
           />
         </Card>
 
         <Card>
           <BasicTransactionTableView
-            transactionIds={unclassifiedTransactions[resultIndex]?.transactionIds ?? []}
+            transactionIds={filteredTransactions[resultIndex]?.transactionIds ?? []}
           />
         </Card>
       </Container>
