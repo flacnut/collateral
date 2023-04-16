@@ -10,6 +10,11 @@ import {
   InputAdornment,
   MenuItem,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableRow,
   TextField,
   Typography,
 } from '@mui/material';
@@ -23,11 +28,24 @@ import {
 } from 'src/__generated__/graphql';
 import { useCallback, useEffect, useState } from 'react';
 import { fCurrency } from 'src/utils/formatNumber';
+import {
+  TableEmptyRows,
+  TableHeadCustom,
+  TablePaginationCustom,
+  emptyRows,
+  useTable,
+} from 'src/components/table';
+import Scrollbar from 'src/components/scrollbar';
+import { CustomAvatar } from 'src/components/custom-avatar';
+import { fDate } from 'src/utils/formatTime';
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { useDebounce } from 'use-debounce';
 import {
   BasicTransactionTable,
+  IBasicAccount,
   IBasicTransaction,
+  ITag,
 } from 'src/components/tables/BasicTransactionTable';
 
 // ----------------------------------------------------------------------
@@ -268,7 +286,7 @@ export default function TransactionClassifier() {
 
   // filter
   const [filterDescription, setFilterDescription] = useState('');
-  const [debounceFilterDescription] = useDebounce(filterDescription, 250);
+  const [debounceFilterDescription] = useDebounce(filterDescription, 100);
   const handleFilterDescription = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       setFilterDescription(event.target.value);
@@ -341,6 +359,16 @@ export default function TransactionClassifier() {
     [setModifiedClassification]
   );
 
+  const applyClassification = useCallback(
+    (classification: string, tags: ITag[]) => {
+      const stringTags = tags.map((t) => t.name) as string[];
+      console.dir(stringTags);
+      setModifiedClassification(classification);
+      setModifiedTags(stringTags);
+    },
+    [setModifiedTags, setModifiedClassification]
+  );
+
   const saveChanges = useCallback(async () => {
     if (!!modifiedTags.length) {
       await updateTransactionTags({
@@ -400,6 +428,7 @@ export default function TransactionClassifier() {
               sx={{ width: '500px' }}
               multiple
               freeSolo
+              value={modifiedTags}
               onChange={(event, newValue) => setModifiedTags(newValue)}
               options={tags.map((option) => option)}
               renderTags={(value, getTagProps) =>
@@ -490,6 +519,7 @@ export default function TransactionClassifier() {
         <Card sx={{ marginBottom: 2 }}>
           <SimilarTransactionsTableView
             description={filteredTransactions[resultIndex]?.description}
+            applyClassification={applyClassification}
           />
         </Card>
 
@@ -544,9 +574,12 @@ function TransactionView(props: {
   );
 }
 
-function SimilarTransactionsTableView(props: { description: string | undefined | null }) {
-  const [refetchByProperty, getByPropertyResponse] = useLazyQuery(transactionsByPropertyQuery);
-  const [transactions, setTransactions] = useState<IBasicTransaction[]>([]);
+function SimilarTransactionsTableView(props: {
+  description: string | undefined | null;
+  applyClassification: (classification: string, tags: ITag[]) => void;
+}) {
+  const [refetchByProperty, { data }] = useLazyQuery(transactionsByPropertyQuery);
+  const [transactions, setTransactions] = useState<IAggregatedTransaction[]>([]);
 
   useEffect(() => {
     if (!props.description || props.description === '') {
@@ -560,12 +593,24 @@ function SimilarTransactionsTableView(props: { description: string | undefined |
     });
   }, [props.description, refetchByProperty]);
 
+  const applyClassification = useCallback(
+    (transaction: IAggregatedTransaction) => {
+      props.applyClassification(transaction.classification, transaction.tags);
+    },
+    [props.applyClassification]
+  );
+
   useEffect(() => {
-    let maybeTransactions = [...(getByPropertyResponse.data?.getTransactionsByProperty ?? [])];
+    if (!props.description || props.description === '') {
+      setTransactions([]);
+      return;
+    }
+
+    let maybeTransactions = [...(data?.getTransactionsByProperty ?? [])];
     setTransactions(
       Object.values(
         (maybeTransactions as unknown as IBasicTransaction[]).reduce(
-          (prev: { [key: string]: IBasicTransaction }, transaction) => {
+          (prev: { [key: string]: IAggregatedTransaction }, transaction) => {
             let key =
               transaction.classification +
               '::' +
@@ -575,12 +620,23 @@ function SimilarTransactionsTableView(props: { description: string | undefined |
                 .join(':');
 
             if (!prev[key]) {
-              prev[key] = { ...transaction };
-              prev[key].date = '1';
+              prev[key] = {
+                transactionIds: [transaction.id],
+                count: 1,
+                key: key,
+                accountId: transaction.accountId,
+                description: transaction.description,
+                amountCents: transaction.amountCents,
+                amount: transaction.amount,
+                currency: transaction.currency,
+                classification: transaction.classification,
+                account: transaction.account,
+                tags: transaction.tags,
+              } as IAggregatedTransaction;
               return prev;
             }
 
-            prev[key].date = (Number(prev[key].date) + 1).toString();
+            prev[key].count++;
             prev[key].amount += transaction.amount;
             prev[key].amountCents += transaction.amountCents;
             return prev;
@@ -589,9 +645,9 @@ function SimilarTransactionsTableView(props: { description: string | undefined |
         )
       )
     );
-  }, [getByPropertyResponse.data]);
+  }, [data?.getTransactionsByProperty, setTransactions, props.description]);
 
-  return <BasicTransactionTable transactions={transactions} />;
+  return <AggregatedTransactionTable transactions={transactions} action={applyClassification} />;
 }
 
 function BasicTransactionTableView(props: { transactionIds: string[] }) {
@@ -616,6 +672,163 @@ function BasicTransactionTableView(props: { transactionIds: string[] }) {
   }, [getByIdsResponse.data]);
 
   return <BasicTransactionTable transactions={transactions} />;
+}
+
+export type IAggregatedTransaction = {
+  key: string;
+  transactionIds: string[];
+  accountId: string;
+  description: string;
+  amountCents: number;
+  amount: number;
+  count: number;
+  currency: string | null;
+  classification: string;
+  account: IBasicAccount;
+  tags: ITag[];
+};
+
+function AggregatedTransactionTable(props: {
+  transactions: IAggregatedTransaction[];
+  action: (row: IAggregatedTransaction) => void;
+}) {
+  const { transactions, action } = props;
+  const TABLE_HEAD = [
+    { id: 'description', label: 'Description', align: 'left' },
+    { id: 'amount', label: 'Amount', align: 'right', width: 180 },
+    { id: 'count', label: 'Count', align: 'left', width: 140 },
+    { id: 'classification', label: 'Classification', align: 'center', width: 240 },
+    { id: 'tags', label: 'Tags', align: 'left' },
+    { id: 'action', label: '', align: 'left', width: 100 },
+  ];
+
+  const { safe, page, order, orderBy, onSort, onChangeSafe, onChangePage } = useTable({
+    defaultRowsPerPage: 25,
+    defaultOrderBy: 'date',
+  });
+
+  return (
+    <>
+      <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
+        <Scrollbar>
+          <Table size={'small'} sx={{ minWidth: 800 }}>
+            <TableHeadCustom
+              order={order}
+              orderBy={orderBy}
+              headLabel={TABLE_HEAD}
+              rowCount={transactions.length}
+              onSort={onSort}
+            />
+
+            <TableBody>
+              {transactions.slice(page * 25, page * 25 + 25).map((transaction, index) => (
+                <TransactionTableRow
+                  key={index.toString()}
+                  transaction={transaction}
+                  safe={safe}
+                  action={action}
+                />
+              ))}
+              <TableEmptyRows height={56} emptyRows={emptyRows(page, 25, transactions.length)} />
+            </TableBody>
+          </Table>
+        </Scrollbar>
+      </TableContainer>
+
+      <TablePaginationCustom
+        count={transactions.length}
+        page={page}
+        rowsPerPage={25}
+        onPageChange={onChangePage}
+        safe={safe}
+        onChangeSafe={onChangeSafe}
+      />
+    </>
+  );
+}
+
+function TransactionTableRow(props: {
+  key: string;
+  transaction: IAggregatedTransaction;
+  safe: boolean;
+  action: (row: IAggregatedTransaction) => void;
+}) {
+  const { transaction, safe, action } = props;
+  return (
+    <TableRow hover>
+      <TableCell>
+        <Stack direction="row" alignItems="center" spacing={2}>
+          <CustomAvatar name={transaction.description} />
+
+          <div>
+            <Typography variant="subtitle2" noWrap color="MenuText" sx={{ color: '#FFF' }}>
+              {transaction.description}
+            </Typography>
+
+            <Typography noWrap variant="body2" sx={{ color: '#919eab' }}>
+              {transaction.account.name}
+            </Typography>
+          </div>
+        </Stack>
+      </TableCell>
+
+      <TableCell align="right">
+        <Typography
+          fontFamily="Menlo"
+          color={transaction.amount > 0 ? '#36B37E' : '#FF5630'}
+          fontWeight="bold"
+        >
+          {safe ? 'X,XXX.XX' : fCurrency(Math.abs(transaction.amount), true)}
+        </Typography>
+      </TableCell>
+
+      <TableCell align="left">{transaction.count}</TableCell>
+
+      <TableCell align="center" sx={{ textTransform: 'capitalize' }}>
+        {transaction.classification !== null ? (
+          <Label
+            variant="soft"
+            color={
+              (transaction.classification === 'Expense' && 'error') ||
+              (transaction.classification === 'Income' && 'success') ||
+              (transaction.classification === 'Duplicate' && 'secondary') ||
+              (transaction.classification === 'Recurring' && 'warning') ||
+              (transaction.classification === 'Transfer' && 'secondary') ||
+              (transaction.classification === 'Investment' && 'primary') ||
+              (transaction.classification === 'Hidden' && 'secondary') ||
+              'default'
+            }
+          >
+            {transaction.classification}
+          </Label>
+        ) : null}
+      </TableCell>
+
+      <TableCell align="left" sx={{ textTransform: 'capitalize' }}>
+        {transaction.tags.map((tag, index) => (
+          <Chip
+            key={index}
+            size={'small'}
+            label={tag.name}
+            sx={{ marginRight: 1, borderRadius: 1 }}
+          />
+        ))}
+      </TableCell>
+
+      <TableCell align="left" sx={{ textTransform: 'capitalize' }}>
+        {action ? (
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => action(transaction)}
+            color="secondary"
+          >
+            Apply
+          </Button>
+        ) : null}
+      </TableCell>
+    </TableRow>
+  );
 }
 
 function getAggregatedSet(
