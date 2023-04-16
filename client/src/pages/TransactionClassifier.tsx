@@ -1,24 +1,30 @@
 import { Helmet } from 'react-helmet-async';
 // @mui
 import {
+  Autocomplete,
   Button,
   Card,
   Chip,
   Container,
   Grid,
+  MenuItem,
   Stack,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableRow,
+  TextField,
   Typography,
 } from '@mui/material';
 // components
 import { useSettingsContext } from '../components/settings';
 import { gql } from 'src/__generated__/gql';
-import { useLazyQuery } from '@apollo/client';
-import { GetAggregatedTransactionsQuery } from 'src/__generated__/graphql';
+import { useLazyQuery, useMutation } from '@apollo/client';
+import {
+  GetAggregatedTransactionsQuery,
+  TransactionClassification,
+} from 'src/__generated__/graphql';
 import { useCallback, useEffect, useState } from 'react';
 import { fCurrency } from 'src/utils/formatNumber';
 import {
@@ -32,6 +38,7 @@ import Scrollbar from 'src/components/scrollbar';
 import { CustomAvatar } from 'src/components/custom-avatar';
 import { fDate } from 'src/utils/formatTime';
 import Label from 'src/components/label';
+import Iconify from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
@@ -181,6 +188,53 @@ fragment CoreInvestmentTransactionParts on InvestmentTransaction {
   classification
 }`);
 
+const updateTransactionTagsQuery = gql(`
+mutation updateTransactionTags(
+  $force:Boolean!, 
+  $addTags:[String!]!, 
+  $removeTags:[String!]!, 
+  $transactionIds:[String!]!
+) {
+  updateTransactionTags(
+    force: $force, 
+    addTags: $addTags, 
+    removeTags: $removeTags, 
+    transactionIds: $transactionIds
+  ) {
+    id
+    tags {
+      name
+    }
+  }
+}`);
+
+const updateTransactionClassificationQuery = gql(`
+mutation updateClassification(
+  $transactionIds: [String!]!, 
+  $classification: TransactionClassification!) {
+  updateTransactionClassification(
+    transactionIds: $transactionIds,
+    classification: $classification) {
+    id
+  }
+}`);
+
+const tagsQuery = gql(`query getTags {
+  tags {
+    name
+  }
+}`);
+
+const Classifications = [
+  'Duplicate',
+  'Income',
+  'Expense',
+  'Recurring',
+  'Transfer',
+  'Investment',
+  'Hidden',
+];
+
 type IBasicTransaction = {
   __typename: string;
   id: string;
@@ -207,10 +261,46 @@ type IBasicAccount = {
 export default function TransactionClassifier() {
   const { themeStretch } = useSettingsContext();
   const [resultIndex, setResultIndex] = useState<number>(-1);
+  const [tags, setTags] = useState<string[]>([]);
   const [unclassifiedTransactions, setUnclassifiedTransactions] = useState<
     GetAggregatedTransactionsQuery['getAggregatedTransactions']
   >([]);
 
+  // loading view
+  const [fetchTags, fetchTagResponse] = useLazyQuery(tagsQuery);
+  useEffect(() => {
+    setTags(Object.values(fetchTagResponse?.data?.tags ?? {}).map((t) => t.name));
+  }, [fetchTagResponse.data]);
+
+  const [refetchUnclassified, unclassifiedResponse] = useLazyQuery(unclassifiedTransactionsQuery);
+  useEffect(() => {
+    if (!(unclassifiedResponse?.data?.getAggregatedTransactions || unclassifiedResponse?.loading)) {
+      refetchUnclassified({
+        variables: {
+          options: {
+            description: true,
+            unclassifiedOnly: true,
+          },
+        },
+      });
+    }
+
+    if (!fetchTagResponse?.loading) {
+      fetchTags({
+        fetchPolicy: 'no-cache',
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    const aggregateResponse = unclassifiedResponse?.data?.getAggregatedTransactions ?? [];
+    if (aggregateResponse.length > 0) {
+      setUnclassifiedTransactions(aggregateResponse);
+      setResultIndex(0);
+    }
+  }, [unclassifiedResponse?.data, setResultIndex]);
+
+  // navigation
   const prev = useCallback(() => {
     setResultIndex(Math.max(resultIndex - 1, 0));
   }, [setResultIndex, resultIndex]);
@@ -240,27 +330,52 @@ export default function TransactionClassifier() {
     };
   }, [handleKeyPress]);
 
-  const [refetchUnclassified, unclassifiedResponse] = useLazyQuery(unclassifiedTransactionsQuery);
-  useEffect(() => {
-    if (!(unclassifiedResponse?.data?.getAggregatedTransactions || unclassifiedResponse?.loading)) {
-      refetchUnclassified({
+  // modifying data
+  const [modifiedTags, setModifiedTags] = useState<string[]>([]);
+  const [modifiedClassification, setModifiedClassification] = useState<string | null>(null);
+
+  const [updateTransactionTags, updateTransactionTagsResult] = useMutation(
+    updateTransactionTagsQuery
+  );
+  const [updateTransactionClassification, updateTransactionClassificationResult] = useMutation(
+    updateTransactionClassificationQuery
+  );
+
+  const handleModifyClassification = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setModifiedClassification(event.target.value);
+    },
+    [setModifiedClassification]
+  );
+
+  const saveChanges = useCallback(async () => {
+    if (!!modifiedTags.length) {
+      await updateTransactionTags({
         variables: {
-          options: {
-            description: true,
-            unclassifiedOnly: true,
-          },
+          force: false,
+          addTags: modifiedTags,
+          removeTags: [],
+          transactionIds: unclassifiedTransactions[resultIndex]?.transactionIds,
         },
       });
     }
-  });
-
-  useEffect(() => {
-    const aggregateResponse = unclassifiedResponse?.data?.getAggregatedTransactions ?? [];
-    if (aggregateResponse.length > 0) {
-      setUnclassifiedTransactions(aggregateResponse);
-      setResultIndex(0);
+    if (!!modifiedClassification) {
+      await updateTransactionClassification({
+        variables: {
+          transactionIds: unclassifiedTransactions[resultIndex]?.transactionIds,
+          classification: modifiedClassification as TransactionClassification,
+        },
+      });
     }
-  }, [unclassifiedResponse?.data, setResultIndex]);
+    await fetchTags({
+      fetchPolicy: 'no-cache',
+    });
+  }, [
+    updateTransactionTags,
+    updateTransactionClassification,
+    modifiedClassification,
+    modifiedTags,
+  ]);
 
   return (
     <>
@@ -286,6 +401,73 @@ export default function TransactionClassifier() {
             <Button variant="contained" onClick={prev} size="large">
               Previous
             </Button>
+
+            <Autocomplete
+              sx={{ width: '400px' }}
+              multiple
+              freeSolo
+              onChange={(event, newValue) => setModifiedTags(newValue)}
+              options={tags.map((option) => option)}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => (
+                  <Chip
+                    {...getTagProps({ index })}
+                    key={option}
+                    size="small"
+                    label={option}
+                    sx={{ marginRight: 1, borderRadius: 1 }}
+                  />
+                ))
+              }
+              renderInput={(params) => <TextField label="Tags" {...params} />}
+            />
+
+            <TextField
+              fullWidth
+              select
+              label="Classification type"
+              value={modifiedClassification}
+              onChange={handleModifyClassification}
+              SelectProps={{
+                MenuProps: {
+                  PaperProps: {
+                    sx: { maxHeight: 240 },
+                  },
+                },
+              }}
+              sx={{
+                maxWidth: { md: '250px' },
+                textTransform: 'capitalize',
+              }}
+            >
+              {Classifications.map((option) => (
+                <MenuItem
+                  key={option}
+                  value={option}
+                  sx={{
+                    mx: 1,
+                    my: 0.5,
+                    borderRadius: 0.75,
+                    typography: 'body2',
+                    textTransform: 'capitalize',
+                    '&:first-of-type': { mt: 0 },
+                    '&:last-of-type': { mb: 0 },
+                  }}
+                >
+                  {option}
+                </MenuItem>
+              ))}
+            </TextField>
+
+            <Button
+              variant="contained"
+              startIcon={<Iconify icon="eva:save-outline" />}
+              onClick={saveChanges}
+              size="large"
+            >
+              Save
+            </Button>
+
             <Button variant="contained" onClick={next} size="large">
               Next
             </Button>
