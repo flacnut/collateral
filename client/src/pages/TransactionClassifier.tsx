@@ -672,11 +672,11 @@ function TransactionTableRow(props: {
           <CustomAvatar name={transaction.description} />
 
           <div>
-            <Typography variant="subtitle2" noWrap color="MenuText">
+            <Typography variant="subtitle2" noWrap color="MenuText" sx={{ color: '#FFF' }}>
               {transaction.description}
             </Typography>
 
-            <Typography noWrap variant="body2">
+            <Typography noWrap variant="body2" sx={{ color: '#919eab' }}>
               {transaction.account.name}
             </Typography>
           </div>

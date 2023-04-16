@@ -1047,11 +1047,11 @@ function TransactionTableRow({
               }}
             >
               <div>
-                <Typography variant="subtitle2" noWrap color="MenuText">
+                <Typography variant="subtitle2" noWrap color="MenuText" sx={{ color: '#FFF' }}>
                   {description}
                 </Typography>
 
-                <Typography noWrap variant="body2">
+                <Typography noWrap variant="body2" sx={{ color: '#919eab' }}>
                   {row.account.name}
                 </Typography>
               </div>
