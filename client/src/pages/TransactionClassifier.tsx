@@ -306,7 +306,6 @@ export default function TransactionClassifier() {
   const [debounceFilterDescription] = useDebounce(filterDescription, 250);
   const handleFilterDescription = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      setResultIndex(0);
       setFilterDescription(event.target.value);
     },
     [setResultIndex, setFilterDescription]
@@ -429,7 +428,7 @@ export default function TransactionClassifier() {
             sx={{ px: 2.5, py: 3 }}
           >
             <Button variant="contained" onClick={prev} size="large">
-              Previous
+              <Iconify icon="eva:chevron-left-outline" />
             </Button>
 
             <Autocomplete
@@ -508,12 +507,13 @@ export default function TransactionClassifier() {
               startIcon={<Iconify icon="eva:save-outline" />}
               onClick={saveChanges}
               size="large"
+              sx={{ width: '200px' }}
             >
               Save
             </Button>
 
             <Button variant="contained" onClick={next} size="large">
-              Next
+              <Iconify icon="eva:chevron-right-outline" />
             </Button>
           </Stack>
         </Card>
