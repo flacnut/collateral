@@ -391,6 +391,12 @@ export default function TransactionClassifier() {
     modifiedTags,
   ]);
 
+  // tabs
+  const [tabStatus, setTabStatus] = useState('all');
+  const handleTabStatus = (event: React.SyntheticEvent<Element, Event>, newValue: string) => {
+    setTabStatus(newValue);
+  };
+
   const TABS = [
     { value: 'all', label: 'All', color: 'warning', count: unclassifiedTransactions.length },
     { value: 'filtered', label: 'Filtered', color: 'info', count: filteredTransactions.length },
@@ -405,6 +411,28 @@ export default function TransactionClassifier() {
     },
   ] as const;
 
+  const sort = useCallback(
+    (tabStatus: string) => {
+      switch (tabStatus) {
+        case 'all':
+          setFilteredTransactions([
+            ...filteredTransactions.sort((a, b) => b.transactionCount - a.transactionCount),
+          ]);
+          break;
+        case 'expense':
+          setFilteredTransactions([
+            ...filteredTransactions.sort((a, b) => b.totalExpenseCents - a.totalExpenseCents),
+          ]);
+          break;
+      }
+    },
+    [filteredTransactions, setFilteredTransactions]
+  );
+
+  useEffect(() => {
+    sort(tabStatus);
+  }, [tabStatus]);
+
   return (
     <>
       <Helmet>
@@ -418,6 +446,8 @@ export default function TransactionClassifier() {
 
         <Card sx={{ marginBottom: 2 }}>
           <Tabs
+            value={tabStatus}
+            onChange={handleTabStatus}
             sx={{
               px: 2,
               bgcolor: 'background.neutral',
