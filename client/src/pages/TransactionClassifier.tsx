@@ -6,10 +6,13 @@ import {
   Card,
   Chip,
   Container,
+  Divider,
   Grid,
   InputAdornment,
   MenuItem,
   Stack,
+  Tab,
+  Tabs,
   TextField,
   Typography,
 } from '@mui/material';
@@ -34,6 +37,8 @@ import {
   AggregatedTransactionTable,
   IAggregatedTransaction,
 } from 'src/components/tables/AggregatedTransactionTable';
+import Label from 'src/components/label';
+import numeral from 'numeral';
 
 // ----------------------------------------------------------------------
 
@@ -386,6 +391,20 @@ export default function TransactionClassifier() {
     modifiedTags,
   ]);
 
+  const TABS = [
+    { value: 'all', label: 'All', color: 'warning', count: unclassifiedTransactions.length },
+    { value: 'filtered', label: 'Filtered', color: 'info', count: filteredTransactions.length },
+    {
+      value: 'expense',
+      label: 'Expense',
+      color: 'error',
+      count:
+        numeral(
+          unclassifiedTransactions.reduce((exp, at) => at.totalExpenseCents + exp, 0) / 100 / 1000
+        ).format('0,0') + 'k',
+    },
+  ] as const;
+
   return (
     <>
       <Helmet>
@@ -398,6 +417,28 @@ export default function TransactionClassifier() {
         </Typography>
 
         <Card sx={{ marginBottom: 2 }}>
+          <Tabs
+            sx={{
+              px: 2,
+              bgcolor: 'background.neutral',
+            }}
+          >
+            {TABS.map((tab) => (
+              <Tab
+                key={tab.value}
+                value={tab.value}
+                label={tab.label}
+                icon={
+                  <Label color={tab.color} sx={{ mr: 1 }}>
+                    {tab.count}
+                  </Label>
+                }
+              />
+            ))}
+          </Tabs>
+
+          <Divider />
+
           <Stack
             spacing={2}
             alignItems="center"
@@ -407,7 +448,7 @@ export default function TransactionClassifier() {
             }}
             sx={{ px: 2.5, py: 3 }}
           >
-            <Button variant="contained" onClick={prev} size="large">
+            <Button variant="contained" onClick={prev} size="large" disabled={resultIndex === 0}>
               <Iconify icon="eva:chevron-left-outline" />
             </Button>
 
@@ -496,7 +537,12 @@ export default function TransactionClassifier() {
               Save
             </Button>
 
-            <Button variant="contained" onClick={next} size="large">
+            <Button
+              variant="contained"
+              onClick={next}
+              size="large"
+              disabled={resultIndex === filteredTransactions.length - 1}
+            >
               <Iconify icon="eva:chevron-right-outline" />
             </Button>
           </Stack>
