@@ -397,16 +397,45 @@ export default function TransactionClassifier() {
     setTabStatus(newValue);
   };
 
+  // TODO: YUCK!
   const TABS = [
-    { value: 'all', label: 'All', color: 'warning', count: unclassifiedTransactions.length },
-    { value: 'filtered', label: 'Filtered', color: 'info', count: filteredTransactions.length },
     {
-      value: 'expense',
-      label: 'Expense',
+      value: 'all',
+      label: 'All Transactions',
+      color: 'info',
+      count: unclassifiedTransactions.length,
+    },
+    {
+      value: 'total_expense',
+      label: 'Total Expense',
       color: 'error',
       count:
         numeral(
           unclassifiedTransactions.reduce((exp, at) => at.totalExpenseCents + exp, 0) / 100 / 1000
+        ).format('0,0') + 'k',
+    },
+    {
+      value: 'total_income',
+      label: 'Total Income',
+      color: 'success',
+      count:
+        numeral(
+          unclassifiedTransactions.reduce((exp, at) => at.totalDepositCents + exp, 0) / 100 / 1000
+        ).format('0,0') + 'k',
+    },
+    {
+      value: 'filtered',
+      label: 'Filtered',
+      color: 'info',
+      count: filteredTransactions.length,
+    },
+    {
+      value: 'filtered_expense',
+      label: 'Filtered Expense',
+      color: 'error',
+      count:
+        numeral(
+          filteredTransactions.reduce((exp, at) => at.totalExpenseCents + exp, 0) / 100 / 1000
         ).format('0,0') + 'k',
     },
   ] as const;
@@ -415,13 +444,20 @@ export default function TransactionClassifier() {
     (tabStatus: string) => {
       switch (tabStatus) {
         case 'all':
+        case 'filtered':
           setFilteredTransactions([
             ...filteredTransactions.sort((a, b) => b.transactionCount - a.transactionCount),
           ]);
           break;
-        case 'expense':
+        case 'total_expense':
+        case 'filtered_expense':
           setFilteredTransactions([
             ...filteredTransactions.sort((a, b) => b.totalExpenseCents - a.totalExpenseCents),
+          ]);
+          break;
+        case 'total_income':
+          setFilteredTransactions([
+            ...filteredTransactions.sort((a, b) => b.totalDepositCents - a.totalDepositCents),
           ]);
           break;
       }
