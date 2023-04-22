@@ -6,6 +6,7 @@ import {
   InputType,
   Query,
   Resolver,
+  ObjectType,
 } from 'type-graphql';
 import { Tag } from '@entities';
 
@@ -13,6 +14,15 @@ import { Tag } from '@entities';
 class TagCreateInput {
   @Field()
   tag: string;
+}
+
+@ObjectType()
+class TagFrequency {
+  @Field(() => [Tag], { nullable: true })
+  tags: Tag[];
+
+  @Field(() => Int)
+  count: number;
 }
 
 @Resolver()
@@ -39,6 +49,32 @@ export class TagResolver {
 
     await Tag.remove(tagToRemove);
     return true;
+  }
+
+  @Query(() => [TagFrequency])
+  async tagsByFrequency() {
+    const tagNameMap: { [key: number]: Tag } = {};
+    (await Tag.find()).forEach((t) => (tagNameMap[t.id] = t));
+
+    const tagsFreqResults = (await Tag.getRepository().query(`
+      SELECT 
+        count(transactionId) as count, 
+        tags 
+      FROM (
+        SELECT 
+          transactionId, 
+          group_concat(tagId) as tags 
+        FROM transaction_tags_tag 
+        GROUP BY transactionId
+      ) 
+      GROUP BY tags`)) as [{ count: number; tags: string }];
+
+    return tagsFreqResults.map((result): TagFrequency => {
+      return {
+        count: result.count,
+        tags: result.tags.split(',').map((id) => tagNameMap[Number(id)]),
+      };
+    });
   }
 
   @Query(() => [Tag])
