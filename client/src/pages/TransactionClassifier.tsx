@@ -376,6 +376,7 @@ export default function TransactionClassifier() {
   );
 
   const saveChanges = useCallback(async () => {
+    console.dir('SAVE!');
     if (!!modifiedTags.length) {
       await updateTransactionTags({
         variables: {
@@ -403,6 +404,7 @@ export default function TransactionClassifier() {
     modifiedClassification,
     modifiedTags,
     fetchTags,
+    next,
   ]);
 
   // tabs
