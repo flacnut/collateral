@@ -219,9 +219,20 @@ mutation updateClassification(
   }
 }`);
 
-const tagsQuery = gql(`query getTags {
+const tagsQuery = gql(`
+query getTags {
   tags {
     name
+  }
+}`);
+
+const similarTagsQuery = gql(`
+query similarTagsQuery {
+  tagsByFrequency {
+    count
+    tags {
+      name
+    }
   }
 }`);
 
@@ -239,6 +250,8 @@ export default function TransactionClassifier() {
   const { themeStretch } = useSettingsContext();
   const [resultIndex, setResultIndex] = useState<number>(-1);
   const [tags, setTags] = useState<string[]>([]);
+  const [similarTags, setSimilarTags] = useState<{ count: number; tags: string[] }[]>([]);
+
   const [unclassifiedTransactions, setUnclassifiedTransactions] = useState<
     GetAggregatedTransactionsQuery['getAggregatedTransactions']
   >([]);
@@ -302,7 +315,19 @@ export default function TransactionClassifier() {
   const [fetchTags, fetchTagResponse] = useLazyQuery(tagsQuery);
   useEffect(() => {
     setTags(Object.values(fetchTagResponse?.data?.tags ?? {}).map((t) => t.name));
-  }, [fetchTagResponse.data]);
+  }, [fetchTagResponse.data, setTags]);
+
+  const [fetchSimilarTags, similarTagsResponse] = useLazyQuery(similarTagsQuery);
+  useEffect(() => {
+    setSimilarTags(
+      (similarTagsResponse?.data?.tagsByFrequency ?? []).map((tf) => {
+        return {
+          count: tf.count,
+          tags: tf.tags.map((t) => t.name),
+        };
+      })
+    );
+  }, [similarTagsResponse.data, setSimilarTags]);
 
   const [refetchUnclassified, unclassifiedResponse] = useLazyQuery(unclassifiedTransactionsQuery);
   useEffect(() => {
@@ -319,6 +344,12 @@ export default function TransactionClassifier() {
 
     if (!fetchTagResponse?.loading) {
       fetchTags({
+        fetchPolicy: 'no-cache',
+      });
+    }
+
+    if (!similarTagsResponse.loading) {
+      fetchSimilarTags({
         fetchPolicy: 'no-cache',
       });
     }
@@ -380,15 +411,17 @@ export default function TransactionClassifier() {
         },
       });
     }
-    await fetchTags({
-      fetchPolicy: 'no-cache',
-    });
+    await fetchTags({ fetchPolicy: 'no-cache' });
+    await fetchSimilarTags({ fetchPolicy: 'no-cache' });
+    next();
   }, [
     filteredTransactions,
     updateTransactionTags,
     updateTransactionClassification,
     modifiedClassification,
     modifiedTags,
+    fetchTags,
+    fetchSimilarTags,
   ]);
 
   // tabs
@@ -468,6 +501,8 @@ export default function TransactionClassifier() {
   useEffect(() => {
     sort(tabStatus);
   }, [tabStatus]);
+
+  console.dir(similarTags.filter((st) => modifiedTags.every((mt) => st.tags.indexOf(mt) != -1)));
 
   return (
     <>
@@ -623,6 +658,28 @@ export default function TransactionClassifier() {
             description={filteredTransactions[resultIndex]?.description}
             applyClassification={applyClassification}
           />
+        </Card>
+
+        <Card sx={{ pt: 5, px: 5, marginBottom: 2 }}>
+          {modifiedTags.length > 0 &&
+            similarTags
+              .filter((st) => modifiedTags.every((mt) => st.tags.indexOf(mt) != -1))
+              .sort()
+              .map((st) => {
+                return (
+                  <div key={st.tags.join('::')}>
+                    <span>{st.count}</span>
+                    {st.tags.map((t) => (
+                      <Chip
+                        key={t}
+                        size="small"
+                        label={t}
+                        sx={{ marginRight: 1, borderRadius: 1 }}
+                      />
+                    ))}
+                  </div>
+                );
+              })}
         </Card>
 
         <Card>

@@ -18,7 +18,7 @@ class TagCreateInput {
 
 @ObjectType()
 class TagFrequency {
-  @Field(() => [Tag], { nullable: true })
+  @Field(() => [Tag])
   tags: Tag[];
 
   @Field(() => Int)
