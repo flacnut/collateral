@@ -20,6 +20,7 @@ import {
   Transfers,
   TransactionView,
   TransactionClassifier,
+  TransactionCharts,
 } from './elements';
 
 // ----------------------------------------------------------------------
@@ -58,6 +59,7 @@ export default function Router() {
             { path: 'list', element: <Transactions /> },
             { path: 'transfers', element: <Transfers /> },
             { path: 'classify', element: <TransactionClassifier /> },
+            { path: 'charts', element: <TransactionCharts /> },
             { path: ':id', element: <TransactionView /> },
           ],
         },

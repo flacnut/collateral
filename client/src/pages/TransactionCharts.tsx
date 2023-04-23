@@ -36,7 +36,7 @@ export default function TransactionCharts() {
         classification: at.classification,
       };
     })
-    .filter((t) => t.classification === 'Expense');
+    .filter((t) => t.classification === 'expense');
   console.dir(expenses);
 
   return (
