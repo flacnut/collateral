@@ -46,6 +46,8 @@ const unclassifiedTransactionsQuery = gql(`
 query getAggregatedTransactions($options: QueryAggregationOptions!) {
   getAggregatedTransactions(options:$options) {
     description
+    month
+    classification
     totalExpenseCents
     totalDepositCents
     transactionCount
@@ -376,7 +378,6 @@ export default function TransactionClassifier() {
   );
 
   const saveChanges = useCallback(async () => {
-    console.dir('SAVE!');
     if (!!modifiedTags.length) {
       await updateTransactionTags({
         variables: {

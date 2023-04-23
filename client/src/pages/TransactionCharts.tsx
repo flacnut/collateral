@@ -1,9 +1,44 @@
+import { useQuery } from '@apollo/client';
 import { Container, Typography } from '@mui/material';
 import { Helmet } from 'react-helmet-async';
 import { useSettingsContext } from 'src/components/settings';
+import { gql } from 'src/__generated__';
+
+const getAggregatedTransactionsQuery = gql(`
+query getAggregatedTransactions($options: QueryAggregationOptions!) {
+  getAggregatedTransactions(options:$options) {
+    description
+    month
+    classification
+    totalExpenseCents
+    totalDepositCents
+    transactionCount
+    transactionIds
+  }
+}`);
 
 export default function TransactionCharts() {
   const { themeStretch } = useSettingsContext();
+  const { data } = useQuery(getAggregatedTransactionsQuery, {
+    variables: {
+      options: {
+        month: true,
+        classification: true,
+      },
+    },
+  });
+
+  const expenses = data?.getAggregatedTransactions
+    .map((at) => {
+      return {
+        amount: (at.totalExpenseCents * -1 + at.totalDepositCents) / 100,
+        month: at.month,
+        classification: at.classification,
+      };
+    })
+    .filter((t) => t.classification === 'Expense');
+  console.dir(expenses);
+
   return (
     <>
       <Helmet>

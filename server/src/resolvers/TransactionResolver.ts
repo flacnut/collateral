@@ -178,7 +178,8 @@ export class TransactionResolver {
     const getGroupKey = async (t: CoreTransaction): Promise<string> => {
       let key = '';
       if (options.account) key += '::' + t.accountId;
-      if (options.classification) key += '::' + t.classification.toString();
+      if (options.classification)
+        key += '::' + (t.classification ?? '').toString();
       if (options.description) key += '::' + t.description;
       if (options.month)
         key += '::' + getMonthNormalizeDate(t.date).toLocaleDateString();
@@ -193,11 +194,14 @@ export class TransactionResolver {
       return key;
     };
 
-    let allTransactions = await CoreTransaction.find({
-      where: {
-        classification: options.unclassifiedOnly ? IsNull() : null,
-      },
-    });
+    let queryOptions = { where: {} };
+    if (options.unclassifiedOnly) {
+      queryOptions.where = {
+        classification: IsNull(),
+      };
+    }
+
+    let allTransactions = await CoreTransaction.find(queryOptions);
     let groups: { [key: string]: AggregatedTransaction } = {};
 
     if (!!options.unclassifiedOnly) {
@@ -221,7 +225,7 @@ export class TransactionResolver {
 
           if (options.account) groups[key].account = await t.account();
           if (options.classification)
-            groups[key].classification = t.classification.toString();
+            groups[key].classification = (t.classification ?? '').toString();
           if (options.description) groups[key].description = t.description;
           if (options.month)
             groups[key].month = getMonthNormalizeDate(
