@@ -330,6 +330,7 @@ export default function TransactionClassifier() {
             unclassifiedOnly: true,
           },
         },
+        fetchPolicy: 'no-cache',
       });
     }
 
