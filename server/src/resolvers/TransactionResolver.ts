@@ -357,15 +357,16 @@ export class TransactionResolver {
   }
 
   @Query(() => [GroupedTransactions])
-  async getDuplicates(@Arg('accountId', () => String) accountId: string) {
-    const transactions = await CoreTransaction.find({ accountId });
+  async getDuplicates(
+    @Arg('accountId', () => String, { nullable: true }) accountId: string,
+  ) {
     const reducer = (
       memo: { [key: string]: CoreTransaction[] },
       x: CoreTransaction,
     ) => {
       const key = `${Math.abs(x.amountCents)}__${x.date}__${x.description
         .toLocaleLowerCase()
-        .trim()}`;
+        .trim()}__${x.accountId}`;
 
       if (!memo[key]) {
         memo[key] = [];
@@ -376,6 +377,12 @@ export class TransactionResolver {
       return memo;
     };
 
+    const findOptions = {} as FindManyOptions<CoreTransaction>;
+    if (!!accountId) {
+      findOptions.where = { accountId };
+    }
+
+    const transactions = await CoreTransaction.find(findOptions);
     const results = transactions.reduce(reducer, {});
 
     return Object.keys(results)
