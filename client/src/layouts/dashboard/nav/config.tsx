@@ -33,6 +33,7 @@ const navConfig = [
         children: [
           { title: 'list', path: PATH_DASHBOARD.transactions.list },
           { title: 'classify', path: PATH_DASHBOARD.transactions.classify },
+          { title: 'duplicates', path: PATH_DASHBOARD.transactions.duplicates },
           {
             title: 'transfers',
             path: PATH_DASHBOARD.transactions.transfers,

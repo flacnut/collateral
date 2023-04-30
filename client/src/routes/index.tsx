@@ -21,6 +21,7 @@ import {
   TransactionView,
   TransactionClassifier,
   TransactionCharts,
+  TransactionDuplicates,
 } from './elements';
 
 // ----------------------------------------------------------------------
@@ -59,6 +60,7 @@ export default function Router() {
             { path: 'list', element: <Transactions /> },
             { path: 'transfers', element: <Transfers /> },
             { path: 'classify', element: <TransactionClassifier /> },
+            { path: 'duplicates', element: <TransactionDuplicates /> },
             { path: 'charts', element: <TransactionCharts /> },
             { path: ':id', element: <TransactionView /> },
           ],

@@ -22,6 +22,7 @@ export const PATH_DASHBOARD = {
     transfers: path(ROOTS_DASHBOARD, '/transactions/transfers'),
     classify: path(ROOTS_DASHBOARD, '/transactions/classify'),
     charts: path(ROOTS_DASHBOARD, '/transactions/charts'),
+    duplicates: path(ROOTS_DASHBOARD, '/transactions/duplicates'),
     view: (id: string) => path(ROOTS_DASHBOARD, `/transactions/${id}`),
     edit: (id: string) => path(ROOTS_DASHBOARD, `/transactions/${id}/edit`),
   },
