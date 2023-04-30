@@ -1,7 +1,8 @@
 import { useLazyQuery } from '@apollo/client';
-import { Container, Typography } from '@mui/material';
+import { Button, Card, Container, Stack, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
+import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import { IBasicTransaction } from 'src/components/tables/BasicTransactionTable';
 import { gql } from 'src/__generated__';
@@ -105,11 +106,34 @@ export default function TransactionDuplicates() {
           Transaction Duplicates
         </Typography>
 
-        <pre>
-          {JSON.stringify(
-            duplicates.length > 0 && resultIndex !== -1 ? duplicates[resultIndex] : {}
-          )}
-        </pre>
+        <Card sx={{ marginBottom: 2 }}>
+          <Stack
+            spacing={2}
+            alignItems="center"
+            direction={{
+              xs: 'column',
+              md: 'row',
+            }}
+            sx={{ px: 2.5, py: 3 }}
+          >
+            <Button variant="contained" onClick={prev} size="large" disabled={resultIndex === 0}>
+              <Iconify icon="eva:chevron-left-outline" />
+            </Button>
+
+            <Typography variant="h3" component="h3" sx={{ width: '100%', textAlign: 'center' }}>
+              {duplicates[resultIndex]?.key.split('__').join(' - ')}
+            </Typography>
+
+            <Button
+              variant="contained"
+              onClick={next}
+              size="large"
+              disabled={resultIndex === duplicates.length - 1}
+            >
+              <Iconify icon="eva:chevron-right-outline" />
+            </Button>
+          </Stack>
+        </Card>
       </Container>
     </>
   );
