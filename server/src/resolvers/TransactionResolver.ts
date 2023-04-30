@@ -588,4 +588,10 @@ export class TransactionResolver {
 
     return await transaction.save();
   }
+
+  @Mutation(() => Boolean)
+  async deletePending() {
+    const transactionIds = await Transaction.find({ pending: true });
+    return this.deleteTransactions(transactionIds.map((t) => t.id));
+  }
 }
