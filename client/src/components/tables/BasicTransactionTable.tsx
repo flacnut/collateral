@@ -1,4 +1,5 @@
 import {
+  Button,
   Chip,
   Stack,
   Table,
@@ -8,6 +9,7 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
+import { useCallback } from 'react';
 import { fCurrency } from 'src/utils/formatNumber';
 import { fDate } from 'src/utils/formatTime';
 import { CustomAvatar } from '../custom-avatar';
@@ -42,8 +44,12 @@ export type IBasicAccount = {
   name: string;
 };
 
-export function BasicTransactionTable(props: { transactions: IBasicTransaction[] }) {
-  const { transactions } = props;
+export function BasicTransactionTable(props: {
+  transactions: IBasicTransaction[];
+  action?: (transaction: IBasicTransaction) => void;
+  actionText?: string;
+}) {
+  const { transactions, action, actionText } = props;
   const TABLE_HEAD = [
     { id: 'description', label: 'Description', align: 'left' },
     { id: 'amount', label: 'Amount', align: 'right', width: 180 },
@@ -51,6 +57,10 @@ export function BasicTransactionTable(props: { transactions: IBasicTransaction[]
     { id: 'classification', label: 'Classification', align: 'center', width: 240 },
     { id: 'tags', label: 'Tags', align: 'left' },
   ];
+
+  if (action && actionText) {
+    TABLE_HEAD.push({ id: 'action', label: '', align: 'left', width: 0 });
+  }
 
   const { safe, page, order, orderBy, onSort, onChangeSafe, onChangePage } = useTable({
     defaultRowsPerPage: 25,
@@ -72,7 +82,13 @@ export function BasicTransactionTable(props: { transactions: IBasicTransaction[]
 
             <TableBody>
               {transactions.slice(page * 25, page * 25 + 25).map((transaction) => (
-                <TransactionTableRow key={transaction.id} transaction={transaction} safe={safe} />
+                <TransactionTableRow
+                  key={transaction.id}
+                  transaction={transaction}
+                  safe={safe}
+                  action={action}
+                  actionText={actionText}
+                />
               ))}
               <TableEmptyRows height={56} emptyRows={emptyRows(page, 25, transactions.length)} />
             </TableBody>
@@ -96,8 +112,21 @@ function TransactionTableRow(props: {
   key: string;
   transaction: IBasicTransaction;
   safe: boolean;
+  action?: (transaction: IBasicTransaction) => void;
+  actionText?: string;
 }) {
-  const { transaction, safe } = props;
+  const { transaction, safe, action, actionText } = props;
+  const performAction = useCallback(() => action && action(transaction), [action]);
+
+  const actionCell =
+    action && actionText ? (
+      <TableCell align="left" sx={{ textTransform: 'capitalize' }}>
+        <Button variant="outlined" size="small" onClick={performAction} color="secondary">
+          {actionText}
+        </Button>
+      </TableCell>
+    ) : null;
+
   return (
     <TableRow hover>
       <TableCell>
@@ -158,6 +187,8 @@ function TransactionTableRow(props: {
           />
         ))}
       </TableCell>
+
+      {actionCell}
     </TableRow>
   );
 }
