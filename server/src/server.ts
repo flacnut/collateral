@@ -28,7 +28,10 @@ export default async function StartServer() {
   app.post('/login', (req, res) => {
     console.dir(req.body);
     const token = jwt.sign(
-      { exp: Math.floor(Date.now() / 1000) + 60 * 60, data: req.body.email },
+      {
+        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24, // 1 day
+        data: req.body.email,
+      },
       secret,
     );
     res.json({
