@@ -4,7 +4,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
-import { IBasicTransaction } from 'src/components/tables/BasicTransactionTable';
+import {
+  BasicTransactionTable,
+  IBasicTransaction,
+} from 'src/components/tables/BasicTransactionTable';
 import { gql } from 'src/__generated__';
 
 const getDuplicatesQuery = gql(`
@@ -133,6 +136,14 @@ export default function TransactionDuplicates() {
               <Iconify icon="eva:chevron-right-outline" />
             </Button>
           </Stack>
+        </Card>
+
+        <Card>
+          <BasicTransactionTable
+            transactions={duplicates[resultIndex]?.transactions ?? []}
+            action={console.dir}
+            actionText={'keep'}
+          />
         </Card>
       </Container>
     </>
