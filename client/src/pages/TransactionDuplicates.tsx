@@ -1,8 +1,9 @@
 import { useLazyQuery } from '@apollo/client';
 import { Container, Typography } from '@mui/material';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useSettingsContext } from 'src/components/settings';
+import { IBasicTransaction } from 'src/components/tables/BasicTransactionTable';
 import { gql } from 'src/__generated__';
 
 const getDuplicatesQuery = gql(`
@@ -10,17 +11,40 @@ query getDuplicates($accountId: String) {
   getDuplicates(accountId:$accountId) {
     key
     transactions {
-      id
-      amountCents
+      ...CoreParts
+      account {
+        id
+        name
+      }
+      tags {
+        name
+      }
     }
   }
+}
+
+fragment CoreParts on CoreTransaction {
+  id
+  accountId
+  description
+  amountCents
+  amount
+  date
+  currency
+  classification
 }`);
+
+type Duplicate = {
+  key: string;
+  transactions: IBasicTransaction[];
+};
 
 export default function TransactionDuplicates() {
   const { themeStretch } = useSettingsContext();
+  const [duplicates, setDuplicates] = useState<Duplicate[]>([]);
 
+  // Loading data
   const [fetchDuplicates, fetchDuplicatesResult] = useLazyQuery(getDuplicatesQuery);
-
   useEffect(() => {
     fetchDuplicates({
       variables: {},
