@@ -1,8 +1,9 @@
 import { useLazyQuery } from '@apollo/client';
-import { Button, Card, Container, Stack, Typography } from '@mui/material';
+import { Button, Card, Container, Divider, Stack, Tab, Tabs, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import Iconify from 'src/components/iconify';
+import Label from 'src/components/label';
 import { useSettingsContext } from 'src/components/settings';
 import {
   BasicTransactionTable,
@@ -43,10 +44,38 @@ type Duplicate = {
   transactions: IBasicTransaction[];
 };
 
+type Tab = { value: string; label: string; count: number };
+
+function getTabsArray(duplicates: Duplicate[]): Array<Tab> {
+  let accountCounts = duplicates.reduce(
+    (accountCount: { [accountName: string]: number }, duplicateSet) => {
+      let transaction = duplicateSet.transactions[0];
+
+      if (!accountCount[transaction.account.name]) {
+        accountCount[transaction.account.name] = 0;
+      }
+
+      accountCount[transaction.account.name] = accountCount[transaction.account.name] + 1;
+      return accountCount;
+    },
+    {}
+  );
+
+  return Object.keys(accountCounts).map((accountName, index) => {
+    return {
+      value: accountName,
+      label: accountName,
+      count: accountCounts[accountName],
+    };
+  });
+}
+
 export default function TransactionDuplicates() {
   const { themeStretch } = useSettingsContext();
   const [resultIndex, setResultIndex] = useState<number>(-1);
   const [duplicates, setDuplicates] = useState<Duplicate[]>([]);
+  const [filteredDuplicates, setFilteredDuplicates] = useState<Duplicate[]>([]);
+  const [tabs, setTabs] = useState<Tab[]>([]);
 
   // Loading data
   const [fetchDuplicates, fetchDuplicatesResult] = useLazyQuery(getDuplicatesQuery);
@@ -64,7 +93,10 @@ export default function TransactionDuplicates() {
 
     setDuplicates(duplicateData);
     if (duplicateData.length > 0) {
+      const tabData = getTabsArray(duplicateData);
       setResultIndex(0);
+      setTabs(tabData);
+      setTabStatus(tabData[0]?.value ?? '');
     }
   }, [fetchDuplicatesResult.data?.getDuplicates, setDuplicates]);
 
@@ -98,6 +130,25 @@ export default function TransactionDuplicates() {
     };
   }, [handleKeyPress]);
 
+  // tabs
+  const [tabStatus, setTabStatus] = useState('');
+  const handleTabStatus = (_: React.SyntheticEvent<Element, Event>, newValue: string) => {
+    setTabStatus(newValue);
+  };
+
+  const applyFilter = useCallback(
+    (tabStatus: string, duplicates: Duplicate[]) => {
+      const filtered = duplicates.filter((d) => d.transactions[0].account.name === tabStatus);
+      setFilteredDuplicates(filtered);
+      setResultIndex(0);
+    },
+    [setResultIndex, setFilteredDuplicates]
+  );
+
+  useEffect(() => {
+    applyFilter(tabStatus, duplicates);
+  }, [tabStatus, duplicates]);
+
   return (
     <>
       <Helmet>
@@ -110,6 +161,29 @@ export default function TransactionDuplicates() {
         </Typography>
 
         <Card sx={{ marginBottom: 2 }}>
+          <Tabs
+            value={tabStatus}
+            onChange={handleTabStatus}
+            sx={{
+              px: 2,
+              bgcolor: 'background.neutral',
+            }}
+          >
+            {tabs.map((tab) => (
+              <Tab
+                key={tab.value}
+                value={tab.value}
+                label={tab.label}
+                icon={
+                  <Label color="info" sx={{ mr: 1 }}>
+                    {tab.count}
+                  </Label>
+                }
+              />
+            ))}
+          </Tabs>
+
+          <Divider />
           <Stack
             spacing={2}
             alignItems="center"
@@ -131,7 +205,7 @@ export default function TransactionDuplicates() {
               variant="contained"
               onClick={next}
               size="large"
-              disabled={resultIndex === duplicates.length - 1}
+              disabled={resultIndex === filteredDuplicates.length - 1}
             >
               <Iconify icon="eva:chevron-right-outline" />
             </Button>
@@ -140,7 +214,7 @@ export default function TransactionDuplicates() {
 
         <Card>
           <BasicTransactionTable
-            transactions={duplicates[resultIndex]?.transactions ?? []}
+            transactions={filteredDuplicates[resultIndex]?.transactions ?? []}
             action={console.dir}
             actionText={'keep'}
           />
