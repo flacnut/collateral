@@ -1,4 +1,4 @@
-import { useLazyQuery } from '@apollo/client';
+import { useLazyQuery, useMutation } from '@apollo/client';
 import { Button, Card, Container, Divider, Stack, Tab, Tabs, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
@@ -39,7 +39,8 @@ fragment CoreParts on CoreTransaction {
   classification
 }`);
 
-const deleteTransactionsMutation = gql(`mutation deleteTransactions($transactionIds: [String!]!) {
+const deleteTransactionsMutation = gql(`
+mutation deleteTransactions($transactionIds: [String!]!) {
   deleteTransactions(transactionIds:$transactionIds) 
 }`);
 
@@ -49,7 +50,6 @@ type Duplicate = {
 };
 
 type Tab = { value: string; label: string; count: number };
-
 function getTabsArray(duplicates: Duplicate[]): Array<Tab> {
   let accountCounts = duplicates.reduce(
     (accountCount: { [accountName: string]: number }, duplicateSet) => {
@@ -86,6 +86,7 @@ export default function TransactionDuplicates() {
   useEffect(() => {
     fetchDuplicates({
       variables: {},
+      fetchPolicy: 'no-cache',
     });
   }, []);
 
@@ -104,14 +105,37 @@ export default function TransactionDuplicates() {
     }
   }, [fetchDuplicatesResult.data?.getDuplicates, setDuplicates]);
 
+  // Delete
+  const [deleteTransactions, deleteTransactionsResult] = useMutation(deleteTransactionsMutation);
+  const performDelete = useCallback(
+    (keepTransaction: IBasicTransaction) => {
+      if (deleteTransactionsResult.loading) {
+        return;
+      }
+
+      const idsToDelete = filteredDuplicates[resultIndex]?.transactions
+        .filter((t) => t.id !== keepTransaction.id)
+        .map((t) => t.id);
+
+      if (idsToDelete.length === filteredDuplicates[resultIndex]?.transactions.length) {
+        console.error('Error: Tried delete everything!');
+        return;
+      }
+
+      deleteTransactions({ variables: { transactionIds: idsToDelete } });
+      next();
+    },
+    [deleteTransactions, deleteTransactionsResult, filteredDuplicates[resultIndex]?.transactions]
+  );
+
   // navigation
   const prev = useCallback(() => {
     setResultIndex(Math.max(resultIndex - 1, 0));
   }, [setResultIndex, resultIndex]);
 
   const next = useCallback(() => {
-    setResultIndex(Math.min(resultIndex + 1, duplicates.length - 1));
-  }, [setResultIndex, resultIndex, duplicates]);
+    setResultIndex(Math.min(resultIndex + 1, filteredDuplicates.length - 1));
+  }, [setResultIndex, resultIndex, filteredDuplicates]);
 
   const handleKeyPress = useCallback(
     (event: { key: any }) => {
@@ -219,7 +243,7 @@ export default function TransactionDuplicates() {
         <Card>
           <BasicTransactionTable
             transactions={filteredDuplicates[resultIndex]?.transactions ?? []}
-            action={console.dir}
+            action={performDelete}
             actionText={'keep'}
           />
         </Card>
