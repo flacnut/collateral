@@ -20,6 +20,7 @@ import {
   Transfer,
 } from '@entities';
 import {
+  BaseTransaction,
   DateAmountAccountTuple,
   MatchTransfers,
 } from '../../src/utils/AccountUtils';
@@ -85,6 +86,15 @@ class AggregatedTransaction {
 
   @Field(() => [String])
   transactionIds: String[];
+}
+
+@ObjectType()
+class GroupedTransactions {
+  @Field(() => [CoreTransaction])
+  transactions: BaseTransaction[];
+
+  @Field(() => String)
+  key: string;
 }
 
 const AnyTransaction = createUnionType({
@@ -346,10 +356,42 @@ export class TransactionResolver {
     return transferWrites;
   }
 
+  @Query(() => [GroupedTransactions])
+  async getDuplicates(@Arg('accountId', () => String) accountId: string) {
+    const transactions = await CoreTransaction.find({ accountId });
+    const reducer = (
+      memo: { [key: string]: CoreTransaction[] },
+      x: CoreTransaction,
+    ) => {
+      const key = `${Math.abs(x.amountCents)}__${x.date}__${x.description
+        .toLocaleLowerCase()
+        .trim()}`;
+
+      if (!memo[key]) {
+        memo[key] = [];
+      }
+
+      memo[key].push(x);
+
+      return memo;
+    };
+
+    const results = transactions.reduce(reducer, {});
+
+    return Object.keys(results)
+      .map((key) => {
+        return {
+          key,
+          transactions: results[key],
+        };
+      })
+      .filter((gt) => gt.transactions.length > 1)
+      .sort((a, b) => b.transactions.length - a.transactions.length);
+  }
+
   // *************
   // EDIT / UPDATE
   // *************
-
   @Mutation(() => [AnyTransaction])
   async updateTransactionDescription(
     @Arg('transactionIds', () => [String]) transactionIds: string[],
