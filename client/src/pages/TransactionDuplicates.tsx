@@ -39,6 +39,10 @@ fragment CoreParts on CoreTransaction {
   classification
 }`);
 
+const deleteTransactionsMutation = gql(`mutation deleteTransactions($transactionIds: [String!]!) {
+  deleteTransactions(transactionIds:$transactionIds) 
+}`);
+
 type Duplicate = {
   key: string;
   transactions: IBasicTransaction[];
