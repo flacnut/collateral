@@ -358,7 +358,9 @@ export class TransactionResolver {
 
   @Query(() => [GroupedTransactions])
   async getTransactionsByTags(
-    @Arg('classifications', () => [TransactionClassification])
+    @Arg('classifications', () => [TransactionClassification], {
+      nullable: true,
+    })
     classifications: TransactionClassification[],
     @Arg('tags', () => [String]) tags: string[],
   ) {
