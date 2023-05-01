@@ -24,9 +24,9 @@ import {
   DateAmountAccountTuple,
   MatchTransfers,
 } from '../../src/utils/AccountUtils';
+import { FindConditions, FindManyOptions, In, IsNull, Not } from 'typeorm';
 import { TransactionClassification } from 'src/entity/CoreTransaction';
 import { UnsavedTransfer } from '../../src/entity/Transfer';
-import { FindManyOptions, In, IsNull, Not } from 'typeorm';
 
 @InputType()
 class QueryTransactionsByPropertyOptions {
@@ -354,6 +354,82 @@ export class TransactionResolver {
     await Transfer.getRepository().save(transferWrites);
 
     return transferWrites;
+  }
+
+  @Query(() => [GroupedTransactions])
+  async getTransactionsByTags(
+    @Arg('classifications', () => [TransactionClassification])
+    classifications: TransactionClassification[],
+    @Arg('tags', () => [String]) tags: string[],
+  ) {
+    // get Tag Ids
+    const allTags = await Tag.find();
+    const tagIds = allTags
+      .filter((t) => tags.indexOf(t.name) != -1)
+      .map((t) => t.id);
+
+    const transactionsForTagsResult = (await Tag.getRepository().query(`
+      SELECT 
+        transactionId
+      FROM 
+        transaction_tags_tag
+      WHERE
+        tagId IN (${tagIds.join(',')})
+      GROUP BY transactionId`)) as [{ transactionId: string }];
+
+    // get Transactions
+    let filters: FindConditions<CoreTransaction> = {
+      id: In(transactionsForTagsResult.map((t) => t.transactionId)),
+    };
+
+    if (classifications.length > 0) {
+      filters.classification = In(classifications);
+    }
+
+    const transactions = await CoreTransaction.find({
+      where: filters,
+    });
+
+    const syncTagTransactions = await Promise.all(
+      transactions.map(async (t) => {
+        return {
+          ...t,
+          syncTags: await t.tags,
+        } as CoreTransaction & { syncTags: Tag[] };
+      }),
+    );
+
+    // Reduce and return
+    const reducer = (
+      memo: { [key: string]: (CoreTransaction & { syncTags: Tag[] })[] },
+      x: CoreTransaction & { syncTags: Tag[] },
+    ) => {
+      const key = `${x.syncTags
+        .map((t) => t.name)
+        .sort()
+        .join('::')}__${
+        classifications.length > 0 ? x.classification : 'ignore'
+      }`;
+
+      if (!memo[key]) {
+        memo[key] = [];
+      }
+
+      memo[key].push(x);
+
+      return memo;
+    };
+
+    const results = syncTagTransactions.reduce(reducer, {});
+    return Object.keys(results)
+      .map((key) => {
+        return {
+          key,
+          transactions: results[key],
+        };
+      })
+      .filter((gt) => gt.transactions.length > 1)
+      .sort((a, b) => b.transactions.length - a.transactions.length);
   }
 
   @Query(() => [GroupedTransactions])
