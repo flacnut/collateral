@@ -22,7 +22,7 @@ const navConfig = [
   // GENERAL
   // ----------------------------------------------------------------------
   {
-    subheader: 'general v4.0.0',
+    subheader: 'accounts',
     items: [
       { title: 'Dashboard', path: PATH_DASHBOARD.dashboard, icon: ICONS.dashboard },
       { title: 'Items', path: PATH_DASHBOARD.items, icon: ICONS.banking },
@@ -44,6 +44,13 @@ const navConfig = [
     ],
   },
 
+  // ASSETS
+  // ----------------------------------------------------------------------
+  {
+    subheader: 'assets',
+    items: [],
+  },
+
   // MANAGEMENT
   // ----------------------------------------------------------------------
   {
@@ -53,11 +60,7 @@ const navConfig = [
         title: 'user',
         path: PATH_DASHBOARD.user.root,
         icon: ICONS.user,
-        children: [
-          { title: 'Four', path: PATH_DASHBOARD.user.four },
-          { title: 'Five', path: PATH_DASHBOARD.user.five },
-          { title: 'Six', path: PATH_DASHBOARD.user.six },
-        ],
+        children: [],
       },
     ],
   },
