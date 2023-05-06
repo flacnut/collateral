@@ -427,7 +427,9 @@ export class TransactionResolver {
       .map((key) => {
         return {
           key,
-          transactions: results[key],
+          transactions: results[key].map((t) => {
+            return { ...t, tags: t.syncTags };
+          }),
         };
       })
       .filter((gt) => gt.transactions.length > 1)
