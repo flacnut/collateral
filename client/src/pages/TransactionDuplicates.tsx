@@ -37,6 +37,9 @@ fragment CoreParts on CoreTransaction {
   date
   currency
   classification
+  tags {
+    name
+	}
 }`);
 
 const deleteTransactionsMutation = gql(`

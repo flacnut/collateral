@@ -32,6 +32,34 @@ query getAggregatedTransactions($options: QueryAggregationOptions!) {
   }
 }`);
 
+const getTransactionsByTagsQuery = gql(`
+query getTransactionsByTags($tags:[String!]!, $classifications:[TransactionClassification!]) {
+  getTransactionsByTags(classifications:$classifications, tags:$tags) {
+    key
+    transactions {
+			...CoreParts
+      account {
+        id
+        name
+      }
+    }
+  }
+}
+
+fragment CoreParts on CoreTransaction {
+  id
+  accountId
+  description
+  amountCents
+  amount
+  date
+  currency
+  classification
+  tags {
+    name
+	}
+}`);
+
 export default function TransactionCharts() {
   const { themeStretch } = useSettingsContext();
   const { data } = useQuery(getAggregatedTransactionsQuery, {
