@@ -75,28 +75,22 @@ export default function TransactionCharts() {
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <BankingWidgetSummary
-              title="Expenses"
-              color="error"
-              icon="eva:diagonal-arrow-right-up-fill"
-              percent={-0.5}
-              total={8938}
-              chart={{
-                series: [],
-              }}
+            <TransactionSummaryWidget
+              title="Petrol"
+              color="info"
+              tags={['Petrol']}
+              classifications={[TransactionClassification.Expense]}
+              invert={true}
             />
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <BankingWidgetSummary
-              title="Recurring"
+            <TransactionSummaryWidget
+              title="Restaurant"
               color="warning"
-              icon="eva:diagonal-arrow-right-up-fill"
-              percent={-0.5}
-              total={8938}
-              chart={{
-                series: [],
-              }}
+              tags={['Restaurant']}
+              classifications={[TransactionClassification.Expense]}
+              invert={true}
             />
           </Grid>
         </Grid>
@@ -125,6 +119,7 @@ interface WidgetProps extends CardProps {
   classifications: TransactionClassification[];
   color?: ColorSchema;
   smoothing?: boolean;
+  invert?: boolean;
 }
 
 type ApexData = {
@@ -195,7 +190,7 @@ function TransactionSummaryWidget(props: WidgetProps) {
           memo[date.getTime()] = 0;
         }
 
-        memo[date.getTime()] += t.amountCents;
+        memo[date.getTime()] += props.invert ? t.amountCents * -1 : t.amountCents;
         return memo;
       },
       {}
@@ -280,7 +275,9 @@ function TransactionSummaryWidget(props: WidgetProps) {
       {...props}
     >
       <Iconify
-        icon="eva:diagonal-arrow-left-down-fill"
+        icon={
+          props.invert ? 'eva:diagonal-arrow-right-up-fill' : 'eva:diagonal-arrow-left-down-fill'
+        }
         sx={{
           p: 1.5,
           top: 24,
