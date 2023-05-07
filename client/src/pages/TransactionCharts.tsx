@@ -370,7 +370,7 @@ function TransactionSummaryWidget(props: WidgetProps) {
       },
       marker: { show: false },
       y: {
-        formatter: (value: number) => fCurrency(value / 100),
+        formatter: (value: number) => (props.safe ? '$ X,XXX.XX' : fCurrency(value / 100)),
         title: {
           formatter: () => '',
         },
@@ -436,7 +436,9 @@ function TransactionSummaryWidget(props: WidgetProps) {
       <Stack spacing={1} sx={{ p: 3 }}>
         <Typography variant="subtitle2">{props.title}</Typography>
 
-        <Typography variant="h3">{fCurrency(thisMonth / 100)}</Typography>
+        <Typography variant="h3">
+          {props.safe ? '$ X,XXX.XX' : fCurrency(thisMonth / 100)}
+        </Typography>
 
         <TrendingInfo percent={changePct} compareTo={'last month'} />
         <TrendingInfo percent={avgPct} compareTo={'average'} />
