@@ -1,4 +1,4 @@
-import { useQuery } from '@apollo/client';
+import { useLazyQuery } from '@apollo/client';
 import {
   alpha,
   Box,
@@ -18,19 +18,9 @@ import { useSettingsContext } from 'src/components/settings';
 import { ColorSchema } from 'src/theme/palette';
 import { fCurrency, fPercent } from 'src/utils/formatNumber';
 import { gql } from 'src/__generated__';
-
-const getAggregatedTransactionsQuery = gql(`
-query getAggregatedTransactions($options: QueryAggregationOptions!) {
-  getAggregatedTransactions(options:$options) {
-    description
-    month
-    classification
-    totalExpenseCents
-    totalDepositCents
-    transactionCount
-    transactionIds
-  }
-}`);
+import { useEffect, useState } from 'react';
+import { IBasicTransaction } from 'src/components/tables/BasicTransactionTable';
+import { TransactionClassification } from 'src/__generated__/graphql';
 
 const getTransactionsByTagsQuery = gql(`
 query getTransactionsByTags($tags:[String!]!, $classifications:[TransactionClassification!]) {
@@ -62,50 +52,6 @@ fragment CoreParts on CoreTransaction {
 
 export default function TransactionCharts() {
   const { themeStretch } = useSettingsContext();
-  const { data } = useQuery(getAggregatedTransactionsQuery, {
-    variables: {
-      options: {
-        month: true,
-        classification: true,
-      },
-    },
-  });
-
-  const expenses = data?.getAggregatedTransactions
-    .filter((t) => t.classification === 'expense')
-    .map((at) => {
-      return {
-        amount: (at.totalExpenseCents * -1 + at.totalDepositCents) / 100,
-        month: at.month ?? '',
-        classification: at.classification,
-      };
-    })
-    .sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime())
-    .reverse();
-
-  const income = data?.getAggregatedTransactions
-    .filter((t) => t.classification === 'income')
-    .map((at) => {
-      return {
-        amount: (at.totalExpenseCents * -1 + at.totalDepositCents) / 100,
-        month: at.month ?? '',
-        classification: at.classification,
-      };
-    })
-    .sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime())
-    .reverse();
-
-  const recurring = data?.getAggregatedTransactions
-    .filter((t) => t.classification === 'recurring')
-    .map((at) => {
-      return {
-        amount: (at.totalExpenseCents * -1 + at.totalDepositCents) / 100,
-        month: at.month ?? '',
-        classification: at.classification,
-      };
-    })
-    .sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime())
-    .reverse();
 
   return (
     <>
@@ -120,17 +66,11 @@ export default function TransactionCharts() {
 
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={3}>
-            <BankingWidgetSummary
+            <TransactionSummaryWidget
               title="Income"
-              icon="eva:diagonal-arrow-left-down-fill"
-              percent={2.6}
-              total={18765}
-              chart={{
-                series:
-                  income?.map((e) => {
-                    return { y: e.amount, x: e.month };
-                  }) ?? [],
-              }}
+              color="success"
+              tags={['Salary']}
+              classifications={[TransactionClassification.Income]}
             />
           </Grid>
 
@@ -142,10 +82,7 @@ export default function TransactionCharts() {
               percent={-0.5}
               total={8938}
               chart={{
-                series:
-                  expenses?.map((e) => {
-                    return { y: e.amount * -1, x: e.month };
-                  }) ?? [],
+                series: [],
               }}
             />
           </Grid>
@@ -158,10 +95,7 @@ export default function TransactionCharts() {
               percent={-0.5}
               total={8938}
               chart={{
-                series:
-                  recurring?.map((e) => {
-                    return { y: e.amount * -1, x: e.month };
-                  }) ?? [],
+                series: [],
               }}
             />
           </Grid>
@@ -183,6 +117,76 @@ interface Props extends CardProps {
     series: number[] | { x: string; y: number }[];
     options?: ApexOptions;
   };
+}
+
+interface WidgetProps extends CardProps {
+  title: string;
+  tags: string[];
+  classifications: TransactionClassification[];
+  color?: ColorSchema;
+  smoothing?: boolean;
+}
+
+function TransactionSummaryWidget(props: WidgetProps) {
+  const color = props.color ?? 'primary';
+  const [getTransactions, getTransactionsResponse] = useLazyQuery(getTransactionsByTagsQuery);
+  const [transactions, setTransactions] = useState<IBasicTransaction[]>([]);
+
+  useEffect(() => {
+    getTransactions({
+      variables: {
+        tags: props.tags,
+        classifications: props.classifications,
+      },
+    });
+  }, [getTransactions, props.tags, props.classifications]);
+
+  useEffect(() => {
+    setTransactions(
+      getTransactionsResponse.data?.getTransactionsByTags.reduce(
+        (memo: IBasicTransaction[], gt) => {
+          return [...memo, ...(gt.transactions as unknown as IBasicTransaction[])];
+        },
+        []
+      ) ?? []
+    );
+  }, [getTransactionsResponse]);
+
+  return (
+    <Card
+      sx={{
+        width: 1,
+        boxShadow: 0,
+        color: (theme) => theme.palette[color].darker,
+        bgcolor: (theme) => theme.palette[color].lighter,
+        ...props.sx,
+      }}
+      {...props}
+    >
+      <Iconify
+        icon="eva:diagonal-arrow-left-down-fill"
+        sx={{
+          p: 1.5,
+          top: 24,
+          right: 24,
+          width: 48,
+          height: 48,
+          borderRadius: '50%',
+          position: 'absolute',
+          color: (theme) => theme.palette[color].lighter,
+          bgcolor: (theme) => theme.palette[color].dark,
+        }}
+      />
+
+      <Stack spacing={1} sx={{ p: 3 }}>
+        <Typography variant="subtitle2">{props.title}</Typography>
+
+        <Typography variant="h3">{fCurrency(transactions.length)}</Typography>
+
+        <TrendingInfo percent={87.34} />
+      </Stack>
+    </Card>
+  );
 }
 
 function BankingWidgetSummary({
