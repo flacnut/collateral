@@ -127,6 +127,18 @@ interface WidgetProps extends CardProps {
   smoothing?: boolean;
 }
 
+type ApexData = {
+  x: any;
+  y: any;
+  fill?: ApexFill;
+  fillColor?: string;
+  strokeColor?: string;
+  meta?: any;
+  goals?: any;
+  barHeightOffset?: number;
+  columnWidthOffset?: number;
+};
+
 function TransactionSummaryWidget(props: WidgetProps) {
   const color = props.color ?? 'primary';
   const [getTransactions, getTransactionsResponse] = useLazyQuery(getTransactionsByTagsQuery);
@@ -151,6 +163,94 @@ function TransactionSummaryWidget(props: WidgetProps) {
       ) ?? []
     );
   }, [getTransactionsResponse]);
+
+  let getEmptyMonthlySeries = (first: number, last: number): { [key: number]: 0 } => {
+    let series: { [key: number]: 0 } = {};
+    let date = new Date(first);
+
+    while (date.getTime() <= last) {
+      series[date.getTime()] = 0;
+      date.setMonth(date.getMonth() + 1);
+    }
+
+    return series;
+  };
+
+  let getSeriesFromTransactions = (transactions: IBasicTransaction[]) => {
+    let date = new Date();
+    date.setDate(1);
+
+    const aggregatedData = transactions.reduce(
+      (memo: { [key: number]: number }, t: IBasicTransaction) => {
+        let tdate = new Date(t.date);
+        date.setMonth(tdate.getMonth());
+        date.setFullYear(tdate.getFullYear());
+
+        if (!memo[date.getTime()]) {
+          memo[date.getTime()] = 0;
+        }
+
+        memo[date.getTime()] += t.amountCents;
+        return memo;
+      },
+      {}
+    );
+
+    let dates = Object.keys(aggregatedData).sort();
+    let series: { data: ApexData[] }[] = [{ data: [] }];
+    Object.keys(getEmptyMonthlySeries(Number(dates[0]), Number(dates[dates.length - 1])))
+      .sort()
+      .forEach((k) => {
+        series[0].data.push({ x: Number(k), y: aggregatedData[Number(k)] ?? 0 });
+      });
+
+    return series as ApexAxisChartSeries;
+  };
+
+  const theme = useTheme();
+  const chartOptions = {
+    colors: [theme.palette[color].main],
+    chart: {
+      sparkline: {
+        enabled: true,
+      },
+    },
+    xaxis: {
+      type: 'datetime',
+      labels: { show: false },
+    },
+    yaxis: {
+      labels: { show: false },
+    },
+    stroke: {
+      width: 4,
+    },
+    legend: {
+      show: false,
+    },
+    grid: {
+      show: false,
+    },
+    tooltip: {
+      marker: { show: false },
+      y: {
+        formatter: (value: number) => fCurrency(value / 100),
+        title: {
+          formatter: () => '',
+        },
+      },
+      x: {
+        formatter: (value: number) =>
+          new Date(value).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+      },
+    },
+    fill: {
+      gradient: {
+        opacityFrom: 0.56,
+        opacityTo: 0.56,
+      },
+    },
+  };
 
   return (
     <Card
@@ -185,6 +285,13 @@ function TransactionSummaryWidget(props: WidgetProps) {
 
         <TrendingInfo percent={87.34} />
       </Stack>
+
+      <Chart
+        type="area"
+        series={getSeriesFromTransactions(transactions)}
+        options={chartOptions as ApexOptions}
+        height={120}
+      />
     </Card>
   );
 }
