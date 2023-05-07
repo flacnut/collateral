@@ -2,11 +2,16 @@ import { useLazyQuery } from '@apollo/client';
 import {
   alpha,
   Box,
+  Button,
   Card,
   CardProps,
   Container,
+  FormControlLabel,
   Grid,
+  MenuItem,
   Stack,
+  Switch,
+  TextField,
   Typography,
   useTheme,
 } from '@mui/material';
@@ -18,7 +23,7 @@ import { useSettingsContext } from 'src/components/settings';
 import { ColorSchema } from 'src/theme/palette';
 import { fCurrency, fPercent } from 'src/utils/formatNumber';
 import { gql } from 'src/__generated__';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { IBasicTransaction } from 'src/components/tables/BasicTransactionTable';
 import { TransactionClassification } from 'src/__generated__/graphql';
 
@@ -53,6 +58,30 @@ fragment CoreParts on CoreTransaction {
 export default function TransactionCharts() {
   const { themeStretch } = useSettingsContext();
 
+  const [safe, setSafe] = useState(false);
+  const onChangeSafe = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setSafe(event.target.checked);
+    },
+    [setSafe]
+  );
+
+  const [smoothing, setSmoothing] = useState(false);
+  const onChangeSmoothing = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setSmoothing(event.target.checked);
+    },
+    [setSmoothing]
+  );
+
+  const [timeWindow, setTimeWindow] = useState('All');
+  const handleModifyTimeWindow = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setTimeWindow(event.target.value);
+    },
+    [setTimeWindow]
+  );
+
   return (
     <>
       <Helmet>
@@ -64,33 +93,105 @@ export default function TransactionCharts() {
           Transaction Charts
         </Typography>
 
+        <Card sx={{ marginBottom: 2 }}>
+          <Stack
+            spacing={2}
+            alignItems="center"
+            direction={{
+              xs: 'column',
+              md: 'row',
+            }}
+            sx={{ px: 2.5, py: 3 }}
+          >
+            <TextField
+              fullWidth
+              select
+              label="Duration"
+              value={timeWindow}
+              onChange={handleModifyTimeWindow}
+              SelectProps={{
+                MenuProps: {
+                  PaperProps: {
+                    sx: { maxHeight: 240 },
+                  },
+                },
+              }}
+              sx={{
+                maxWidth: { md: '250px' },
+                textTransform: 'capitalize',
+              }}
+            >
+              {['Year To Date', '1 Year', 'All'].map((option) => (
+                <MenuItem
+                  key={option}
+                  value={option}
+                  sx={{
+                    mx: 1,
+                    my: 0.5,
+                    borderRadius: 0.75,
+                    typography: 'body2',
+                    textTransform: 'capitalize',
+                    '&:first-of-type': { mt: 0 },
+                    '&:last-of-type': { mb: 0 },
+                  }}
+                >
+                  {option}
+                </MenuItem>
+              ))}
+            </TextField>
+
+            <FormControlLabel
+              label="Safe"
+              control={<Switch checked={safe} onChange={onChangeSafe} />}
+              sx={{
+                pl: 2,
+                py: 1.5,
+                top: 0,
+              }}
+            />
+
+            <FormControlLabel
+              label="Smoothing"
+              control={<Switch checked={smoothing} onChange={onChangeSmoothing} />}
+              sx={{
+                pl: 2,
+                py: 1.5,
+                top: 0,
+              }}
+            />
+          </Stack>
+        </Card>
+
         <Grid container spacing={3}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} md={6} lg={4}>
             <TransactionSummaryWidget
               title="Income"
               color="success"
               tags={['Salary']}
               classifications={[TransactionClassification.Income]}
+              smoothing={smoothing}
             />
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} md={6} lg={4}>
             <TransactionSummaryWidget
               title="Petrol"
               color="info"
               tags={['Petrol']}
               classifications={[TransactionClassification.Expense]}
               invert={true}
+              smoothing={smoothing}
             />
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} md={6} lg={4}>
             <TransactionSummaryWidget
               title="Restaurant"
               color="warning"
               tags={['Restaurant']}
               classifications={[TransactionClassification.Expense]}
               invert={true}
+              smoothing={smoothing}
             />
           </Grid>
         </Grid>
@@ -150,7 +251,7 @@ function TransactionSummaryWidget(props: WidgetProps) {
 
   useEffect(() => {
     setSeries(getSeriesFromTransactions(transactions));
-  }, [transactions]);
+  }, [transactions, props.smoothing]);
 
   let getEmptyMonthlySeries = (first: number, last: number): { [key: number]: 0 } => {
     let series: { [key: number]: 0 } = {};
@@ -186,11 +287,20 @@ function TransactionSummaryWidget(props: WidgetProps) {
 
     let dates = Object.keys(aggregatedData).sort();
     let series: { data: ApexData[] }[] = [{ data: [] }];
-    Object.keys(getEmptyMonthlySeries(Number(dates[0]), Number(dates[dates.length - 1])))
-      .sort()
-      .forEach((k) => {
-        series[0].data.push({ x: Number(k), y: aggregatedData[Number(k)] ?? 0 });
-      });
+    let months = Object.keys(
+      getEmptyMonthlySeries(Number(dates[0]), Number(dates[dates.length - 1]))
+    ).sort();
+
+    months.forEach((k, i) => {
+      let value = props.smoothing
+        ? [
+            aggregatedData[Number(months[i])] ?? 0,
+            aggregatedData[Number(months[i - 1])] ?? 0,
+            aggregatedData[Number(months[i - 2])] ?? 0,
+          ].reduce((memo, x) => memo + x, 0) / 3
+        : aggregatedData[Number(k)] ?? 0;
+      series[0].data.push({ x: Number(k), y: value });
+    });
 
     return series as ApexAxisChartSeries;
   };
