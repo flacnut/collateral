@@ -409,9 +409,7 @@ export class TransactionResolver {
       const key = `${x.syncTags
         .map((t) => t.name)
         .sort()
-        .join('::')}__${
-        classifications.length > 0 ? x.classification : 'ignore'
-      }`;
+        .join('::')}__${classifications.length > 0 ? x.classification : 'any'}`;
 
       if (!memo[key]) {
         memo[key] = [];
@@ -432,7 +430,6 @@ export class TransactionResolver {
           }),
         };
       })
-      .filter((gt) => gt.transactions.length > 1)
       .sort((a, b) => b.transactions.length - a.transactions.length);
   }
 
