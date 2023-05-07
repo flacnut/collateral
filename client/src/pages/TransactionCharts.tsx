@@ -170,6 +170,8 @@ export default function TransactionCharts() {
               tags={['Salary']}
               classifications={[TransactionClassification.Income]}
               smoothing={smoothing}
+              safe={safe}
+              timeWindow={timeWindow}
             />
           </Grid>
 
@@ -181,6 +183,8 @@ export default function TransactionCharts() {
               classifications={[TransactionClassification.Expense]}
               invert={true}
               smoothing={smoothing}
+              safe={safe}
+              timeWindow={timeWindow}
             />
           </Grid>
 
@@ -192,6 +196,8 @@ export default function TransactionCharts() {
               classifications={[TransactionClassification.Expense]}
               invert={true}
               smoothing={smoothing}
+              safe={safe}
+              timeWindow={timeWindow}
             />
           </Grid>
         </Grid>
@@ -206,9 +212,12 @@ interface WidgetProps extends CardProps {
   title: string;
   tags: string[];
   classifications: TransactionClassification[];
+  safe: boolean;
+
   color?: ColorSchema;
   smoothing?: boolean;
   invert?: boolean;
+  timeWindow?: string;
 }
 
 type ApexData = {
@@ -265,7 +274,29 @@ function TransactionSummaryWidget(props: WidgetProps) {
     return series;
   };
 
+  let getTimeWindowCutoffTime = (timeWindow: string): number => {
+    let date = new Date();
+    date.setMilliseconds(0);
+    date.setSeconds(0);
+    date.setMinutes(0);
+    date.setHours(0);
+
+    switch (timeWindow) {
+      case 'Year To Date':
+        date.setDate(1);
+        date.setMonth(0);
+        return date.getTime();
+      case '1 Year':
+        date.setMonth(date.getMonth() - 12);
+        return date.getTime();
+      case 'All':
+      default:
+        return 0;
+    }
+  };
+
   let getSeriesFromTransactions = (transactions: IBasicTransaction[]) => {
+    let cutoffTime = getTimeWindowCutoffTime(props.timeWindow ?? 'All');
     let date = new Date();
     date.setDate(1);
 
@@ -299,7 +330,10 @@ function TransactionSummaryWidget(props: WidgetProps) {
             aggregatedData[Number(months[i - 2])] ?? 0,
           ].reduce((memo, x) => memo + x, 0) / 3
         : aggregatedData[Number(k)] ?? 0;
-      series[0].data.push({ x: Number(k), y: value });
+
+      if (Number(k) >= cutoffTime) {
+        series[0].data.push({ x: Number(k), y: value });
+      }
     });
 
     return series as ApexAxisChartSeries;
@@ -362,8 +396,14 @@ function TransactionSummaryWidget(props: WidgetProps) {
     series.length > 0 && series[0].data?.length > 2
       ? (series[0].data[series[0].data.length - 2] as ApexData).y
       : 0;
-
   const changePct = (thisMonth * 100) / lastMonth - 100;
+
+  const avg =
+    series[0] && series[0].data
+      ? (series[0].data as ApexData[]).reduce((memo, ad) => memo + ad.y, 0) / series[0].data.length
+      : 0;
+
+  const avgPct = (thisMonth * 100) / avg - 100;
 
   return (
     <Card
@@ -398,7 +438,8 @@ function TransactionSummaryWidget(props: WidgetProps) {
 
         <Typography variant="h3">{fCurrency(thisMonth / 100)}</Typography>
 
-        <TrendingInfo percent={changePct} />
+        <TrendingInfo percent={changePct} compareTo={'last month'} />
+        <TrendingInfo percent={avgPct} compareTo={'average'} />
       </Stack>
 
       <Chart type="area" series={series} options={chartOptions as ApexOptions} height={120} />
@@ -410,9 +451,10 @@ function TransactionSummaryWidget(props: WidgetProps) {
 
 type TrendingInfoProps = {
   percent: number;
+  compareTo: string;
 };
 
-function TrendingInfo({ percent }: TrendingInfoProps) {
+function TrendingInfo({ percent, compareTo }: TrendingInfoProps) {
   return (
     <Stack direction="row" alignItems="center" flexWrap="wrap" spacing={0.5}>
       <Iconify icon={percent < 0 ? 'eva:trending-down-fill' : 'eva:trending-up-fill'} />
@@ -423,7 +465,7 @@ function TrendingInfo({ percent }: TrendingInfoProps) {
         {fPercent(percent)}
 
         <Box component="span" sx={{ opacity: 0.72, typography: 'body2' }}>
-          {' than last month'}
+          {' than ' + compareTo}
         </Box>
       </Typography>
     </Stack>
