@@ -353,6 +353,7 @@ function TransactionSummaryWidget(props: WidgetProps) {
     },
     yaxis: {
       labels: { show: false },
+      min: 0,
     },
     stroke: {
       width: 4,
