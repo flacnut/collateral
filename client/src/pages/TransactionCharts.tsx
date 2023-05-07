@@ -143,6 +143,7 @@ function TransactionSummaryWidget(props: WidgetProps) {
   const color = props.color ?? 'primary';
   const [getTransactions, getTransactionsResponse] = useLazyQuery(getTransactionsByTagsQuery);
   const [transactions, setTransactions] = useState<IBasicTransaction[]>([]);
+  const [series, setSeries] = useState<ApexAxisChartSeries>([]);
 
   useEffect(() => {
     getTransactions({
@@ -163,6 +164,10 @@ function TransactionSummaryWidget(props: WidgetProps) {
       ) ?? []
     );
   }, [getTransactionsResponse]);
+
+  useEffect(() => {
+    setSeries(getSeriesFromTransactions(transactions));
+  }, [transactions]);
 
   let getEmptyMonthlySeries = (first: number, last: number): { [key: number]: 0 } => {
     let series: { [key: number]: 0 } = {};
@@ -252,6 +257,17 @@ function TransactionSummaryWidget(props: WidgetProps) {
     },
   };
 
+  const thisMonth =
+    series.length > 0 && series[0].data?.length > 2
+      ? (series[0].data[series[0].data.length - 1] as ApexData).y
+      : 0;
+  const lastMonth =
+    series.length > 0 && series[0].data?.length > 2
+      ? (series[0].data[series[0].data.length - 2] as ApexData).y
+      : 0;
+
+  const changePct = (thisMonth * 100) / lastMonth - 100;
+
   return (
     <Card
       sx={{
@@ -281,17 +297,12 @@ function TransactionSummaryWidget(props: WidgetProps) {
       <Stack spacing={1} sx={{ p: 3 }}>
         <Typography variant="subtitle2">{props.title}</Typography>
 
-        <Typography variant="h3">{fCurrency(transactions.length)}</Typography>
+        <Typography variant="h3">{fCurrency(thisMonth / 100)}</Typography>
 
-        <TrendingInfo percent={87.34} />
+        <TrendingInfo percent={changePct} />
       </Stack>
 
-      <Chart
-        type="area"
-        series={getSeriesFromTransactions(transactions)}
-        options={chartOptions as ApexOptions}
-        height={120}
-      />
+      <Chart type="area" series={series} options={chartOptions as ApexOptions} height={120} />
     </Card>
   );
 }
