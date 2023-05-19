@@ -1,5 +1,6 @@
 import {
   AccountResolver,
+  AdvancedTransactionResolver,
   PlaidResolver,
   TagResolver,
   TransactionResolver,
@@ -69,6 +70,7 @@ export default async function StartServer() {
           PlaidResolver,
           TagResolver,
           TransactionResolver,
+          AdvancedTransactionResolver,
         ],
         validate: true,
       }),
