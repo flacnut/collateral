@@ -59,7 +59,7 @@ class QueryAggregationOptions {
 }
 
 @ObjectType()
-class AggregatedTransaction {
+export class AggregatedTransaction {
   @Field(() => Account, { nullable: true })
   account?: Account | null;
 
