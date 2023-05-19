@@ -51,7 +51,7 @@ import { DatePicker } from '@mui/x-date-pickers';
 import MenuPopover from 'src/components/menu-popover';
 import { CustomAvatar } from 'src/components/custom-avatar';
 import { fCurrency } from 'src/utils/formatNumber';
-import { useLazyQuery, useMutation, useQuery } from '@apollo/client';
+import { useLazyQuery, useMutation } from '@apollo/client';
 import { GetBasicTransactionsQuery, TransactionClassification } from 'src/__generated__/graphql';
 import { useDebounce } from 'use-debounce';
 // ----------------------------------------------------------------------
@@ -125,13 +125,15 @@ mutation updateClassification(
   }
 }`);
 
-const tagsQuery = gql(`query getTags {
+const tagsQuery = gql(`
+query getTags {
   tags {
     name
   }
 }`);
 
-const accountsQuery = gql(`query getAccounts {
+const accountsQuery = gql(`
+query getAccounts {
   getAccounts {
     id
     name
@@ -206,6 +208,16 @@ fragment CoreInvestmentTransactionParts on InvestmentTransaction {
   date
   currency
   classification
+}`);
+
+const deletePendingMutation = gql(`
+mutation deletePending {
+  deletePending
+}`);
+
+const refreshItemsQuery = gql(`
+query refreshPlaidItems {
+  refreshPlaidItems
 }`);
 
 const Classifications = [
