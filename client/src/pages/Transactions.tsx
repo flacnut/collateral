@@ -249,6 +249,9 @@ export default function Transactions() {
     updateTransactionClassificationQuery
   );
 
+  const [deletePending] = useMutation(deletePendingMutation);
+  const [refreshItems] = useLazyQuery(refreshItemsQuery);
+
   const [modifiedTags, setModifiedTags] = useState<string[]>([]);
   const [modifiedClassification, setModifiedClassification] = useState<string | null>(null);
 
@@ -511,14 +514,24 @@ export default function Transactions() {
             },
           ]}
           action={
-            <Button
-              to={PATH_DASHBOARD.transactions.list /*.transaction.new*/}
-              component={RouterLink}
-              variant="contained"
-              startIcon={<Iconify icon="eva:plus-fill" />}
-            >
-              New Transaction
-            </Button>
+            <>
+              <Button
+                color="error"
+                variant="contained"
+                startIcon={<Iconify icon="eva:trash-2-outline" />}
+                onClick={() => deletePending()}
+                sx={{ marginRight: 2 }}
+              >
+                Delete Pending
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<Iconify icon="eva:refresh-outline" />}
+                onClick={() => refreshItems()}
+              >
+                Refetch
+              </Button>
+            </>
           }
         />
 
