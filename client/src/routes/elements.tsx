@@ -16,6 +16,8 @@ const Loadable = (Component: ElementType) => (props: any) =>
 export const LoginPage = Loadable(lazy(() => import('../pages/LoginPage')));
 export const ItemsPage = Loadable(lazy(() => import('../pages/Items')));
 
+export const ChartBuilder = Loadable(lazy(() => import('../pages/ChartBuilder')));
+
 export const Dashboard = Loadable(lazy(() => import('../pages/Dashboard')));
 export const Transactions = Loadable(lazy(() => import('../pages/Transactions')));
 export const Transfers = Loadable(lazy(() => import('../pages/Transfers')));

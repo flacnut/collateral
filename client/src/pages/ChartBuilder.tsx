@@ -1,3 +1,4 @@
+import React from 'react';
 import { Container, Typography } from '@mui/material';
 import { Helmet } from 'react-helmet-async';
 import { useSettingsContext } from 'src/components/settings';

@@ -39,6 +39,7 @@ const navConfig = [
             path: PATH_DASHBOARD.transactions.transfers,
           },
           { title: 'charts', path: PATH_DASHBOARD.transactions.charts },
+          { title: 'chart builder', path: PATH_DASHBOARD.transactions.chartbuilder },
         ],
       },
     ],
