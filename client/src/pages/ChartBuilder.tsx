@@ -3,6 +3,24 @@ import { Container, Typography } from '@mui/material';
 import { Helmet } from 'react-helmet-async';
 import { useSettingsContext } from 'src/components/settings';
 
+import { gql } from 'src/__generated__';
+
+const getAggregatedTransactionsQuery = gql(`
+query advancedTransactionQuery($options:AdvancedTransactionQueryOptions!) {
+  advancedTransactionQuery(options:$options) {
+    classification
+    description
+    month
+    tags {
+      name
+    }
+  	totalDepositCents
+    totalExpenseCents
+    transactionCount
+    transactionIds
+  }
+}`);
+
 export default function ChartBuilder() {
   const { themeStretch } = useSettingsContext();
   return (

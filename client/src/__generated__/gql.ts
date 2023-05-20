@@ -13,6 +13,7 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
  * Therefore it is highly recommended to use the babel-plugin for production.
  */
 const documents = {
+    "\nquery advancedTransactionQuery($options:AdvancedTransactionQueryOptions!) {\n  advancedTransactionQuery(options:$options) {\n    classification\n    description\n    month\n    tags {\n      name\n    }\n  \ttotalDepositCents\n    totalExpenseCents\n    transactionCount\n    transactionIds\n  }\n}": types.AdvancedTransactionQueryDocument,
     "\nquery getItems {\n  getItems {\n    id\n    accounts {\n      ...AccountParts\n      latestBalance {\n        ...BalanceParts\n      }\n      latestTransaction {\n        date\n      }\n      institution {\n        ...InstitutionParts\n      }\n    }\n  }\n}\n\nfragment AccountParts on Account {\n  id\n  name\n  mask\n  type\n  subtype\n  officialName\n  status\n  currency\n  totalTransactions\n}\n\nfragment BalanceParts on AccountBalance {\n  balanceCents\n  limitCents\n  lastUpdateDate\n  availableCents\n}\n\nfragment InstitutionParts on Institution {\n  id\n  url\n  name\n  logo\n  products\n  countryCodes\n  primaryColor\n}\n": types.GetItemsDocument,
     "\nquery getToken {\n  getLinkToken {\n    token\n    error\n  }\n}\n": types.GetTokenDocument,
     "\nmutation setPlaidLinkResponse($plaidLinkResponse: PlaidLinkResponse!) {\n  setPlaidLinkResponse(plaidLinkResponse: $plaidLinkResponse) {\n    id \n    institutionId\n  }\n}\n": types.SetPlaidLinkResponseDocument,
@@ -36,6 +37,10 @@ const documents = {
     "\nmutation saveTransfers($transfers: [UnsavedTransfer!]!) {\n  saveTransfers(transfers:$transfers) {\n    to {\n      ...parts\n    }\n    from {\n      ...parts\n    }\n  }\n}": types.SaveTransfersDocument,
 };
 
+/**
+ * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function gql(source: "\nquery advancedTransactionQuery($options:AdvancedTransactionQueryOptions!) {\n  advancedTransactionQuery(options:$options) {\n    classification\n    description\n    month\n    tags {\n      name\n    }\n  \ttotalDepositCents\n    totalExpenseCents\n    transactionCount\n    transactionIds\n  }\n}"): (typeof documents)["\nquery advancedTransactionQuery($options:AdvancedTransactionQueryOptions!) {\n  advancedTransactionQuery(options:$options) {\n    classification\n    description\n    month\n    tags {\n      name\n    }\n  \ttotalDepositCents\n    totalExpenseCents\n    transactionCount\n    transactionIds\n  }\n}"];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
