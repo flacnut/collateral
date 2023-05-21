@@ -10,6 +10,7 @@ import {
   FilterType,
   TransactionClassification,
 } from 'src/__generated__/graphql';
+import { IBasicAccount } from 'src/components/tables/BasicTransactionTable';
 
 const getAggregatedTransactionsQuery = gql(`
 query advancedTransactionQuery($options:AdvancedTransactionQueryOptions!) {
@@ -30,6 +31,14 @@ query advancedTransactionQuery($options:AdvancedTransactionQueryOptions!) {
 const tagsQuery = gql(`
 query getTags {
   tags {
+    name
+  }
+}`);
+
+const accountsQuery = gql(`
+query getAccounts {
+  getAccounts {
+    id
     name
   }
 }`);
@@ -77,15 +86,22 @@ export default function ChartBuilder() {
   // filter
   const [tags, setTags] = useState<string[]>([]);
   const [getTags, getTagsResult] = useLazyQuery(tagsQuery);
+
+  const [accounts, setAccounts] = useState<IBasicAccount[]>([]);
+  const [getAccounts, getAccountsResult] = useLazyQuery(accountsQuery);
+
   useEffect(() => {
     getTags();
-  }, [getTags]);
+    getAccounts();
+  }, [getTags, getAccounts]);
 
   useEffect(() => {
     setTags(Object.values(getTagsResult?.data?.tags ?? {}).map((t) => t.name));
-  }, [getTagsResult]);
+    setAccounts(getAccountsResult.data?.getAccounts as IBasicAccount[]);
+  }, [getTagsResult, getAccountsResult]);
 
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedAccounts, setSelectedAccounts] = useState<IBasicAccount[]>([]);
   const [selectedClassifications, setSelectedClassifications] = useState<
     TransactionClassification[]
   >([]);
@@ -114,7 +130,6 @@ export default function ChartBuilder() {
             <Autocomplete
               sx={{ width: '400px' }}
               multiple
-              freeSolo
               onChange={(event, newValue) => setSelectedTags(newValue)}
               options={tags.map((option) => option)}
               renderTags={(value, getTagProps) =>
@@ -134,7 +149,6 @@ export default function ChartBuilder() {
             <Autocomplete
               sx={{ width: '400px' }}
               multiple
-              freeSolo
               onChange={(event, newValue) =>
                 setSelectedClassifications(newValue as TransactionClassification[])
               }
@@ -165,6 +179,26 @@ export default function ChartBuilder() {
                 ))
               }
               renderInput={(params) => <TextField label="Classifications" {...params} />}
+            />
+
+            <Autocomplete
+              sx={{ width: 1 }}
+              multiple
+              onChange={(event, newValue) => setSelectedAccounts(newValue as IBasicAccount[])}
+              options={(accounts ?? []).map((account) => account)}
+              getOptionLabel={(option: IBasicAccount) => option.name}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => (
+                  <Chip
+                    {...getTagProps({ index })}
+                    key={option.id}
+                    size="small"
+                    label={option.name}
+                    sx={{ marginRight: 1, borderRadius: 1 }}
+                  />
+                ))
+              }
+              renderInput={(params) => <TextField label="Accounts" {...params} />}
             />
           </Stack>
         </Card>
