@@ -97,35 +97,46 @@ export class AdvancedTransactionResolver {
   ): Promise<AggregatedTransaction[]> {
     // fetch with filters for classifications & accounts
     let ormOptions = {
-      where: [] as FindConditions<CoreTransaction>[],
+      where: {} as FindConditions<CoreTransaction>,
     };
 
-    if (options.includeFilters.accounts) {
-      ormOptions.where.push({
-        accountId: In(options.includeFilters.accounts.accountIds),
-      });
+    // if BOTH exclude and include filters are provided here, we
+    // should just use the include filters. Set the excludes and just
+    // overwrite them if there's includes.
+    if (
+      options.excludeFilters.accounts &&
+      options.excludeFilters.accounts.accountIds.length > 0
+    ) {
+      ormOptions.where.accountId = Not(
+        In(options.excludeFilters.accounts.accountIds),
+      );
     }
 
-    if (options.includeFilters.classifications) {
-      ormOptions.where.push({
-        classification: In(
-          options.includeFilters.classifications.classifications,
-        ),
-      });
+    if (
+      options.excludeFilters.classifications &&
+      options.excludeFilters.classifications.classifications.length > 0
+    ) {
+      ormOptions.where.classification = Not(
+        In(options.excludeFilters.classifications.classifications),
+      );
     }
 
-    if (options.excludeFilters.accounts) {
-      ormOptions.where.push({
-        accountId: Not(In(options.excludeFilters.accounts.accountIds)),
-      });
+    if (
+      options.includeFilters.accounts &&
+      options.includeFilters.accounts.accountIds.length > 0
+    ) {
+      ormOptions.where.accountId = In(
+        options.includeFilters.accounts.accountIds,
+      );
     }
 
-    if (options.excludeFilters.classifications) {
-      ormOptions.where.push({
-        classification: Not(
-          In(options.excludeFilters.classifications.classifications),
-        ),
-      });
+    if (
+      options.includeFilters.classifications &&
+      options.includeFilters.classifications.classifications.length > 0
+    ) {
+      ormOptions.where.classification = In(
+        options.includeFilters.classifications.classifications,
+      );
     }
 
     const transactions = await CoreTransaction.find(ormOptions);
