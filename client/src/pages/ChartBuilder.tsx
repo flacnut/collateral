@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Container, Typography } from '@mui/material';
+import { Autocomplete, Card, Chip, Container, Stack, TextField, Typography } from '@mui/material';
 import { Helmet } from 'react-helmet-async';
 import { useSettingsContext } from 'src/components/settings';
 
@@ -24,6 +24,13 @@ query advancedTransactionQuery($options:AdvancedTransactionQueryOptions!) {
     totalExpenseCents
     transactionCount
     transactionIds
+  }
+}`);
+
+const tagsQuery = gql(`
+query getTags {
+  tags {
+    name
   }
 }`);
 
@@ -67,6 +74,22 @@ export default function ChartBuilder() {
     });
   }, []);
 
+  // filter
+  const [tags, setTags] = useState<string[]>([]);
+  const [getTags, getTagsResult] = useLazyQuery(tagsQuery);
+  useEffect(() => {
+    getTags();
+  }, [getTags]);
+
+  useEffect(() => {
+    setTags(Object.values(getTagsResult?.data?.tags ?? {}).map((t) => t.name));
+  }, [getTagsResult]);
+
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedClassifications, setSelectedClassifications] = useState<
+    TransactionClassification[]
+  >([]);
+
   return (
     <>
       <Helmet>
@@ -77,6 +100,74 @@ export default function ChartBuilder() {
         <Typography variant="h3" component="h1" paragraph>
           Transaction Charts
         </Typography>
+
+        <Card sx={{ marginBottom: 2 }}>
+          <Stack
+            spacing={2}
+            alignItems="center"
+            direction={{
+              xs: 'column',
+              md: 'row',
+            }}
+            sx={{ px: 2.5, py: 3 }}
+          >
+            <Autocomplete
+              sx={{ width: '400px' }}
+              multiple
+              freeSolo
+              onChange={(event, newValue) => setSelectedTags(newValue)}
+              options={tags.map((option) => option)}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => (
+                  <Chip
+                    {...getTagProps({ index })}
+                    key={option}
+                    size="small"
+                    label={option}
+                    sx={{ marginRight: 1, borderRadius: 1 }}
+                  />
+                ))
+              }
+              renderInput={(params) => <TextField label="Tags" {...params} />}
+            />
+
+            <Autocomplete
+              sx={{ width: '400px' }}
+              multiple
+              freeSolo
+              onChange={(event, newValue) =>
+                setSelectedClassifications(newValue as TransactionClassification[])
+              }
+              options={(
+                Object.keys(TransactionClassification) as Array<
+                  keyof typeof TransactionClassification
+                >
+              ).map((option) => option)}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => (
+                  <Chip
+                    {...getTagProps({ index })}
+                    key={option}
+                    size="small"
+                    label={option}
+                    sx={{ marginRight: 1, borderRadius: 1 }}
+                    color={
+                      (option === 'Expense' && 'error') ||
+                      (option === 'Income' && 'success') ||
+                      (option === 'Duplicate' && 'secondary') ||
+                      (option === 'Recurring' && 'warning') ||
+                      (option === 'Transfer' && 'secondary') ||
+                      (option === 'Investment' && 'primary') ||
+                      (option === 'Hidden' && 'secondary') ||
+                      'default'
+                    }
+                  />
+                ))
+              }
+              renderInput={(params) => <TextField label="Classifications" {...params} />}
+            />
+          </Stack>
+        </Card>
 
         <pre>
           {JSON.stringify(getAggregatedTransactionsResults.data?.advancedTransactionQuery, null, 2)}
