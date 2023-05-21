@@ -106,6 +106,25 @@ export default function ChartBuilder() {
     TransactionClassification[]
   >([]);
 
+  useEffect(() => {
+    setQueryOptions({
+      aggregation: { tags: true, classification: true },
+      includeFilters: {
+        tags: {
+          type: FilterType.Any,
+          tags: selectedTags ?? [],
+        },
+        classifications: {
+          classifications: selectedClassifications,
+        },
+        accounts: {
+          accountIds: selectedAccounts.map((a) => a.id),
+        },
+      },
+      excludeFilters: {},
+    });
+  }, [selectedTags, selectedAccounts, selectedClassifications]);
+
   return (
     <>
       <Helmet>
