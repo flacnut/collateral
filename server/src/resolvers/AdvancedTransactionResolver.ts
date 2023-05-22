@@ -95,6 +95,38 @@ export class AdvancedTransactionResolver {
     @Arg('options', () => AdvancedTransactionQueryOptions)
     options: AdvancedTransactionQueryOptions,
   ): Promise<AggregatedTransaction[]> {
+    // handle invalid input
+    const hasAccountsFilter =
+      options.includeFilters.accounts &&
+      options.includeFilters.accounts.accountIds.length > 0;
+    const hasExcludeAccountsFilter =
+      options.excludeFilters.accounts &&
+      options.excludeFilters.accounts.accountIds.length > 0;
+
+    const hasTagsFilter =
+      options.includeFilters.tags &&
+      options.includeFilters.tags?.tags.length > 0;
+    const hasExcludeTagsFilter =
+      options.excludeFilters.tags &&
+      options.excludeFilters.tags?.tags.length > 0;
+
+    const hasClassificationsFilter =
+      options.includeFilters.classifications &&
+      options.includeFilters.classifications.classifications.length > 0;
+    const hasExcludeClassificationsFilter =
+      options.excludeFilters.classifications &&
+      options.excludeFilters.classifications.classifications.length > 0;
+    if (
+      !hasAccountsFilter &&
+      !hasClassificationsFilter &&
+      !hasTagsFilter &&
+      !hasExcludeAccountsFilter &&
+      !hasExcludeClassificationsFilter &&
+      !hasExcludeTagsFilter
+    ) {
+      return [];
+    }
+
     // fetch with filters for classifications & accounts
     let ormOptions = {
       where: {} as FindConditions<CoreTransaction>,
@@ -103,39 +135,27 @@ export class AdvancedTransactionResolver {
     // if BOTH exclude and include filters are provided here, we
     // should just use the include filters. Set the excludes and just
     // overwrite them if there's includes.
-    if (
-      options.excludeFilters.accounts &&
-      options.excludeFilters.accounts.accountIds.length > 0
-    ) {
+    if (hasExcludeAccountsFilter) {
       ormOptions.where.accountId = Not(
-        In(options.excludeFilters.accounts.accountIds),
+        In(options.excludeFilters.accounts?.accountIds ?? []),
       );
     }
 
-    if (
-      options.excludeFilters.classifications &&
-      options.excludeFilters.classifications.classifications.length > 0
-    ) {
+    if (hasExcludeClassificationsFilter) {
       ormOptions.where.classification = Not(
-        In(options.excludeFilters.classifications.classifications),
+        In(options.excludeFilters.classifications?.classifications ?? []),
       );
     }
 
-    if (
-      options.includeFilters.accounts &&
-      options.includeFilters.accounts.accountIds.length > 0
-    ) {
+    if (hasAccountsFilter) {
       ormOptions.where.accountId = In(
-        options.includeFilters.accounts.accountIds,
+        options.includeFilters.accounts?.accountIds ?? [],
       );
     }
 
-    if (
-      options.includeFilters.classifications &&
-      options.includeFilters.classifications.classifications.length > 0
-    ) {
+    if (hasClassificationsFilter) {
       ormOptions.where.classification = In(
-        options.includeFilters.classifications.classifications,
+        options.includeFilters.classifications?.classifications ?? [],
       );
     }
 
@@ -149,29 +169,30 @@ export class AdvancedTransactionResolver {
       await Promise.all(
         transactions.map(async (t): Promise<CoreTransaction | null> => {
           let transactionTags = (await t.tags).map((t) => t.name);
-          let hasIncludeTags = false;
+          // only include transaction if there's no tags filter
+          let hasIncludeTags = !hasTagsFilter;
           let hasExcludeTags = false;
 
-          if (options.includeFilters.tags) {
-            hasIncludeTags =
-              options.includeFilters.tags.type === FilterType.All
-                ? options.includeFilters.tags.tags.every((desiredTag) =>
-                    transactionTags.includes(desiredTag),
-                  )
-                : options.includeFilters.tags.tags
-                    .map((desiredTag) => transactionTags.includes(desiredTag))
-                    .includes(true);
+          if (hasTagsFilter) {
+            hasIncludeTags = !!(options.includeFilters.tags?.type ===
+            FilterType.All
+              ? options.includeFilters.tags.tags.every((desiredTag) =>
+                  transactionTags.includes(desiredTag),
+                )
+              : options.includeFilters.tags?.tags
+                  .map((desiredTag) => transactionTags.includes(desiredTag))
+                  .includes(true));
           }
 
-          if (options.excludeFilters.tags) {
-            hasExcludeTags =
-              options.excludeFilters.tags.type === FilterType.All
-                ? options.excludeFilters.tags.tags.every((desiredTag) =>
-                    transactionTags.includes(desiredTag),
-                  )
-                : options.excludeFilters.tags.tags
-                    .map((desiredTag) => transactionTags.includes(desiredTag))
-                    .includes(true);
+          if (hasExcludeTagsFilter) {
+            hasExcludeTags = !!(options.excludeFilters.tags?.type ===
+            FilterType.All
+              ? options.excludeFilters.tags.tags.every((desiredTag) =>
+                  transactionTags.includes(desiredTag),
+                )
+              : options.excludeFilters.tags?.tags
+                  .map((desiredTag) => transactionTags.includes(desiredTag))
+                  .includes(true));
           }
 
           return hasIncludeTags && !hasExcludeTags ? t : null;
