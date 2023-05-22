@@ -1,5 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { Autocomplete, Card, Chip, Container, Stack, TextField, Typography } from '@mui/material';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  Autocomplete,
+  Card,
+  CardHeader,
+  Chip,
+  Container,
+  MenuItem,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
 import { Helmet } from 'react-helmet-async';
 import { useSettingsContext } from 'src/components/settings';
 
@@ -100,18 +110,40 @@ export default function ChartBuilder() {
     setAccounts(getAccountsResult.data?.getAccounts as IBasicAccount[]);
   }, [getTagsResult, getAccountsResult]);
 
+  const [selectedTagFilterType, setSelectedTagFilterType] = useState<FilterType>(FilterType.Any);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedAccounts, setSelectedAccounts] = useState<IBasicAccount[]>([]);
   const [selectedClassifications, setSelectedClassifications] = useState<
     TransactionClassification[]
   >([]);
 
+  const [excludedTagFilterType, setExcludedTagFilterType] = useState<FilterType>(FilterType.Any);
+  const [excludedTags, setExcludedTags] = useState<string[]>([]);
+  const [excludedAccounts, setExcludedAccounts] = useState<IBasicAccount[]>([]);
+  const [excludedClassifications, setExcludedClassifications] = useState<
+    TransactionClassification[]
+  >([]);
+
+  const handleSetTagFilterType = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setSelectedTagFilterType(event.target.value as FilterType);
+    },
+    [setSelectedTagFilterType]
+  );
+
+  const handleSetExcludedTagFilterType = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setExcludedTagFilterType(event.target.value as FilterType);
+    },
+    [setExcludedTagFilterType]
+  );
+
   useEffect(() => {
     setQueryOptions({
       aggregation: { tags: true, classification: true },
       includeFilters: {
         tags: {
-          type: FilterType.Any,
+          type: selectedTagFilterType,
           tags: selectedTags ?? [],
         },
         classifications: {
@@ -121,9 +153,29 @@ export default function ChartBuilder() {
           accountIds: selectedAccounts.map((a) => a.id),
         },
       },
-      excludeFilters: {},
+      excludeFilters: {
+        tags: {
+          type: excludedTagFilterType,
+          tags: excludedTags ?? [],
+        },
+        classifications: {
+          classifications: selectedClassifications.length > 0 ? [] : excludedClassifications,
+        },
+        accounts: {
+          accountIds: selectedAccounts.length > 0 ? [] : excludedAccounts.map((a) => a.id),
+        },
+      },
     });
-  }, [selectedTags, selectedAccounts, selectedClassifications]);
+  }, [
+    selectedTags,
+    selectedAccounts,
+    selectedClassifications,
+    selectedTagFilterType,
+    excludedTags,
+    excludedAccounts,
+    excludedClassifications,
+    excludedTagFilterType,
+  ]);
 
   return (
     <>
@@ -137,6 +189,7 @@ export default function ChartBuilder() {
         </Typography>
 
         <Card sx={{ marginBottom: 2 }}>
+          <CardHeader title="Filter" />
           <Stack
             spacing={2}
             alignItems="center"
@@ -144,10 +197,10 @@ export default function ChartBuilder() {
               xs: 'column',
               md: 'row',
             }}
-            sx={{ px: 2.5, py: 3 }}
+            sx={{ px: 2.5, paddingTop: 3 }}
           >
             <Autocomplete
-              sx={{ width: '400px' }}
+              sx={{ width: '500px' }}
               multiple
               onChange={(event, newValue) => setSelectedTags(newValue)}
               options={tags.map((option) => option)}
@@ -165,8 +218,59 @@ export default function ChartBuilder() {
               renderInput={(params) => <TextField label="Tags" {...params} />}
             />
 
+            <TextField
+              fullWidth
+              select
+              label="Tags"
+              value={selectedTagFilterType}
+              onChange={handleSetTagFilterType}
+              SelectProps={{
+                MenuProps: {
+                  PaperProps: {
+                    sx: { maxHeight: 220 },
+                  },
+                },
+              }}
+              sx={{
+                maxWidth: { md: 100 },
+                textTransform: 'capitalize',
+              }}
+            >
+              <MenuItem
+                key={FilterType.Any}
+                value={FilterType.Any}
+                sx={{
+                  mx: 1,
+                  my: 0.5,
+                  borderRadius: 0.75,
+                  typography: 'body2',
+                  textTransform: 'capitalize',
+                  '&:first-of-type': { mt: 0 },
+                  '&:last-of-type': { mb: 0 },
+                }}
+              >
+                Any
+              </MenuItem>
+
+              <MenuItem
+                key={FilterType.All}
+                value={FilterType.All}
+                sx={{
+                  mx: 1,
+                  my: 0.5,
+                  borderRadius: 0.75,
+                  typography: 'body2',
+                  textTransform: 'capitalize',
+                  '&:first-of-type': { mt: 0 },
+                  '&:last-of-type': { mb: 0 },
+                }}
+              >
+                All
+              </MenuItem>
+            </TextField>
+
             <Autocomplete
-              sx={{ width: '400px' }}
+              sx={{ width: '500px' }}
               multiple
               onChange={(event, newValue) =>
                 setSelectedClassifications(newValue as TransactionClassification[])
@@ -218,6 +322,143 @@ export default function ChartBuilder() {
                 ))
               }
               renderInput={(params) => <TextField label="Accounts" {...params} />}
+            />
+          </Stack>
+
+          <Stack
+            spacing={2}
+            alignItems="center"
+            direction={{
+              xs: 'column',
+              md: 'row',
+            }}
+            sx={{ px: 2.5, py: 3 }}
+          >
+            <Autocomplete
+              sx={{ width: '500px' }}
+              multiple
+              onChange={(event, newValue) => setExcludedTags(newValue)}
+              options={tags.map((option) => option)}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => (
+                  <Chip
+                    {...getTagProps({ index })}
+                    key={option}
+                    size="small"
+                    label={option}
+                    sx={{ marginRight: 1, borderRadius: 1 }}
+                  />
+                ))
+              }
+              renderInput={(params) => <TextField label="Exclude Tags" {...params} />}
+            />
+
+            <TextField
+              fullWidth
+              select
+              label="Tags"
+              value={excludedTagFilterType}
+              onChange={handleSetExcludedTagFilterType}
+              SelectProps={{
+                MenuProps: {
+                  PaperProps: {
+                    sx: { maxHeight: 220 },
+                  },
+                },
+              }}
+              sx={{
+                maxWidth: { md: 100 },
+                textTransform: 'capitalize',
+              }}
+            >
+              <MenuItem
+                key={FilterType.Any}
+                value={FilterType.Any}
+                sx={{
+                  mx: 1,
+                  my: 0.5,
+                  borderRadius: 0.75,
+                  typography: 'body2',
+                  textTransform: 'capitalize',
+                  '&:first-of-type': { mt: 0 },
+                  '&:last-of-type': { mb: 0 },
+                }}
+              >
+                Any
+              </MenuItem>
+
+              <MenuItem
+                key={FilterType.All}
+                value={FilterType.All}
+                sx={{
+                  mx: 1,
+                  my: 0.5,
+                  borderRadius: 0.75,
+                  typography: 'body2',
+                  textTransform: 'capitalize',
+                  '&:first-of-type': { mt: 0 },
+                  '&:last-of-type': { mb: 0 },
+                }}
+              >
+                All
+              </MenuItem>
+            </TextField>
+
+            <Autocomplete
+              disabled={selectedClassifications.length > 0}
+              sx={{ width: '500px' }}
+              multiple
+              onChange={(event, newValue) =>
+                setExcludedClassifications(newValue as TransactionClassification[])
+              }
+              options={(
+                Object.keys(TransactionClassification) as Array<
+                  keyof typeof TransactionClassification
+                >
+              ).map((option) => option)}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => (
+                  <Chip
+                    {...getTagProps({ index })}
+                    key={option}
+                    size="small"
+                    label={option}
+                    sx={{ marginRight: 1, borderRadius: 1 }}
+                    color={
+                      (option === 'Expense' && 'error') ||
+                      (option === 'Income' && 'success') ||
+                      (option === 'Duplicate' && 'secondary') ||
+                      (option === 'Recurring' && 'warning') ||
+                      (option === 'Transfer' && 'secondary') ||
+                      (option === 'Investment' && 'primary') ||
+                      (option === 'Hidden' && 'secondary') ||
+                      'default'
+                    }
+                  />
+                ))
+              }
+              renderInput={(params) => <TextField label="Exclude Classifications" {...params} />}
+            />
+
+            <Autocomplete
+              disabled={selectedAccounts.length > 0}
+              sx={{ width: 1 }}
+              multiple
+              onChange={(event, newValue) => setExcludedAccounts(newValue as IBasicAccount[])}
+              options={(accounts ?? []).map((account) => account)}
+              getOptionLabel={(option: IBasicAccount) => option.name}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => (
+                  <Chip
+                    {...getTagProps({ index })}
+                    key={option.id}
+                    size="small"
+                    label={option.name}
+                    sx={{ marginRight: 1, borderRadius: 1 }}
+                  />
+                ))
+              }
+              renderInput={(params) => <TextField label="Exclude Accounts" {...params} />}
             />
           </Stack>
         </Card>
