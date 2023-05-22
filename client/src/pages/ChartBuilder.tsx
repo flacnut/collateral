@@ -72,27 +72,6 @@ export default function ChartBuilder() {
     }
   }, [getAggregatedTransactions, queryOptions]);
 
-  useEffect(() => {
-    setQueryOptions({
-      aggregation: { tags: true, classification: true },
-      includeFilters: {
-        tags: {
-          type: FilterType.Any,
-          tags: ['Apple'],
-        },
-      },
-      excludeFilters: {
-        tags: {
-          type: FilterType.Any,
-          tags: ['Trash', 'Water'],
-        },
-        classifications: {
-          classifications: [TransactionClassification.Expense],
-        },
-      },
-    });
-  }, []);
-
   // filter
   const [tags, setTags] = useState<string[]>([]);
   const [getTags, getTagsResult] = useLazyQuery(tagsQuery);
@@ -106,7 +85,11 @@ export default function ChartBuilder() {
   }, [getTags, getAccounts]);
 
   useEffect(() => {
-    setTags(Object.values(getTagsResult?.data?.tags ?? {}).map((t) => t.name));
+    setTags(
+      Object.values(getTagsResult?.data?.tags ?? {})
+        .map((t) => t.name)
+        .sort()
+    );
     setAccounts(getAccountsResult.data?.getAccounts as IBasicAccount[]);
   }, [getTagsResult, getAccountsResult]);
 
