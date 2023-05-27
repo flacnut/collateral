@@ -21,6 +21,10 @@ import {
   TransactionClassification,
 } from 'src/__generated__/graphql';
 import { IBasicAccount } from 'src/components/tables/BasicTransactionTable';
+import {
+  AggregatedTransactionTable,
+  IAggregatedTransaction,
+} from 'src/components/tables/AggregatedTransactionTable';
 
 const getAggregatedTransactionsQuery = gql(`
 query advancedTransactionQuery($options:AdvancedTransactionQueryOptions!) {
@@ -79,6 +83,8 @@ export default function ChartBuilder() {
   const [accounts, setAccounts] = useState<IBasicAccount[]>([]);
   const [getAccounts, getAccountsResult] = useLazyQuery(accountsQuery);
 
+  const [aggTransactions, setAggTransactoins] = useState<IAggregatedTransaction[]>([]);
+
   useEffect(() => {
     getTags();
     getAccounts();
@@ -92,6 +98,26 @@ export default function ChartBuilder() {
     );
     setAccounts(getAccountsResult.data?.getAccounts as IBasicAccount[]);
   }, [getTagsResult, getAccountsResult]);
+
+  useEffect(() => {
+    setAggTransactoins(
+      (getAggregatedTransactionsResults.data?.advancedTransactionQuery ?? []).map((at, i) => {
+        return {
+          key: i.toString(),
+          accountId: '',
+          tags: at.tags ?? [],
+          transactionIds: at.transactionIds ?? [],
+          description: at.description ?? '',
+          amountCents: at.totalDepositCents - at.totalExpenseCents,
+          amount: (at.totalDepositCents - at.totalExpenseCents) / 100,
+          currency: null,
+          classification: at.classification ?? '',
+          account: { id: '', name: '' },
+          count: at.transactionCount,
+        };
+      })
+    );
+  }, [getAggregatedTransactionsResults.data, setAggTransactoins]);
 
   return (
     <>
@@ -109,6 +135,10 @@ export default function ChartBuilder() {
           tags={tags}
           setQueryOptions={setQueryOptions}
         />
+
+        <Card sx={{ marginBottom: 2 }}>
+          <AggregatedTransactionTable transactions={aggTransactions} action={() => {}} />
+        </Card>
 
         <pre>
           {JSON.stringify(getAggregatedTransactionsResults.data?.advancedTransactionQuery, null, 2)}
