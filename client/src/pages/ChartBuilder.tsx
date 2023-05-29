@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   Autocomplete,
+  Button,
   Card,
   CardHeader,
   Chip,
   Container,
+  Grid,
   MenuItem,
   Stack,
   TextField,
@@ -25,6 +27,7 @@ import {
   AggregatedTransactionTable,
   IAggregatedTransaction,
 } from 'src/components/tables/AggregatedTransactionTable';
+import Iconify from 'src/components/iconify';
 
 const getAggregatedTransactionsQuery = gql(`
 query advancedTransactionQuery($options:AdvancedTransactionQueryOptions!) {
@@ -56,6 +59,12 @@ query getAccounts {
     name
   }
 }`);
+
+type ISeriesConfig = {
+  tags: string[];
+  color?: string;
+  name?: string;
+};
 
 export default function ChartBuilder() {
   const { themeStretch } = useSettingsContext();
@@ -130,20 +139,120 @@ export default function ChartBuilder() {
           Transaction Charts
         </Typography>
 
-        <AdvancedTransactionFilters
-          accounts={accounts}
-          tags={tags}
-          setQueryOptions={setQueryOptions}
-        />
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <AdvancedTransactionFilters
+              accounts={accounts}
+              tags={tags}
+              setQueryOptions={setQueryOptions}
+            />
+          </Grid>
 
-        <Card sx={{ marginBottom: 2 }}>
-          <AggregatedTransactionTable transactions={aggTransactions} action={() => {}} />
-        </Card>
+          <Grid item xs={6}>
+            <Card sx={{ marginBottom: 2 }}>
+              <AggregatedTransactionTable transactions={aggTransactions} action={() => {}} />
+            </Card>
+          </Grid>
+
+          <Grid item xs={6}>
+            <Card sx={{ marginBottom: 2 }}>
+              <SeriesBuilder tags={tags} />
+            </Card>
+          </Grid>
+        </Grid>
 
         <pre>
           {JSON.stringify(getAggregatedTransactionsResults.data?.advancedTransactionQuery, null, 2)}
         </pre>
       </Container>
+    </>
+  );
+}
+
+function SeriesBuilder(props: { tags: string[] }) {
+  const { tags } = props;
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [seriesConfig, setSeriesConfig] = useState<ISeriesConfig[]>([]);
+
+  const appendConfig = useCallback(() => {
+    let tags = selectedTags;
+    setSelectedTags([]);
+    setSeriesConfig([...seriesConfig, { tags }]);
+  }, [setSeriesConfig, setSelectedTags, selectedTags, seriesConfig]);
+
+  const deleteItem = useCallback(
+    (i: number) => {
+      seriesConfig.splice(i, 1);
+      setSeriesConfig([...seriesConfig]);
+    },
+    [seriesConfig, setSeriesConfig]
+  );
+
+  return (
+    <>
+      {seriesConfig.map((sc, i) => (
+        <Stack
+          key={i}
+          spacing={2}
+          alignItems="center"
+          direction={{
+            xs: 'column',
+            md: 'row',
+          }}
+          sx={{ px: 2.5, paddingTop: 3 }}
+        >
+          <Chip
+            size={'small'}
+            color="error"
+            label="X"
+            sx={{ marginRight: 1, borderRadius: 1 }}
+            onClick={() => deleteItem(i)}
+          />
+          <span>
+            {sc.tags.map((tag, index) => (
+              <Chip
+                key={index}
+                size={'small'}
+                label={tag}
+                sx={{ marginRight: 1, borderRadius: 1 }}
+              />
+            ))}
+          </span>
+        </Stack>
+      ))}
+
+      <Stack
+        spacing={2}
+        alignItems="center"
+        direction={{
+          xs: 'column',
+          md: 'row',
+        }}
+        sx={{ px: 2.5, paddingTop: 3 }}
+      >
+        <Autocomplete
+          sx={{ width: '500px' }}
+          multiple
+          onChange={(event, newValue) => setSelectedTags(newValue)}
+          options={tags.map((option) => option)}
+          value={selectedTags}
+          renderTags={(value, getTagProps) =>
+            value.map((option, index) => (
+              <Chip
+                {...getTagProps({ index })}
+                key={option}
+                size="small"
+                label={option}
+                sx={{ marginRight: 1, borderRadius: 1 }}
+              />
+            ))
+          }
+          renderInput={(params) => <TextField label="Tags" {...params} />}
+        />
+        <Button variant="contained" onClick={appendConfig} size="large" disabled={false}>
+          <Iconify icon="eva:plus-outline" />
+        </Button>
+      </Stack>
     </>
   );
 }

@@ -36,7 +36,7 @@ export type IBasicTransaction = {
 };
 
 export type ITag = {
-  name: String;
+  name: string;
 };
 
 export type IBasicAccount = {
