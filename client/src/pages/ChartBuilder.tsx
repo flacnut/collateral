@@ -93,6 +93,7 @@ export default function ChartBuilder() {
   const [getAccounts, getAccountsResult] = useLazyQuery(accountsQuery);
 
   const [aggTransactions, setAggTransactoins] = useState<IAggregatedTransaction[]>([]);
+  const [seriesConfig, setSeriesConfig] = useState<ISeriesConfig[]>([]);
 
   useEffect(() => {
     getTags();
@@ -156,7 +157,11 @@ export default function ChartBuilder() {
 
           <Grid item xs={6}>
             <Card sx={{ marginBottom: 2 }}>
-              <SeriesBuilder tags={tags} />
+              <SeriesBuilder
+                tags={tags}
+                seriesConfig={seriesConfig}
+                setSeriesConfig={setSeriesConfig}
+              />
             </Card>
           </Grid>
         </Grid>
@@ -169,10 +174,13 @@ export default function ChartBuilder() {
   );
 }
 
-function SeriesBuilder(props: { tags: string[] }) {
-  const { tags } = props;
+function SeriesBuilder(props: {
+  tags: string[];
+  seriesConfig: ISeriesConfig[];
+  setSeriesConfig: (isc: ISeriesConfig[]) => void;
+}) {
+  const { tags, seriesConfig, setSeriesConfig } = props;
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [seriesConfig, setSeriesConfig] = useState<ISeriesConfig[]>([]);
 
   const appendConfig = useCallback(() => {
     let tags = selectedTags;
