@@ -128,7 +128,7 @@ function TransactionTableRow(props: {
 
       <TableCell align="right">
         <Typography
-          fontFamily="Menlo"
+          fontFamily="monospace"
           color={transaction.amount > 0 ? '#36B37E' : '#FF5630'}
           fontWeight="bold"
         >
@@ -143,13 +143,13 @@ function TransactionTableRow(props: {
           <Label
             variant="soft"
             color={
-              (transaction.classification === 'Expense' && 'error') ||
-              (transaction.classification === 'Income' && 'success') ||
-              (transaction.classification === 'Duplicate' && 'secondary') ||
-              (transaction.classification === 'Recurring' && 'warning') ||
-              (transaction.classification === 'Transfer' && 'secondary') ||
-              (transaction.classification === 'Investment' && 'primary') ||
-              (transaction.classification === 'Hidden' && 'secondary') ||
+              (transaction.classification.toLowerCase() === 'expense' && 'error') ||
+              (transaction.classification.toLowerCase() === 'income' && 'success') ||
+              (transaction.classification.toLowerCase() === 'duplicate' && 'secondary') ||
+              (transaction.classification.toLowerCase() === 'recurring' && 'warning') ||
+              (transaction.classification.toLowerCase() === 'transfer' && 'secondary') ||
+              (transaction.classification.toLowerCase() === 'investment' && 'primary') ||
+              (transaction.classification.toLowerCase() === 'hidden' && 'secondary') ||
               'default'
             }
           >
