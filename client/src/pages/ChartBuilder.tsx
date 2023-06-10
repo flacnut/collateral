@@ -25,6 +25,7 @@ import {
 import { IBasicAccount } from 'src/components/tables/BasicTransactionTable';
 import {
   AggregatedTransactionTable,
+  Color,
   IAggregatedTransaction,
 } from 'src/components/tables/AggregatedTransactionTable';
 import Iconify from 'src/components/iconify';
@@ -129,6 +130,40 @@ export default function ChartBuilder() {
     );
   }, [getAggregatedTransactionsResults.data, setAggTransactoins]);
 
+  const colorIndex = [
+    'primary',
+    'secondary',
+    'error',
+    'info',
+    'success',
+    'warning',
+  ] as Array<Color>;
+
+  const getTagColor = useCallback(
+    (transaction: IAggregatedTransaction, tag: string): Color => {
+      console.dir(transaction);
+      let transactionTagNames = transaction.tags.map((t) => t.name);
+
+      // match the transaction to the series definition
+      const possibleMatches = seriesConfig
+        .map((config, index) => {
+          if (config.tags.every((configTag) => transactionTagNames.indexOf(configTag) !== -1)) {
+            // only color the tags that specifically match series config
+            if (config.tags.indexOf(tag) !== -1) {
+              console.dir(colorIndex[index]);
+              return colorIndex[index];
+            }
+          }
+          return null;
+        })
+        .filter((c) => c !== null) as Array<Color>;
+
+      // return first match
+      return possibleMatches.length > 0 ? possibleMatches[0] : 'default';
+    },
+    [seriesConfig]
+  );
+
   return (
     <>
       <Helmet>
@@ -151,7 +186,10 @@ export default function ChartBuilder() {
 
           <Grid item xs={6}>
             <Card sx={{ marginBottom: 2 }}>
-              <AggregatedTransactionTable transactions={aggTransactions} action={() => {}} />
+              <AggregatedTransactionTable
+                transactions={aggTransactions}
+                getTagColor={getTagColor}
+              />
             </Card>
           </Grid>
 

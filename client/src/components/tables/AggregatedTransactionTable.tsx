@@ -8,11 +8,13 @@ import {
   TableContainer,
   TableRow,
   Typography,
+  useTheme,
 } from '@mui/material';
 import { fCurrency } from 'src/utils/formatNumber';
 import { CustomAvatar } from '../custom-avatar';
 import Label from '../label';
 import Scrollbar from '../scrollbar';
+import ThemeColorPresets from '../settings/ThemeColorPresets';
 import TableEmptyRows from '../table/TableEmptyRows';
 import TableHeadCustom from '../table/TableHeadCustom';
 import TablePaginationCustom from '../table/TablePaginationCustom';
@@ -36,7 +38,8 @@ export type IAggregatedTransaction = {
 
 export function AggregatedTransactionTable(props: {
   transactions: IAggregatedTransaction[];
-  action: (row: IAggregatedTransaction) => void;
+  action?: (row: IAggregatedTransaction) => void;
+  getTagColor?: (transaction: IAggregatedTransaction, tag: string) => Color;
 }) {
   const { transactions, action } = props;
   const TABLE_HEAD = [
@@ -73,6 +76,7 @@ export function AggregatedTransactionTable(props: {
                   transaction={transaction}
                   safe={safe}
                   action={action}
+                  getTagColor={props.getTagColor}
                 />
               ))}
               <TableEmptyRows height={56} emptyRows={emptyRows(page, 25, transactions.length)} />
@@ -93,12 +97,16 @@ export function AggregatedTransactionTable(props: {
   );
 }
 
+export type Color = 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning';
+
 function TransactionTableRow(props: {
   key: string;
   transaction: IAggregatedTransaction;
   safe: boolean;
-  action: (row: IAggregatedTransaction) => void;
+  action?: (row: IAggregatedTransaction) => void;
+  getTagColor?: (transaction: IAggregatedTransaction, tag: string) => Color;
 }) {
+  const theme = useTheme();
   const { transaction, safe, action } = props;
   return (
     <TableRow hover>
@@ -157,6 +165,7 @@ function TransactionTableRow(props: {
             size={'small'}
             label={tag.name}
             sx={{ marginRight: 1, borderRadius: 1 }}
+            color={props.getTagColor ? props.getTagColor(transaction, tag.name) : 'error'}
           />
         ))}
       </TableCell>
