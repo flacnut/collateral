@@ -191,7 +191,7 @@ export function useChart(theme: Theme, options?: ApexOptions) {
 
     // Markers
     markers: {
-      size: 0,
+      size: 6,
       strokeColors: theme.palette.background.paper,
     },
 
@@ -199,22 +199,6 @@ export function useChart(theme: Theme, options?: ApexOptions) {
     tooltip: {
       x: {
         show: false,
-      },
-    },
-
-    // Legend
-    legend: {
-      show: true,
-      fontSize: String(13),
-      position: 'top',
-      horizontalAlign: 'right',
-      markers: {
-        radius: 12,
-      },
-      fontWeight: 500,
-      itemMargin: { horizontal: 12 },
-      labels: {
-        colors: theme.palette.text.primary,
       },
     },
 
