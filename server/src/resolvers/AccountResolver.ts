@@ -3,6 +3,14 @@ import { Arg, Mutation, Query, Resolver } from 'type-graphql';
 
 @Resolver()
 export class AccountResolver {
+  @Query(() => Account)
+  async getAccount(
+    @Arg('accountId', () => String, { nullable: false }) accountId: string,
+  ) {
+    const account = await Account.findOne({ id: accountId });
+    return account;
+  }
+
   @Query(() => [Account])
   async getAccounts(
     @Arg('accountIds', () => [String], { nullable: true }) accountIds: string[],

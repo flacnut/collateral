@@ -113,7 +113,7 @@ export class Account extends BaseEntity {
 
   @Field(() => Institution)
   async institution() {
-    return (await Institution.findByIds([this.institutionId])).pop() ?? null;
+    return await Institution.findOne({ id: this.institutionId });
   }
 
   @Field(() => String)
