@@ -5,8 +5,9 @@ import { Container, Typography } from '@mui/material';
 import { useSettingsContext } from '../components/settings';
 import { useParams } from 'react-router';
 import { useLazyQuery } from '@apollo/client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { gql } from 'src/__generated__/gql';
+import { IAggregatedTransaction } from 'src/components/tables/AggregatedTransactionTable';
 
 // ----------------------------------------------------------------------
 
@@ -42,10 +43,31 @@ query getAccount($accountId: String!) {
   }
 }`);
 
+const getAggregatedTransactionsQuery = gql(`
+query advancedTransactionQuery($options:AdvancedTransactionQueryOptions!) {
+  advancedTransactionQuery(options:$options) {
+    classification
+    description
+    month
+    tags {
+      name
+    }
+  	totalDepositCents
+    totalExpenseCents
+    transactionCount
+    transactionIds
+  }
+}`);
+
 export default function AccountView() {
   const { themeStretch } = useSettingsContext();
+
   const { id } = useParams<string>();
   const [refetch, { data, loading }] = useLazyQuery(getAccountQuery);
+
+  const [refetchTransactionVolume, transactionVolumeResults] = useLazyQuery(
+    getAggregatedTransactionsQuery
+  );
 
   useEffect(() => {
     !!id &&
@@ -54,7 +76,44 @@ export default function AccountView() {
           accountId: id,
         },
       });
+
+    !!id &&
+      refetchTransactionVolume({
+        variables: {
+          options: {
+            aggregation: { month: true, classification: true },
+            includeFilters: {
+              accounts: {
+                accountIds: [id],
+              },
+            },
+            excludeFilters: {},
+          },
+        },
+      });
   }, [id]);
+
+  const [aggTransactions, setAggTransactions] = useState<IAggregatedTransaction[]>([]);
+  useEffect(() => {
+    setAggTransactions(
+      (transactionVolumeResults.data?.advancedTransactionQuery ?? []).map((at, i) => {
+        return {
+          key: i.toString(),
+          accountId: '',
+          tags: at.tags ?? [],
+          transactionIds: at.transactionIds ?? [],
+          description: at.description ?? '',
+          amountCents: at.totalDepositCents - at.totalExpenseCents,
+          amount: (at.totalDepositCents - at.totalExpenseCents) / 100,
+          currency: null,
+          classification: at.classification ?? '',
+          account: { id: '', name: '' },
+          count: at.transactionCount,
+          date: new Date(at.month ?? 0),
+        };
+      })
+    );
+  }, [transactionVolumeResults.data, setAggTransactions]);
 
   return (
     <>
@@ -68,7 +127,11 @@ export default function AccountView() {
         </Typography>
 
         <Typography gutterBottom>
-          <pre>${JSON.stringify(data?.getAccount, null, 2)}</pre>
+          <pre>{JSON.stringify(data?.getAccount, null, 2)}</pre>
+        </Typography>
+
+        <Typography gutterBottom>
+          <pre>{JSON.stringify(aggTransactions, null, 2)}</pre>
         </Typography>
       </Container>
     </>

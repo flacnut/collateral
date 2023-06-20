@@ -34,6 +34,7 @@ export type IAggregatedTransaction = {
   classification: string;
   account: IBasicAccount;
   tags: ITag[];
+  date: Date;
 };
 
 export function AggregatedTransactionTable(props: {

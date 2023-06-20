@@ -125,6 +125,7 @@ export default function ChartBuilder() {
           classification: at.classification ?? '',
           account: { id: '', name: '' },
           count: at.transactionCount,
+          date: new Date(at.month ?? 0),
         };
       })
     );
