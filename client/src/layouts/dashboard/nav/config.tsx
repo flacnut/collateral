@@ -25,7 +25,13 @@ const navConfig = [
     subheader: 'accounts',
     items: [
       { title: 'Dashboard', path: PATH_DASHBOARD.dashboard, icon: ICONS.dashboard },
-      { title: 'Items', path: PATH_DASHBOARD.items, icon: ICONS.banking },
+      { title: 'Plaid Links', path: PATH_DASHBOARD.items, icon: ICONS.ecommerce },
+      {
+        title: 'Accounts',
+        path: PATH_DASHBOARD.accounts.root,
+        icon: ICONS.banking,
+        children: [{ title: 'list', path: PATH_DASHBOARD.items }],
+      },
       {
         title: 'transactions',
         path: PATH_DASHBOARD.transactions.root,
@@ -50,20 +56,6 @@ const navConfig = [
   {
     subheader: 'assets',
     items: [],
-  },
-
-  // MANAGEMENT
-  // ----------------------------------------------------------------------
-  {
-    subheader: 'management',
-    items: [
-      {
-        title: 'user',
-        path: PATH_DASHBOARD.user.root,
-        icon: ICONS.user,
-        children: [],
-      },
-    ],
   },
 ];
 

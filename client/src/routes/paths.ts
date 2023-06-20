@@ -27,10 +27,8 @@ export const PATH_DASHBOARD = {
     view: (id: string) => path(ROOTS_DASHBOARD, `/transactions/${id}`),
     edit: (id: string) => path(ROOTS_DASHBOARD, `/transactions/${id}/edit`),
   },
-  user: {
-    root: path(ROOTS_DASHBOARD, '/user'),
-    four: path(ROOTS_DASHBOARD, '/user/four'),
-    five: path(ROOTS_DASHBOARD, '/user/five'),
-    six: path(ROOTS_DASHBOARD, '/user/six'),
+  accounts: {
+    root: path(ROOTS_DASHBOARD, '/accounts'),
+    view: (id: string) => path(ROOTS_DASHBOARD, `/accounts/${id}`),
   },
 };

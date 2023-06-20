@@ -26,8 +26,6 @@ export const TransactionClassifier = Loadable(lazy(() => import('../pages/Transa
 export const TransactionCharts = Loadable(lazy(() => import('../pages/TransactionCharts')));
 export const TransactionDuplicates = Loadable(lazy(() => import('../pages/TransactionDuplicates')));
 
-export const PageFour = Loadable(lazy(() => import('../pages/PageFour')));
-export const PageFive = Loadable(lazy(() => import('../pages/PageFive')));
-export const PageSix = Loadable(lazy(() => import('../pages/PageSix')));
+export const AccountView = Loadable(lazy(() => import('../pages/AccountView')));
 
 export const Page404 = Loadable(lazy(() => import('../pages/Page404')));

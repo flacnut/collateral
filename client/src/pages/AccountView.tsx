@@ -6,13 +6,13 @@ import { useSettingsContext } from '../components/settings';
 
 // ----------------------------------------------------------------------
 
-export default function PageFive() {
+export default function AccountView() {
   const { themeStretch } = useSettingsContext();
 
   return (
     <>
       <Helmet>
-        <title> Page Five | Minimal UI</title>
+        <title> Account</title>
       </Helmet>
 
       <Container maxWidth={themeStretch ? false : 'xl'}>
