@@ -91,9 +91,12 @@ export class Account extends BaseEntity {
 
   @Field(() => Int)
   async totalTransactions(): Promise<number> {
-    const [_, count] = await CoreTransaction.findAndCount({
-      accountId: this.id,
-    });
+    const count = await CoreTransaction.getRepository()
+      .createQueryBuilder('t')
+      .where('t.accountId = :accountId', {
+        accountId: this.id,
+      })
+      .getCount();
     return count;
   }
 
