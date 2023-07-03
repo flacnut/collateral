@@ -173,7 +173,7 @@ export function useChart(theme: Theme, options?: ApexOptions) {
     // Stroke
     stroke: {
       width: 3,
-      curve: 'smooth',
+      //curve: 'smooth',
       lineCap: 'round',
     },
 
@@ -206,8 +206,8 @@ export function useChart(theme: Theme, options?: ApexOptions) {
     plotOptions: {
       // Bar
       bar: {
-        borderRadius: 4,
-        columnWidth: '28%',
+        borderRadius: 3,
+        columnWidth: '80%',
       },
 
       // Pie + Donut
@@ -259,14 +259,14 @@ export function useChart(theme: Theme, options?: ApexOptions) {
         // sm
         breakpoint: theme.breakpoints.values.sm,
         options: {
-          plotOptions: { bar: { columnWidth: '40%' } },
+          plotOptions: { bar: { borderRadius: 1, columnWidth: '80%' } },
         },
       },
       {
         // md
         breakpoint: theme.breakpoints.values.md,
         options: {
-          plotOptions: { bar: { columnWidth: '32%' } },
+          plotOptions: { bar: { borderRadius: 1, columnWidth: '75%' } },
         },
       },
     ],

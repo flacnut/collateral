@@ -255,7 +255,7 @@ function AccountTransactionsChart(props: { accountId: string | null }) {
     });
   Object.keys(timeData).forEach((time) => {
     series.forEach((serie) => {
-      serie.data.push(timeData[time][serie.name]);
+      serie.data.push(timeData[time][serie.name].amountCents / 100);
     });
   });
 
@@ -279,7 +279,7 @@ function AccountTransactionsChart(props: { accountId: string | null }) {
     chartOptions.chart.stacked = false;
   }
 
-  return <Chart type="line" series={series} options={chartOptions} height={364} />;
+  return <Chart type="bar" series={series} options={chartOptions} height={364} />;
 }
 
 function BasicTransactionTableView(props: { accountId: string | null }) {
@@ -312,11 +312,16 @@ function BasicTransactionTableView(props: { accountId: string | null }) {
 
 function getSeriesData(at: IAggregatedTransaction[]) {
   const years: { [year: string]: number } = {};
-  const dates: { [date: string]: { [classification: string]: number } } = {};
-  const classifications = at.reduce((memo: { [key: string]: number }, at) => {
-    memo[at.classification] = 0;
-    return memo;
-  }, {});
+  const dates: {
+    [date: string]: { [classification: string]: { count: number; amountCents: number } };
+  } = {};
+  const classifications = at.reduce(
+    (memo: { [key: string]: { count: number; amountCents: number } }, at) => {
+      memo[at.classification] = { count: 0, amountCents: 0 };
+      return memo;
+    },
+    {}
+  );
 
   getDates().forEach((time) => {
     dates[time] = { ...classifications };
@@ -328,7 +333,7 @@ function getSeriesData(at: IAggregatedTransaction[]) {
     if (!dates[time]) {
       return;
     }
-    dates[time][t.classification] = t.transactionIds.length;
+    dates[time][t.classification] = { count: t.transactionIds.length, amountCents: t.amountCents };
   });
 
   Object.keys(dates).forEach((date) => {
