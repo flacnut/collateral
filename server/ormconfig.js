@@ -4,7 +4,7 @@ module.exports = [
     type: 'sqlite',
     database: 'database.sqlite',
     synchronize: false, // switch to true if you change table structure
-    logging: true,
+    logging: false,
     entities: ['src/entity/**/*.ts'],
     migrations: ['src/migration/**/*.ts'],
     subscribers: ['src/subscriber/**/*.ts'],

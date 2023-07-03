@@ -160,7 +160,6 @@ export class AdvancedTransactionResolver {
     }
 
     const transactions = await CoreTransaction.find(ormOptions);
-
     // filter out based on tags
     // Notes: This could be made faster with a more complex manual SQL query
     // on transaction_tags_tag table and injecting the result as a transactionId IN (...)
@@ -240,8 +239,9 @@ export class AdvancedTransactionResolver {
             transactionIds: [],
           };
 
-          if (options.aggregation.account)
+          if (options.aggregation.account && !groups[key].account) {
             groups[key].account = await t.account();
+          }
           if (options.aggregation.classification)
             groups[key].classification = (t.classification ?? '').toString();
           if (options.aggregation.description)
@@ -250,7 +250,8 @@ export class AdvancedTransactionResolver {
             groups[key].month = getMonthNormalizeDate(
               t.date,
             ).toLocaleDateString();
-          if (options.aggregation.tags) groups[key].tags = await t.tags;
+          if (options.aggregation.tags && !groups[key].tags)
+            groups[key].tags = await t.tags;
         }
 
         groups[key].transactionCount++;
