@@ -4,7 +4,7 @@ import { Container, Typography, useTheme } from '@mui/material';
 // components
 import { useSettingsContext } from '../components/settings';
 import { useParams } from 'react-router';
-import { useLazyQuery } from '@apollo/client';
+import { DocumentNode, useLazyQuery } from '@apollo/client';
 import { useEffect, useState } from 'react';
 import { gql } from 'src/__generated__/gql';
 import { IAggregatedTransaction } from 'src/components/tables/AggregatedTransactionTable';
@@ -13,6 +13,7 @@ import { useChart } from 'src/utils/chartUtils';
 import Chart from 'react-apexcharts';
 import { ApexOptions } from 'apexcharts';
 import { TransactionCategory, TransactionClassification } from 'src/__generated__/graphql';
+import Queries from 'src/graphql/Queries';
 
 // ----------------------------------------------------------------------
 
@@ -62,6 +63,73 @@ query advancedTransactionQuery($options:AdvancedTransactionQueryOptions!) {
     transactionCount
     transactionIds
   }
+}`);
+
+const getTransactionsForAccountQuery = gql(`
+query getTransactionsByAccount($accountId:String!) {
+  getTransactions(accountId:$accountId) {
+    __typename
+  	...on Transaction {
+      ...CoreTransactionParts
+      account {
+        name
+      }
+      tags {
+        name
+      }
+    }
+    ...on BackfilledTransaction {
+      ...CoreBackfilledTransactionParts
+      account {
+        name
+      }
+      tags {
+        name
+      }
+    }
+    ... on InvestmentTransaction {
+      ...CoreInvestmentTransactionParts
+      account {
+        name
+      }
+      tags {
+        name
+      }
+    }
+  }
+}
+
+fragment CoreTransactionParts on Transaction {
+  id
+  accountId
+  description
+  amountCents
+  amount
+  date
+  currency
+  classification
+}
+
+fragment CoreBackfilledTransactionParts on BackfilledTransaction {
+  id
+  accountId
+  description
+  amountCents
+  amount
+  date
+  currency
+  classification
+}
+
+fragment CoreInvestmentTransactionParts on InvestmentTransaction {
+  id
+  accountId
+  description
+  amountCents
+  amount
+  date
+  currency
+  classification
 }`);
 
 export default function AccountView() {
@@ -135,7 +203,6 @@ export default function AccountView() {
     });
   });
 
-  console.dir(chartOptions);
   let months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
   chartOptions.xaxis = {
@@ -152,13 +219,10 @@ export default function AccountView() {
     },
   };
 
-  console.dir(chartOptions);
-
-  /*
   if (chartOptions.chart) {
     chartOptions.chart.stacked = false;
   }
-  */
+
   return (
     <>
       <Helmet>
