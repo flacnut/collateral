@@ -1,6 +1,16 @@
 import { Helmet } from 'react-helmet-async';
 // @mui
-import { Card, Container, Stack, Typography, useTheme } from '@mui/material';
+import {
+  Card,
+  Container,
+  FormControlLabel,
+  MenuItem,
+  Stack,
+  Switch,
+  TextField,
+  Typography,
+  useTheme,
+} from '@mui/material';
 // components
 import { useSettingsContext } from '../components/settings';
 import { useParams } from 'react-router';
@@ -20,6 +30,7 @@ import {
   IBasicTransaction,
 } from 'src/components/tables/BasicTransactionTable';
 import { CustomAvatar } from 'src/components/custom-avatar';
+import { reverse } from 'lodash';
 
 // ----------------------------------------------------------------------
 
@@ -279,7 +290,165 @@ function AccountTransactionsChart(props: { accountId: string | null }) {
     chartOptions.chart.stacked = false;
   }
 
-  return <Chart type="bar" series={series} options={chartOptions} height={364} />;
+  // toolbar
+  const dataTypes = ['amount', 'volume'];
+  const [dataType, setDataType] = useState<string>('amount');
+  const onSelectDataType = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setDataType(event.target.value);
+  };
+
+  const timeWindows = ['year to date', '1 year', '2 years', '3 years', '5 years', 'all'];
+  const [timeWindow, setTimeWindow] = useState<string>('year to date');
+  const onSelectTimeWindow = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setTimeWindow(event.target.value);
+  };
+
+  const chartTypes = ['bar', 'line'];
+  const [chartType, setChartType] = useState<string>('bar');
+  const onSelectChartType = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setChartType(event.target.value);
+  };
+
+  const [stacked, setStacked] = useState(false);
+  const onSetStacked = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setStacked(event.target.checked);
+  };
+
+  return (
+    <Stack>
+      <Stack
+        spacing={2}
+        alignItems="center"
+        direction={{
+          xs: 'column',
+          md: 'row',
+        }}
+        sx={{ px: 2.5, py: 3 }}
+      >
+        <TextField
+          fullWidth
+          select
+          label="Data"
+          value={dataType}
+          onChange={onSelectDataType}
+          SelectProps={{
+            MenuProps: {
+              PaperProps: {
+                sx: { maxHeight: 220 },
+              },
+            },
+          }}
+          sx={{
+            maxWidth: { md: 200 },
+            textTransform: 'capitalize',
+          }}
+        >
+          {dataTypes.map((option) => (
+            <MenuItem
+              key={option}
+              value={option}
+              sx={{
+                mx: 1,
+                my: 0.5,
+                borderRadius: 0.75,
+                typography: 'body2',
+                textTransform: 'capitalize',
+                '&:first-of-type': { mt: 0 },
+                '&:last-of-type': { mb: 0 },
+              }}
+            >
+              {option}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <TextField
+          fullWidth
+          select
+          label="Duration"
+          value={timeWindow}
+          onChange={onSelectTimeWindow}
+          SelectProps={{
+            MenuProps: {
+              PaperProps: {
+                sx: { maxHeight: 220 },
+              },
+            },
+          }}
+          sx={{
+            maxWidth: { md: 200 },
+            textTransform: 'capitalize',
+          }}
+        >
+          {timeWindows.map((option) => (
+            <MenuItem
+              key={option}
+              value={option}
+              sx={{
+                mx: 1,
+                my: 0.5,
+                borderRadius: 0.75,
+                typography: 'body2',
+                textTransform: 'capitalize',
+                '&:first-of-type': { mt: 0 },
+                '&:last-of-type': { mb: 0 },
+              }}
+            >
+              {option}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <TextField
+          fullWidth
+          select
+          label="Chart"
+          value={chartType}
+          onChange={onSelectChartType}
+          SelectProps={{
+            MenuProps: {
+              PaperProps: {
+                sx: { maxHeight: 220 },
+              },
+            },
+          }}
+          sx={{
+            maxWidth: { md: 200 },
+            textTransform: 'capitalize',
+          }}
+        >
+          {chartTypes.map((option) => (
+            <MenuItem
+              key={option}
+              value={option}
+              sx={{
+                mx: 1,
+                my: 0.5,
+                borderRadius: 0.75,
+                typography: 'body2',
+                textTransform: 'capitalize',
+                '&:first-of-type': { mt: 0 },
+                '&:last-of-type': { mb: 0 },
+              }}
+            >
+              {option}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <FormControlLabel
+          label="Stacked"
+          control={<Switch checked={stacked} onChange={onSetStacked} />}
+          sx={{
+            pl: 2,
+            py: 1.5,
+            top: 0,
+          }}
+        />
+      </Stack>
+      <Chart type="bar" series={series} options={chartOptions} height={364} />
+    </Stack>
+  );
 }
 
 function BasicTransactionTableView(props: { accountId: string | null }) {
