@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 // @mui
-import { Container, Typography, useTheme } from '@mui/material';
+import { Card, Container, Typography, useTheme } from '@mui/material';
 // components
 import { useSettingsContext } from '../components/settings';
 import { useParams } from 'react-router';
@@ -14,6 +14,10 @@ import Chart from 'react-apexcharts';
 import { ApexOptions } from 'apexcharts';
 import { TransactionCategory, TransactionClassification } from 'src/__generated__/graphql';
 import Queries from 'src/graphql/Queries';
+import {
+  BasicTransactionTable,
+  IBasicTransaction,
+} from 'src/components/tables/BasicTransactionTable';
 
 // ----------------------------------------------------------------------
 
@@ -236,6 +240,10 @@ export default function AccountView() {
 
         <Chart type="line" series={series} options={chartOptions} height={364} />
 
+        <Card>
+          <BasicTransactionTableView accountId={id ?? null} />
+        </Card>
+
         <Typography gutterBottom>
           <pre>{JSON.stringify(getSeriesData(aggTransactions), null, 2)}</pre>
         </Typography>
@@ -250,6 +258,34 @@ export default function AccountView() {
       </Container>
     </>
   );
+}
+
+function BasicTransactionTableView(props: { accountId: string | null }) {
+  const [refetchByAccount, getByAccountResponse] = useLazyQuery(getTransactionsForAccountQuery);
+  const [transactions, setTransactions] = useState<IBasicTransaction[]>([]);
+
+  useEffect(() => {
+    if (!props.accountId) {
+      return;
+    }
+
+    refetchByAccount({
+      variables: {
+        accountId: props.accountId,
+      },
+    });
+  }, [props.accountId, refetchByAccount]);
+
+  useEffect(() => {
+    let maybeTransactions = [...(getByAccountResponse.data?.getTransactions ?? [])];
+    setTransactions(
+      (maybeTransactions as unknown as IBasicTransaction[]).sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      )
+    );
+  }, [getByAccountResponse.data]);
+
+  return <BasicTransactionTable transactions={transactions} />;
 }
 
 function getSeriesData(at: IAggregatedTransaction[]) {
