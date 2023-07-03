@@ -30,7 +30,7 @@ import {
   IBasicTransaction,
 } from 'src/components/tables/BasicTransactionTable';
 import { CustomAvatar } from 'src/components/custom-avatar';
-import { reverse } from 'lodash';
+import { type Props } from 'react-apexcharts';
 
 // ----------------------------------------------------------------------
 
@@ -212,6 +212,31 @@ export default function AccountView() {
 }
 
 function AccountTransactionsChart(props: { accountId: string | null }) {
+  // toolbar
+  const dataTypes = ['amount', 'volume'];
+  const [dataType, setDataType] = useState<string>('amount');
+  const onSelectDataType = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setDataType(event.target.value);
+  };
+
+  const timeWindows = ['year to date', '1 year', '2 years', '3 years', '5 years', 'all'];
+  const [timeWindow, setTimeWindow] = useState<string>('year to date');
+  const onSelectTimeWindow = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setTimeWindow(event.target.value);
+  };
+
+  const chartTypes = ['bar', 'line'];
+  const [chartType, setChartType] = useState<Props['type']>('bar');
+  const onSelectChartType = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setChartType(event.target.value as Props['type']);
+  };
+
+  const [stacked, setStacked] = useState(false);
+  const onSetStacked = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setStacked(event.target.checked);
+  };
+
+  // chart data rendering
   const [refetchTransactionVolume, transactionVolumeResults] = useLazyQuery(
     getAggregatedTransactionsQuery
   );
@@ -257,7 +282,7 @@ function AccountTransactionsChart(props: { accountId: string | null }) {
 
   const theme = useTheme();
   const chartOptions = useChart(theme, {}) as ApexOptions;
-  const { timeData, groups, seriesNames } = getSeriesData(aggTransactions);
+  const { timeData, groups, seriesNames } = getSeriesData(timeWindow, aggTransactions);
 
   let series: Array<{ name: string; data: number[] }> = seriesNames
     .filter((n) => n !== '')
@@ -287,32 +312,8 @@ function AccountTransactionsChart(props: { accountId: string | null }) {
   };
 
   if (chartOptions.chart) {
-    chartOptions.chart.stacked = false;
+    chartOptions.chart.stacked = stacked;
   }
-
-  // toolbar
-  const dataTypes = ['amount', 'volume'];
-  const [dataType, setDataType] = useState<string>('amount');
-  const onSelectDataType = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setDataType(event.target.value);
-  };
-
-  const timeWindows = ['year to date', '1 year', '2 years', '3 years', '5 years', 'all'];
-  const [timeWindow, setTimeWindow] = useState<string>('year to date');
-  const onSelectTimeWindow = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setTimeWindow(event.target.value);
-  };
-
-  const chartTypes = ['bar', 'line'];
-  const [chartType, setChartType] = useState<string>('bar');
-  const onSelectChartType = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setChartType(event.target.value);
-  };
-
-  const [stacked, setStacked] = useState(false);
-  const onSetStacked = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setStacked(event.target.checked);
-  };
 
   return (
     <Stack>
@@ -446,7 +447,7 @@ function AccountTransactionsChart(props: { accountId: string | null }) {
           }}
         />
       </Stack>
-      <Chart type="bar" series={series} options={chartOptions} height={364} />
+      <Chart type={chartType} series={series} options={chartOptions} height={364} />
     </Stack>
   );
 }
@@ -479,7 +480,7 @@ function BasicTransactionTableView(props: { accountId: string | null }) {
   return <BasicTransactionTable transactions={transactions} />;
 }
 
-function getSeriesData(at: IAggregatedTransaction[]) {
+function getSeriesData(duration: string, at: IAggregatedTransaction[]) {
   const years: { [year: string]: number } = {};
   const dates: {
     [date: string]: { [classification: string]: { count: number; amountCents: number } };
@@ -492,7 +493,7 @@ function getSeriesData(at: IAggregatedTransaction[]) {
     {}
   );
 
-  getDates().forEach((time) => {
+  getDates(duration, at).forEach((time) => {
     dates[time] = { ...classifications };
   });
 
@@ -526,16 +527,44 @@ function getSeriesData(at: IAggregatedTransaction[]) {
   return { timeData: dates, groups, seriesNames: Array.from(new Set(seriesNames)) };
 }
 
-function getDates(): number[] {
+function getDates(duration: string, at: IAggregatedTransaction[]): number[] {
   const date = new Date(new Date().toLocaleDateString());
   date.setDate(1);
 
   let results = [date.getTime()];
+  let months = getDuration(duration, at);
 
-  for (var i = 0; i < 23; i++) {
+  for (var i = 0; i < months; i++) {
     date.setMonth(date.getMonth() - 1);
     results.unshift(date.getTime());
   }
 
   return results;
+}
+
+function getDuration(duration: string, at: IAggregatedTransaction[]): number {
+  const now = new Date();
+  switch (duration) {
+    case '1 year':
+      return 11;
+    case '2 years':
+      return 23;
+    case '3 years':
+      return 35;
+    case '5 years':
+      return 59;
+    case 'year to date':
+      return now.getMonth();
+    case 'all':
+      let oldestDate = at.reduce((memo: Date, transaction) => {
+        return transaction.date.getTime() < memo.getTime() ? transaction.date : memo;
+      }, now);
+
+      let months = (now.getFullYear() - oldestDate.getFullYear()) * 12;
+      months -= oldestDate.getMonth();
+      months += now.getMonth();
+      return months <= 0 ? 0 : months;
+    default:
+      return 1;
+  }
 }
