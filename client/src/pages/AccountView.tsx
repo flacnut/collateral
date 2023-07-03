@@ -214,7 +214,7 @@ export default function AccountView() {
           </Typography>
         </Stack>
 
-        <Card sx={{ pt: 3, px: 3, marginBottom: 2 }}>
+        <Card sx={{ pb: 1, px: 3, marginBottom: 2 }}>
           <AccountTransactionsChart accountId={id ?? null} />
         </Card>
         <Card sx={{ marginBottom: 2 }}>
@@ -298,6 +298,17 @@ function AccountTransactionsChart(props: { accountId: string | null }) {
   const chartOptions = useChart(theme, {}) as ApexOptions;
   const { timeData, groups, seriesNames } = getSeriesData(timeWindow, aggTransactions);
 
+  let getSerieValue = (serie: string, time: string): number => {
+    switch (dataType) {
+      case 'amount':
+        return timeData[time][serie].amountCents / 100;
+      case 'volume':
+        return timeData[time][serie].count;
+      default:
+        return 0;
+    }
+  };
+
   let series: Array<{ name: string; data: number[] }> = seriesNames
     .filter((n) => n !== '')
     .map((name) => {
@@ -305,7 +316,7 @@ function AccountTransactionsChart(props: { accountId: string | null }) {
     });
   Object.keys(timeData).forEach((time) => {
     series.forEach((serie) => {
-      serie.data.push(timeData[time][serie.name].amountCents / 100);
+      serie.data.push(getSerieValue(serie.name, time));
     });
   });
 
@@ -341,6 +352,9 @@ function AccountTransactionsChart(props: { accountId: string | null }) {
         }}
         sx={{ px: 2.5, py: 3 }}
       >
+        <Typography variant="h4" component="div" flexGrow={1}>
+          Account Transactions
+        </Typography>
         <TextField
           fullWidth
           select
