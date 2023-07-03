@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 // @mui
-import { Card, Container, Typography, useTheme } from '@mui/material';
+import { Card, Container, Stack, Typography, useTheme } from '@mui/material';
 // components
 import { useSettingsContext } from '../components/settings';
 import { useParams } from 'react-router';
@@ -16,8 +16,10 @@ import { TransactionCategory, TransactionClassification } from 'src/__generated_
 import Queries from 'src/graphql/Queries';
 import {
   BasicTransactionTable,
+  IBasicAccount,
   IBasicTransaction,
 } from 'src/components/tables/BasicTransactionTable';
+import { CustomAvatar } from 'src/components/custom-avatar';
 
 // ----------------------------------------------------------------------
 
@@ -136,6 +138,15 @@ fragment CoreInvestmentTransactionParts on InvestmentTransaction {
   classification
 }`);
 
+interface IInstitution {
+  name: string;
+  logo: string;
+}
+
+interface IAccount extends IBasicAccount {
+  institution: IInstitution;
+}
+
 export default function AccountView() {
   const { themeStretch } = useSettingsContext();
 
@@ -145,6 +156,11 @@ export default function AccountView() {
   const [refetchTransactionVolume, transactionVolumeResults] = useLazyQuery(
     getAggregatedTransactionsQuery
   );
+
+  const [account, setAccount] = useState<IAccount | null>(null);
+  useEffect(() => {
+    setAccount((data?.getAccount as unknown as IAccount) ?? null);
+  }, [data?.getAccount, setAccount]);
 
   useEffect(() => {
     !!id &&
@@ -234,13 +250,25 @@ export default function AccountView() {
       </Helmet>
 
       <Container maxWidth={themeStretch ? false : 'xl'}>
-        <Typography variant="h3" component="h1" paragraph>
-          Account
-        </Typography>
+        <Stack sx={{ marginBottom: 2 }}>
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <CustomAvatar
+              src={`data:image/png;base64,${account?.institution.logo}`}
+              name={account?.institution.name}
+            />
+            <Typography variant="h3" component="h1" paragraph>
+              {account?.name}
+            </Typography>
+          </Stack>
+          <Typography noWrap variant="body2" sx={{ color: '#919eab', marginLeft: '58px' }}>
+            {account?.institution.name}
+          </Typography>
+        </Stack>
 
-        <Chart type="line" series={series} options={chartOptions} height={364} />
-
-        <Card>
+        <Card sx={{ pt: 3, px: 3, marginBottom: 2 }}>
+          <Chart type="line" series={series} options={chartOptions} height={364} />
+        </Card>
+        <Card sx={{ marginBottom: 2 }}>
           <BasicTransactionTableView accountId={id ?? null} />
         </Card>
 
