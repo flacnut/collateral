@@ -14,23 +14,19 @@ import {
 // components
 import { useSettingsContext } from '../components/settings';
 import { useParams } from 'react-router';
-import { DocumentNode, useLazyQuery } from '@apollo/client';
+import { useLazyQuery } from '@apollo/client';
 import { useEffect, useState } from 'react';
 import { gql } from 'src/__generated__/gql';
 import { IAggregatedTransaction } from 'src/components/tables/AggregatedTransactionTable';
 import { useChart } from 'src/utils/chartUtils';
-
-import Chart from 'react-apexcharts';
 import { ApexOptions } from 'apexcharts';
-import { TransactionCategory, TransactionClassification } from 'src/__generated__/graphql';
-import Queries from 'src/graphql/Queries';
 import {
   BasicTransactionTable,
   IBasicAccount,
   IBasicTransaction,
 } from 'src/components/tables/BasicTransactionTable';
 import { CustomAvatar } from 'src/components/custom-avatar';
-import { type Props } from 'react-apexcharts';
+import Chart from 'src/components/charts/Chart';
 
 // ----------------------------------------------------------------------
 
@@ -158,6 +154,24 @@ interface IAccount extends IBasicAccount {
   institution: IInstitution;
 }
 
+type ApexOptionsChartTypes =
+  | 'line'
+  | 'area'
+  | 'bar'
+  | 'pie'
+  | 'donut'
+  | 'radialBar'
+  | 'scatter'
+  | 'bubble'
+  | 'heatmap'
+  | 'candlestick'
+  | 'boxPlot'
+  | 'radar'
+  | 'polarArea'
+  | 'rangeBar'
+  | 'rangeArea'
+  | 'treemap';
+
 export default function AccountView() {
   const { themeStretch } = useSettingsContext();
 
@@ -226,9 +240,9 @@ function AccountTransactionsChart(props: { accountId: string | null }) {
   };
 
   const chartTypes = ['bar', 'line'];
-  const [chartType, setChartType] = useState<Props['type']>('bar');
+  const [chartType, setChartType] = useState<ApexOptionsChartTypes>('bar');
   const onSelectChartType = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setChartType(event.target.value as Props['type']);
+    setChartType(event.target.value as ApexOptionsChartTypes);
   };
 
   const [stacked, setStacked] = useState(false);
@@ -312,6 +326,7 @@ function AccountTransactionsChart(props: { accountId: string | null }) {
   };
 
   if (chartOptions.chart) {
+    chartOptions.chart.type = chartType;
     chartOptions.chart.stacked = stacked;
   }
 
@@ -447,7 +462,7 @@ function AccountTransactionsChart(props: { accountId: string | null }) {
           }}
         />
       </Stack>
-      <Chart type={chartType} series={series} options={chartOptions} height={364} />
+      <Chart series={series} options={chartOptions} height={300} />
     </Stack>
   );
 }
