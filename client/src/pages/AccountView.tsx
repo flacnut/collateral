@@ -153,10 +153,6 @@ export default function AccountView() {
   const { id } = useParams<string>();
   const [refetch, { data, loading }] = useLazyQuery(getAccountQuery);
 
-  const [refetchTransactionVolume, transactionVolumeResults] = useLazyQuery(
-    getAggregatedTransactionsQuery
-  );
-
   const [account, setAccount] = useState<IAccount | null>(null);
   useEffect(() => {
     setAccount((data?.getAccount as unknown as IAccount) ?? null);
@@ -169,22 +165,62 @@ export default function AccountView() {
           accountId: id,
         },
       });
+  }, [id]);
 
-    !!id &&
+  return (
+    <>
+      <Helmet>
+        <title>Account: {account?.name ?? ''}</title>
+      </Helmet>
+
+      <Container maxWidth={themeStretch ? false : 'xl'}>
+        <Stack sx={{ marginBottom: 2 }}>
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <CustomAvatar
+              src={`data:image/png;base64,${account?.institution.logo}`}
+              name={account?.institution.name}
+            />
+            <Typography variant="h3" component="h1" paragraph>
+              {account?.name}
+            </Typography>
+          </Stack>
+          <Typography noWrap variant="body2" sx={{ color: '#919eab', marginLeft: '58px' }}>
+            {account?.institution.name}
+          </Typography>
+        </Stack>
+
+        <Card sx={{ pt: 3, px: 3, marginBottom: 2 }}>
+          <AccountTransactionsChart accountId={id ?? null} />
+        </Card>
+        <Card sx={{ marginBottom: 2 }}>
+          <BasicTransactionTableView accountId={id ?? null} />
+        </Card>
+      </Container>
+    </>
+  );
+}
+
+function AccountTransactionsChart(props: { accountId: string | null }) {
+  const [refetchTransactionVolume, transactionVolumeResults] = useLazyQuery(
+    getAggregatedTransactionsQuery
+  );
+
+  useEffect(() => {
+    !!props.accountId &&
       refetchTransactionVolume({
         variables: {
           options: {
             aggregation: { month: true, classification: true },
             includeFilters: {
               accounts: {
-                accountIds: [id],
+                accountIds: [props.accountId],
               },
             },
             excludeFilters: {},
           },
         },
       });
-  }, [id]);
+  }, [props.accountId]);
 
   const [aggTransactions, setAggTransactions] = useState<IAggregatedTransaction[]>([]);
   useEffect(() => {
@@ -243,49 +279,7 @@ export default function AccountView() {
     chartOptions.chart.stacked = false;
   }
 
-  return (
-    <>
-      <Helmet>
-        <title>Account</title>
-      </Helmet>
-
-      <Container maxWidth={themeStretch ? false : 'xl'}>
-        <Stack sx={{ marginBottom: 2 }}>
-          <Stack direction="row" alignItems="center" spacing={2}>
-            <CustomAvatar
-              src={`data:image/png;base64,${account?.institution.logo}`}
-              name={account?.institution.name}
-            />
-            <Typography variant="h3" component="h1" paragraph>
-              {account?.name}
-            </Typography>
-          </Stack>
-          <Typography noWrap variant="body2" sx={{ color: '#919eab', marginLeft: '58px' }}>
-            {account?.institution.name}
-          </Typography>
-        </Stack>
-
-        <Card sx={{ pt: 3, px: 3, marginBottom: 2 }}>
-          <Chart type="line" series={series} options={chartOptions} height={364} />
-        </Card>
-        <Card sx={{ marginBottom: 2 }}>
-          <BasicTransactionTableView accountId={id ?? null} />
-        </Card>
-
-        <Typography gutterBottom>
-          <pre>{JSON.stringify(getSeriesData(aggTransactions), null, 2)}</pre>
-        </Typography>
-
-        <Typography gutterBottom>
-          <pre>{JSON.stringify(data?.getAccount, null, 2)}</pre>
-        </Typography>
-
-        <Typography gutterBottom>
-          <pre>{JSON.stringify(aggTransactions, null, 2)}</pre>
-        </Typography>
-      </Container>
-    </>
-  );
+  return <Chart type="line" series={series} options={chartOptions} height={364} />;
 }
 
 function BasicTransactionTableView(props: { accountId: string | null }) {
