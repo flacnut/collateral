@@ -1,5 +1,5 @@
 import { Helmet } from 'react-helmet-async';
-import { SetStateAction, useEffect, useState } from 'react';
+import { SetStateAction, useCallback, useEffect, useState } from 'react';
 // @mui
 import { useTheme } from '@mui/material/styles';
 import {
@@ -345,9 +345,12 @@ export default function ItemsPage() {
     //navigate(PATH_DASHBOARD.invoice.edit(id));
   };
 
-  const handleViewRow = (id: string) => {
-    //navigate(PATH_DASHBOARD.invoice.view(id));
-  };
+  const handleViewRow = useCallback(
+    (id: string) => {
+      navigate(PATH_DASHBOARD.accounts.view(id));
+    },
+    [navigate]
+  );
 
   const handleResetFilter = () => {
     setFilterName('');
@@ -772,20 +775,20 @@ function InvoiceTableRow({
               name={row.institution.name}
             />
 
-            <div>
-              <Typography variant="subtitle2" noWrap>
-                {row.name}
-              </Typography>
+            <Link
+              noWrap
+              variant="body2"
+              onClick={onViewRow}
+              sx={{ color: 'text.disabled', cursor: 'pointer' }}
+            >
+              <div>
+                <Typography variant="subtitle2" noWrap color="MenuText" sx={{ color: '#FFF' }}>
+                  {row.name}
+                </Typography>
 
-              <Link
-                noWrap
-                variant="body2"
-                onClick={onViewRow}
-                sx={{ color: 'text.disabled', cursor: 'pointer' }}
-              >
                 {`...${row.mask}`}
-              </Link>
-            </div>
+              </div>
+            </Link>
           </Stack>
         </TableCell>
 
