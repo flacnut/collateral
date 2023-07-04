@@ -8,6 +8,7 @@ import {
   Stack,
   Switch,
   TextField,
+  Theme,
   Typography,
   useTheme,
 } from '@mui/material';
@@ -27,6 +28,7 @@ import {
 } from 'src/components/tables/BasicTransactionTable';
 import { CustomAvatar } from 'src/components/custom-avatar';
 import Chart from 'src/components/charts/Chart';
+import { TransactionClassification } from 'src/__generated__/graphql';
 
 // ----------------------------------------------------------------------
 
@@ -309,7 +311,7 @@ function AccountTransactionsChart(props: { accountId: string | null }) {
     }
   };
 
-  let series: Array<{ name: string; data: number[] }> = seriesNames
+  let series: Array<{ name: string; color?: string; data: number[] }> = seriesNames
     .filter((n) => n !== '')
     .map((name) => {
       return { name, data: [] };
@@ -318,6 +320,16 @@ function AccountTransactionsChart(props: { accountId: string | null }) {
     series.forEach((serie) => {
       serie.data.push(getSerieValue(serie.name, time));
     });
+  });
+
+  series.forEach((s) => {
+    if (
+      Object.keys(TransactionClassification)
+        .map((k) => k.toLowerCase())
+        .indexOf(s.name) !== -1
+    ) {
+      s.color = getColor(s.name, theme);
+    }
   });
 
   let months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -479,6 +491,27 @@ function AccountTransactionsChart(props: { accountId: string | null }) {
       <Chart series={series} options={chartOptions} height={300} />
     </Stack>
   );
+}
+
+function getColor(name: string, theme: Theme): string {
+  switch (name) {
+    case 'duplicate':
+      return theme.palette.grey[300];
+    case 'hidden':
+      return theme.palette.info.light;
+    case 'transfer':
+      return theme.palette.info.main;
+    case 'expense':
+      return theme.palette.error.main;
+    case 'recurring':
+      return theme.palette.warning.main;
+    case 'income':
+      return theme.palette.success.main;
+    case 'investment':
+      return theme.palette.success.light;
+    default:
+      return '';
+  }
 }
 
 function BasicTransactionTableView(props: { accountId: string | null }) {
