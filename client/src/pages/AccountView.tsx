@@ -29,6 +29,8 @@ import {
 import { CustomAvatar } from 'src/components/custom-avatar';
 import Chart from 'src/components/charts/Chart';
 import { TransactionClassification } from 'src/__generated__/graphql';
+import { fCurrency } from 'src/utils/formatNumber';
+import numeral from 'numeral';
 
 // ----------------------------------------------------------------------
 
@@ -346,6 +348,11 @@ function AccountTransactionsChart(props: { accountId: string | null }) {
     group: {
       groups: groups,
     },
+  };
+
+  chartOptions.yaxis = (chartOptions.yaxis ?? {}) as ApexYAxis;
+  chartOptions.yaxis.labels = {
+    formatter: (val: number, opts?: any) => numeral(val).format('$0,0'),
   };
 
   if (chartOptions.chart) {
