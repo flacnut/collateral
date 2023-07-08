@@ -16,7 +16,7 @@ import {
 import { useSettingsContext } from '../components/settings';
 import { useParams } from 'react-router';
 import { useLazyQuery } from '@apollo/client';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { gql } from 'src/__generated__/gql';
 import { IAggregatedTransaction } from 'src/components/tables/AggregatedTransactionTable';
 import { useChart } from 'src/utils/chartUtils';
@@ -149,6 +149,74 @@ fragment CoreInvestmentTransactionParts on InvestmentTransaction {
   classification
 }`);
 
+const transactionsByIdQuery = gql(`
+query getTransactionsbyId($ids:[String!]!) {
+  getTransactionsById(ids:$ids) {
+  
+  __typename
+  	...on Transaction {
+      ...CoreTransactionParts
+      account {
+        name
+      }
+      tags {
+        name
+      }
+    }
+    ...on BackfilledTransaction {
+      ...CoreBackfilledTransactionParts
+      account {
+        name
+      }
+      tags {
+        name
+      }
+    }
+    ... on InvestmentTransaction {
+      ...CoreInvestmentTransactionParts
+      account {
+        name
+      }
+      tags {
+        name
+      }
+    }
+  }
+}
+
+fragment CoreTransactionParts on Transaction {
+  id
+  accountId
+  description
+  amountCents
+  amount
+  date
+  currency
+  classification
+}
+
+fragment CoreBackfilledTransactionParts on BackfilledTransaction {
+  id
+  accountId
+  description
+  amountCents
+  amount
+  date
+  currency
+  classification
+}
+
+fragment CoreInvestmentTransactionParts on InvestmentTransaction {
+  id
+  accountId
+  description
+  amountCents
+  amount
+  date
+  currency
+  classification
+}`);
+
 interface IInstitution {
   name: string;
   logo: string;
@@ -181,6 +249,8 @@ export default function AccountView() {
 
   const { id } = useParams<string>();
   const [refetch, { data, loading }] = useLazyQuery(getAccountQuery);
+
+  const [selectedTransactionIds, setSelectedTransactionIds] = useState<string[]>([]);
 
   const [account, setAccount] = useState<IAccount | null>(null);
   useEffect(() => {
@@ -219,8 +289,16 @@ export default function AccountView() {
         </Stack>
 
         <Card sx={{ pb: 1, px: 3, marginBottom: 2 }}>
-          <AccountTransactionsChart accountId={id ?? null} />
+          <AccountTransactionsChart
+            accountId={id ?? null}
+            onSelectedTransactions={setSelectedTransactionIds}
+          />
         </Card>
+
+        <Card sx={{ marginBottom: 2 }}>
+          <BasicTransactionTableViewById transactionIds={selectedTransactionIds} />
+        </Card>
+
         <Card sx={{ marginBottom: 2 }}>
           <BasicTransactionTableView accountId={id ?? null} />
         </Card>
@@ -229,7 +307,10 @@ export default function AccountView() {
   );
 }
 
-function AccountTransactionsChart(props: { accountId: string | null }) {
+function AccountTransactionsChart(props: {
+  accountId: string | null;
+  onSelectedTransactions: (transactionIds: string[]) => void;
+}) {
   // toolbar
   const dataTypes = ['amount', 'volume'];
   const [dataType, setDataType] = useState<string>('amount');
@@ -358,6 +439,27 @@ function AccountTransactionsChart(props: { accountId: string | null }) {
   if (chartOptions.chart) {
     chartOptions.chart.type = chartType;
     chartOptions.chart.stacked = stacked;
+
+    chartOptions.chart.events = {
+      dataPointSelection: function (
+        event,
+        chartContext,
+        config: { seriesIndex: number; dataPointIndex: number }
+      ) {
+        let seriesTime = Number(Object.keys(timeData)[config.dataPointIndex]);
+        let aggTransactionSet = aggTransactions.filter(
+          (at) =>
+            at.classification.toLowerCase() === series[config.seriesIndex].name.toLowerCase() &&
+            seriesTime === at.date.getTime()
+        );
+
+        if (aggTransactionSet.length !== 1) {
+          return;
+        }
+
+        props.onSelectedTransactions(aggTransactionSet.pop()?.transactionIds ?? []);
+      },
+    };
   }
 
   return (
@@ -545,6 +647,30 @@ function BasicTransactionTableView(props: { accountId: string | null }) {
       )
     );
   }, [getByAccountResponse.data]);
+
+  return <BasicTransactionTable transactions={transactions} />;
+}
+
+function BasicTransactionTableViewById(props: { transactionIds: string[] }) {
+  const [refetchByIds, getByIdsResponse] = useLazyQuery(transactionsByIdQuery);
+  const [transactions, setTransactions] = useState<IBasicTransaction[]>([]);
+
+  useEffect(() => {
+    refetchByIds({
+      variables: {
+        ids: props.transactionIds,
+      },
+    });
+  }, [props.transactionIds, refetchByIds]);
+
+  useEffect(() => {
+    let maybeTransactions = [...(getByIdsResponse.data?.getTransactionsById ?? [])];
+    setTransactions(
+      (maybeTransactions as unknown as IBasicTransaction[]).sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      )
+    );
+  }, [getByIdsResponse.data]);
 
   return <BasicTransactionTable transactions={transactions} />;
 }
