@@ -200,6 +200,7 @@ export function useChart(theme: Theme, options?: ApexOptions) {
       x: {
         show: false,
       },
+      theme: theme.palette.mode,
     },
 
     // plotOptions
