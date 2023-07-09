@@ -1,8 +1,8 @@
 import { Account, BackfilledTransaction, CoreTransaction } from '@entities';
 import { createConnection, getConnectionOptions } from 'typeorm';
 import { createInterface } from 'readline';
+import data from './../../data.json';
 import { v4 as uuidv4 } from 'uuid';
-//import data from './../data.json';
 
 type ExistingTransactions = {
   raw: CoreTransaction[];
@@ -40,7 +40,7 @@ async function backfill(): Promise<[number, number]> {
   let skipped = 0;
   let inserted = 0;
 
-  const accountId = 'ACCOUNT ID';
+  const accountId = 'gEzKYvEyv0FEwDwKYX9EIkoynnE8b4fn530QN';
 
   const account = await Account.findOneOrFail({
     id: accountId,
@@ -51,7 +51,7 @@ async function backfill(): Promise<[number, number]> {
   );
 
   // data
-  let transactions = [].map((row: any) => {
+  let transactions = data.map((row: any) => {
     return mapRowToTransaction(row, account);
   });
 
@@ -131,11 +131,34 @@ function getPossibleDuplicates(
   };
 }
 
-function getCreditCents(credit: string, debit: string) {
-  let creditCents = Number(credit.replace('.', '')) ?? 0;
-  let debitCents = Number(debit.replace('.', '')) ?? 0;
+function getDecimalAsCents(num: string): number {
+  switch (num.length - num.indexOf('.')) {
+    case 3:
+      // x.00
+      return Number(num.replace('.', ''));
+    case 2:
+      // x.0
+      return Number(num.replace('.', '') + '0');
+    case 1:
+      // x.
+      return Number(num.replace('.', '') + '00');
+    default:
+    case num.length + 1:
+      // x
+      return Number(num + '00');
+  }
+}
 
-  return !!creditCents ? Math.abs(creditCents) : Math.abs(debitCents) * -1;
+function getCreditCents(credit: string, debit: string | undefined) {
+  if (!!debit) {
+    // two values
+    let creditCents = getDecimalAsCents(credit);
+    let debitCents = getDecimalAsCents(debit);
+
+    return !!creditCents ? Math.abs(creditCents) : Math.abs(debitCents) * -1;
+  }
+
+  return getDecimalAsCents(credit);
 }
 
 function getDayOfYear(date: Date): number {
@@ -185,7 +208,7 @@ function mapRowToTransaction(
   account: Account,
 ): BackfilledTransaction {
   const t = new BackfilledTransaction();
-  let creditCents = getCreditCents(data.Credit, data.Debit);
+  let creditCents = getCreditCents(data.Credit ?? data.Amount, data.Debit);
 
   if (account.invertTransactions) {
     creditCents = creditCents * -1;
