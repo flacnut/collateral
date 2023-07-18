@@ -201,9 +201,21 @@ export class AdvancedTransactionResolver {
 
     // aggregate
     const getMonthNormalizeDate = (d: Date | string): Date => {
-      let date = new Date(d);
+      let date = getUTCFixedDate(new Date(d));
       date.setDate(1);
       return date;
+    };
+
+    // timezon creates an off-by-one error where 1/1/n is picked up as 12/31/n-1
+    const getUTCFixedDate = (d: Date): Date => {
+      let year = d.getUTCFullYear();
+      let day = d.getUTCDate();
+      let month = d.getUTCMonth();
+
+      d.setDate(day);
+      d.setMonth(month);
+      d.setFullYear(year);
+      return d;
     };
 
     const getGroupKey = async (t: CoreTransaction): Promise<string> => {

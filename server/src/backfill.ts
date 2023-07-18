@@ -40,7 +40,7 @@ async function backfill(): Promise<[number, number]> {
   let skipped = 0;
   let inserted = 0;
 
-  const accountId = 'gEzKYvEyv0FEwDwKYX9EIkoynnE8b4fn530QN';
+  const accountId = '<ACCOUNT_ID>';
 
   const account = await Account.findOneOrFail({
     id: accountId,
@@ -132,20 +132,28 @@ function getPossibleDuplicates(
 }
 
 function getDecimalAsCents(num: string): number {
-  switch (num.length - num.indexOf('.')) {
+  let cleanNum = num.replace(',', '');
+  switch (cleanNum.length - cleanNum.indexOf('.')) {
+    case 6:
+    case 5:
+    case 4:
+      // x.0000
+      return Number(
+        cleanNum.substring(cleanNum.indexOf('.') + 3).replace('.', ''),
+      );
     case 3:
       // x.00
-      return Number(num.replace('.', ''));
+      return Number(cleanNum.replace('.', ''));
     case 2:
       // x.0
-      return Number(num.replace('.', '') + '0');
+      return Number(cleanNum.replace('.', '') + '0');
     case 1:
       // x.
-      return Number(num.replace('.', '') + '00');
+      return Number(cleanNum.replace('.', '') + '00');
     default:
-    case num.length + 1:
+    case cleanNum.length + 1:
       // x
-      return Number(num + '00');
+      return Number(cleanNum + '00');
   }
 }
 
@@ -210,8 +218,14 @@ function mapRowToTransaction(
   const t = new BackfilledTransaction();
   let creditCents = getCreditCents(data.Credit ?? data.Amount, data.Debit);
 
+  if (isNaN(creditCents)) {
+    console.dir(data);
+    console.dir(creditCents);
+    process.abort();
+  }
+
   if (account.invertTransactions) {
-    creditCents = creditCents * -1;
+    //creditCents = creditCents * -1;
   }
 
   t.id = `backfill-${uuidv4()}`;
