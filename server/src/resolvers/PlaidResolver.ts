@@ -48,6 +48,18 @@ const configuration = new Configuration({
   },
 });
 
+const DEFAULT_LINK_OPTIONS = {
+  user: {
+    client_user_id: '4325',
+  },
+  client_name: 'Plaid Test App',
+  products: [Products.Transactions],
+  country_codes: [CountryCode.Us],
+  language: 'en',
+  webhook: 'https://sample-web-hook.com',
+  redirect_uri: 'https://localhost:3000/oauth',
+};
+
 const client = new PlaidApi(configuration);
 
 @ObjectType()
@@ -75,17 +87,9 @@ class PlaidLinkResponse {
 export class PlaidResolver {
   @Query(() => LinkTokenResult)
   async getLinkToken(@Arg('itemId', { nullable: true }) itemId: string) {
-    const linkTokenRequestOptions = {
-      user: {
-        client_user_id: '4325',
-      },
-      client_name: 'Plaid Test App',
-      products: [Products.Transactions],
-      country_codes: [CountryCode.Us],
-      language: 'en',
-      webhook: 'https://sample-web-hook.com',
-      redirect_uri: 'https://localhost:3000/oauth',
-    } as LinkTokenCreateRequest;
+    const linkTokenRequestOptions = JSON.parse(
+      JSON.stringify(DEFAULT_LINK_OPTIONS),
+    ) as LinkTokenCreateRequest;
 
     if (itemId) {
       const item = await PlaidItem.findOne(itemId);
@@ -111,6 +115,27 @@ export class PlaidResolver {
           error: error.message,
         };
       });
+  }
+
+  @Query(() => LinkTokenResult)
+  async getLinkTokenForAccount(
+    @Arg('accountId', { nullable: false }) accountId: string,
+  ) {
+    const account = await Account.findOneOrFail({ id: accountId });
+    const item = await PlaidItem.findOneOrFail({ id: account.itemId });
+
+    const linkTokenRequestOptions = JSON.parse(
+      JSON.stringify(DEFAULT_LINK_OPTIONS),
+    ) as LinkTokenCreateRequest;
+
+    linkTokenRequestOptions.access_token = item?.accessToken;
+    const clientResponse = await client.linkTokenCreate(
+      linkTokenRequestOptions,
+    );
+
+    return {
+      token: clientResponse.data.link_token,
+    };
   }
 
   @Mutation(() => PlaidItem)
