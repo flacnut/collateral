@@ -171,6 +171,13 @@ query getToken {
 }
 `);
 
+const getLinkTokenForAccountQuery = gql(`
+query getLinkTokenForAccountQuery($accountId:String!) {
+  getLinkTokenForAccount(accountId:$accountId) {
+    token
+  }
+}`);
+
 const setLinkResponse = gql(`
 mutation setPlaidLinkResponse($plaidLinkResponse: PlaidLinkResponse!) {
   setPlaidLinkResponse(plaidLinkResponse: $plaidLinkResponse) {
@@ -191,12 +198,14 @@ export default function ItemsPage() {
   const theme = useTheme();
 
   const { loading, data, refetch } = useQuery(query);
+  const [token, setToken] = useState<string | null>(null);
   const [getLinkToken, gltResponse] = useLazyQuery(getLinkTokenQuery);
+  const [getLinkTokenForAccount, gltfaResponse] = useLazyQuery(getLinkTokenForAccountQuery);
   const [setPlaidLinkResponse] = useMutation<PlaidLinkResponse>(setLinkResponse);
   const [deleteAccount] = useMutation(deleteAccountMutation);
 
   const { open, ready } = usePlaidLink({
-    token: gltResponse.data?.getLinkToken?.token ?? null,
+    token: token,
     onSuccess: (public_token, metadata) => {
       setPlaidLinkResponse({
         variables: {
@@ -207,6 +216,7 @@ export default function ItemsPage() {
           },
         },
       });
+      setToken(null);
     },
   });
 
@@ -215,6 +225,14 @@ export default function ItemsPage() {
       open();
     }
   }, [ready, open]);
+
+  useEffect(() => {
+    setToken(gltResponse.data?.getLinkToken?.token ?? null);
+  }, [setToken, gltResponse]);
+
+  useEffect(() => {
+    setToken(gltfaResponse.data?.getLinkTokenForAccount?.token ?? null);
+  }, [setToken, gltfaResponse]);
 
   const { themeStretch } = useSettingsContext();
 
@@ -483,6 +501,13 @@ export default function ItemsPage() {
                         onViewRow={() => handleViewRow(row.id)}
                         onEditRow={() => handleEditRow(row.id)}
                         onDeleteRow={() => handleDeleteRow(row.id)}
+                        onFixLink={() =>
+                          getLinkTokenForAccount({
+                            variables: {
+                              accountId: row.id,
+                            },
+                          })
+                        }
                       />
                     ))}
 
@@ -733,6 +758,7 @@ function InvoiceTableRow({
   onViewRow,
   onEditRow,
   onDeleteRow,
+  onFixLink,
 }: {
   row: IAccount;
   selected: boolean;
@@ -740,6 +766,7 @@ function InvoiceTableRow({
   onViewRow: VoidFunction;
   onEditRow: VoidFunction;
   onDeleteRow: VoidFunction;
+  onFixLink: VoidFunction;
 }) {
   const [openConfirm, setOpenConfirm] = useState(false);
 
@@ -812,7 +839,7 @@ function InvoiceTableRow({
         </TableCell>
 
         <TableCell align="right">
-          <IconButton color={openPopover ? 'inherit' : 'default'} onClick={handleOpenPopover}>
+          <IconButton color="default" onClick={onFixLink}>
             <Iconify icon="eva:refresh-outline" />
           </IconButton>
           <IconButton color={openPopover ? 'inherit' : 'default'} onClick={handleOpenPopover}>
