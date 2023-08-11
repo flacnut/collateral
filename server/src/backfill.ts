@@ -45,7 +45,7 @@ async function backfill(): Promise<[number, number]> {
   let skipped = 0;
   let inserted = 0;
 
-  const accountId = '<ACCOUNT_ID>';
+  const accountId = 'm134kOQvLRsrqDVr6Zrytk9rLPZkJnCQxqPvm';
 
   const account = await Account.findOneOrFail({
     id: accountId,
@@ -112,6 +112,8 @@ function getPossibleDuplicates(
       ?.filter(
         (et) =>
           getDayOfYear(new Date(et.date)) === dayOfYear &&
+          new Date(newTransaction.date).getFullYear() ===
+            new Date(et.date).getFullYear() &&
           et.description === newTransaction.description,
       )
       ?.pop() ?? null;
@@ -127,9 +129,22 @@ function getPossibleDuplicates(
   ];
 
   nearbyET.forEach((et) => {
-    if (Math.abs(newTransaction.amountCents) === Math.abs(et.amountCents)) {
-      possibleDupes.push(et);
+    // not same amount
+    if (!(Math.abs(newTransaction.amountCents) === Math.abs(et.amountCents))) {
+      return;
     }
+
+    // not same year (but not on a year boundary)
+    if (
+      new Date(newTransaction.date).getFullYear() !==
+        new Date(et.date).getFullYear() &&
+      5 < dayOfYear &&
+      dayOfYear < 360
+    ) {
+      return;
+    }
+
+    possibleDupes.push(et);
   });
 
   return {
@@ -175,7 +190,7 @@ function getCreditCents(credit: string, debit: string | undefined) {
     return !!creditCents ? Math.abs(creditCents) : Math.abs(debitCents) * -1;
   }
 
-  return getDecimalAsCents(credit);
+  return getDecimalAsCents(credit) * -1;
 }
 
 function getDayOfYear(date: Date): number {
@@ -220,6 +235,7 @@ async function getExistingTransactionsForAccount(
   return existingTransactions;
 }
 
+/*
 function mapRowToInvestmentTransaction(
   data: any,
   account: Account,
@@ -246,7 +262,7 @@ function mapRowToInvestmentTransaction(
   t.unitPriceCents = data.unitPriceCents;
 
   return t;
-}
+} */
 
 function mapRowToTransaction(
   data: any,
