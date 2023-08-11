@@ -199,6 +199,45 @@ export default function TransactionCharts() {
               timeWindow={timeWindow}
             />
           </Grid>
+
+          <Grid item xs={12} md={6} lg={4}>
+            <TransactionSummaryWidget
+              title="Groceries"
+              color="warning"
+              tags={['Groceries']}
+              classifications={[TransactionClassification.Expense]}
+              invert={true}
+              smoothing={smoothing}
+              safe={safe}
+              timeWindow={timeWindow}
+            />
+          </Grid>
+
+          <Grid item xs={12} md={6} lg={4}>
+            <TransactionSummaryWidget
+              title="Water"
+              color="warning"
+              tags={['Water']}
+              classifications={[TransactionClassification.Recurring]}
+              invert={true}
+              smoothing={smoothing}
+              safe={safe}
+              timeWindow={timeWindow}
+            />
+          </Grid>
+
+          <Grid item xs={12} md={6} lg={4}>
+            <TransactionSummaryWidget
+              title="Energy"
+              color="warning"
+              tags={['Energy']}
+              classifications={[TransactionClassification.Recurring]}
+              invert={true}
+              smoothing={smoothing}
+              safe={safe}
+              timeWindow={timeWindow}
+            />
+          </Grid>
         </Grid>
       </Container>
     </>
@@ -362,7 +401,7 @@ function TransactionSummaryWidget(props: WidgetProps) {
         <TrendingInfo percent={avgPct} compareTo={'average'} />
       </Stack>
 
-      <Chart type="area" series={series} options={chartOptions as ApexOptions} height={120} />
+      <Chart type="area" series={series} options={chartOptions as ApexOptions} height={140} />
     </Card>
   );
 }

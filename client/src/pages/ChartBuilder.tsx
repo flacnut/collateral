@@ -6,11 +6,15 @@ import {
   CardHeader,
   Chip,
   Container,
+  FormControlLabel,
   Grid,
   MenuItem,
   Stack,
+  Switch,
   TextField,
+  Theme,
   Typography,
+  useTheme,
 } from '@mui/material';
 import { Helmet } from 'react-helmet-async';
 import { useSettingsContext } from 'src/components/settings';
@@ -29,6 +33,10 @@ import {
   IAggregatedTransaction,
 } from 'src/components/tables/AggregatedTransactionTable';
 import Iconify from 'src/components/iconify';
+import Chart from 'src/components/charts/Chart';
+import { ApexOptions } from 'apexcharts';
+import numeral from 'numeral';
+import { useChart } from 'src/utils/chartUtils';
 
 const getAggregatedTransactionsQuery = gql(`
 query advancedTransactionQuery($options:AdvancedTransactionQueryOptions!) {
@@ -67,6 +75,24 @@ type ISeriesConfig = {
   name?: string;
 };
 
+type ApexOptionsChartTypes =
+  | 'line'
+  | 'area'
+  | 'bar'
+  | 'pie'
+  | 'donut'
+  | 'radialBar'
+  | 'scatter'
+  | 'bubble'
+  | 'heatmap'
+  | 'candlestick'
+  | 'boxPlot'
+  | 'radar'
+  | 'polarArea'
+  | 'rangeBar'
+  | 'rangeArea'
+  | 'treemap';
+
 export default function ChartBuilder() {
   const { themeStretch } = useSettingsContext();
 
@@ -93,7 +119,7 @@ export default function ChartBuilder() {
   const [accounts, setAccounts] = useState<IBasicAccount[]>([]);
   const [getAccounts, getAccountsResult] = useLazyQuery(accountsQuery);
 
-  const [aggTransactions, setAggTransactoins] = useState<IAggregatedTransaction[]>([]);
+  const [aggTransactions, setAggTransactions] = useState<IAggregatedTransaction[]>([]);
   const [seriesConfig, setSeriesConfig] = useState<ISeriesConfig[]>([]);
 
   useEffect(() => {
@@ -111,25 +137,31 @@ export default function ChartBuilder() {
   }, [getTagsResult, getAccountsResult]);
 
   useEffect(() => {
-    setAggTransactoins(
-      (getAggregatedTransactionsResults.data?.advancedTransactionQuery ?? []).map((at, i) => {
-        return {
-          key: i.toString(),
-          accountId: '',
-          tags: at.tags ?? [],
-          transactionIds: at.transactionIds ?? [],
-          description: at.description ?? '',
-          amountCents: at.totalDepositCents - at.totalExpenseCents,
-          amount: (at.totalDepositCents - at.totalExpenseCents) / 100,
-          currency: null,
-          classification: at.classification ?? '',
-          account: { id: '', name: '' },
-          count: at.transactionCount,
-          date: new Date(at.month ?? 0),
-        };
-      })
+    setAggTransactions(
+      (getAggregatedTransactionsResults.data?.advancedTransactionQuery ?? [])
+        .map((at, i) => {
+          if (!at.month) {
+            console.log('NO MONTH!');
+            console.dir(at);
+          }
+          return {
+            key: i.toString(),
+            accountId: '',
+            tags: at.tags ?? [],
+            transactionIds: at.transactionIds ?? [],
+            description: at.description ?? '',
+            amountCents: at.totalDepositCents - at.totalExpenseCents,
+            amount: (at.totalDepositCents - at.totalExpenseCents) / 100,
+            currency: null,
+            classification: at.classification ?? '',
+            account: { id: '', name: '' },
+            count: at.transactionCount,
+            date: new Date(at.month ?? 0),
+          };
+        })
+        .filter((t) => t !== null)
     );
-  }, [getAggregatedTransactionsResults.data, setAggTransactoins]);
+  }, [getAggregatedTransactionsResults.data, setAggTransactions]);
 
   const colorIndex = [
     'primary',
@@ -142,7 +174,6 @@ export default function ChartBuilder() {
 
   const getTagColor = useCallback(
     (transaction: IAggregatedTransaction, tag: string): Color => {
-      console.dir(transaction);
       let transactionTagNames = transaction.tags.map((t) => t.name);
 
       // match the transaction to the series definition
@@ -151,7 +182,6 @@ export default function ChartBuilder() {
           if (config.tags.every((configTag) => transactionTagNames.indexOf(configTag) !== -1)) {
             // only color the tags that specifically match series config
             if (config.tags.indexOf(tag) !== -1) {
-              console.dir(colorIndex[index]);
               return colorIndex[index];
             }
           }
@@ -188,7 +218,7 @@ export default function ChartBuilder() {
           <Grid item xs={6}>
             <Card sx={{ marginBottom: 2 }}>
               <AggregatedTransactionTable
-                transactions={aggTransactions}
+                transactions={ReAggregateIgnoreMonth(aggTransactions)}
                 getTagColor={getTagColor}
               />
             </Card>
@@ -200,6 +230,16 @@ export default function ChartBuilder() {
                 tags={tags}
                 seriesConfig={seriesConfig}
                 setSeriesConfig={setSeriesConfig}
+              />
+            </Card>
+          </Grid>
+
+          <Grid item xs={12}>
+            <Card sx={{ marginBottom: 2 }}>
+              <AggTransactionsChart
+                aggTransactions={aggTransactions}
+                onSelectedTransactions={() => {}}
+                seriesConfig={seriesConfig}
               />
             </Card>
           </Grid>
@@ -341,7 +381,7 @@ function AdvancedTransactionFilters(props: {
 
   useEffect(() => {
     props.setQueryOptions({
-      aggregation: { tags: true, classification: true },
+      aggregation: { tags: true, classification: true, month: true },
       includeFilters: {
         tags: {
           type: selectedTagFilterType,
@@ -650,4 +690,435 @@ function AdvancedTransactionFilters(props: {
       </Stack>
     </Card>
   );
+}
+
+function ReAggregateIgnoreMonth(
+  aggTransactions: IAggregatedTransaction[]
+): IAggregatedTransaction[] {
+  let reducedMap = aggTransactions.reduce(
+    (set: { [key: string]: IAggregatedTransaction }, at: IAggregatedTransaction) => {
+      let key =
+        at.classification +
+        '::' +
+        at.tags
+          .map((t) => t.name)
+          .sort()
+          .join('_');
+
+      if (set[key]) {
+        set[key].transactionIds = [...set[key].transactionIds, ...at.transactionIds];
+        set[key].count += at.count;
+        set[key].amountCents += at.amountCents;
+        set[key].amount += at.amount;
+      } else {
+        set[key] = JSON.parse(JSON.stringify(at));
+        set[key].date = new Date(0);
+      }
+
+      return set;
+    },
+    {}
+  );
+
+  return Object.values(reducedMap);
+}
+
+// CHART FROM ACCOUNTVIEW
+function AggTransactionsChart(props: {
+  aggTransactions: IAggregatedTransaction[];
+  seriesConfig: ISeriesConfig[];
+  onSelectedTransactions: (transactionIds: string[]) => void;
+}) {
+  // toolbar
+  const dataTypes = ['amount', 'volume'];
+  const [dataType, setDataType] = useState<string>('amount');
+  const onSelectDataType = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setDataType(event.target.value);
+  };
+
+  const timeWindows = ['year to date', '1 year', '2 years', '3 years', '5 years', 'all'];
+  const [timeWindow, setTimeWindow] = useState<string>('year to date');
+  const onSelectTimeWindow = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setTimeWindow(event.target.value);
+  };
+
+  const chartTypes = ['bar', 'line'];
+  const [chartType, setChartType] = useState<ApexOptionsChartTypes>('bar');
+  const onSelectChartType = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setChartType(event.target.value as ApexOptionsChartTypes);
+  };
+
+  const [stacked, setStacked] = useState(false);
+  const onSetStacked = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setStacked(event.target.checked);
+  };
+
+  // reset when input changes to prevent page thrash
+  useEffect(() => {
+    setTimeWindow('year to date');
+  }, [props.aggTransactions, setTimeWindow]);
+
+  const theme = useTheme();
+  const chartOptions = useChart(theme, {}) as ApexOptions;
+  const { timeData, groups, seriesNames } = getSeriesData(
+    timeWindow,
+    props.aggTransactions,
+    props.seriesConfig
+  );
+
+  let getSerieValue = (serie: string, time: string): number => {
+    switch (dataType) {
+      case 'amount':
+        return timeData[time][serie].amountCents / 100;
+      case 'volume':
+        return timeData[time][serie].count;
+      default:
+        return 0;
+    }
+  };
+
+  let series: Array<{ name: string; color?: string; data: number[] }> = seriesNames
+    .filter((n) => n !== '')
+    .map((name) => {
+      return { name, data: [] };
+    });
+  Object.keys(timeData).forEach((time) => {
+    series.forEach((serie) => {
+      serie.data.push(getSerieValue(serie.name, time));
+    });
+  });
+
+  series.forEach((s) => {
+    if (
+      Object.keys(TransactionClassification)
+        .map((k) => k.toLowerCase())
+        .indexOf(s.name) !== -1
+    ) {
+      s.color = getColor(s.name, theme);
+    }
+  });
+
+  let months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  chartOptions.xaxis = {
+    type: 'category',
+    categories: Object.keys(timeData).map((key) => {
+      let d = new Date(Number(key));
+      return months[d.getMonth()];
+    }),
+    tickPlacement: 'between',
+    axisBorder: { show: false },
+    axisTicks: { show: false },
+    group: {
+      groups: groups,
+    },
+  };
+
+  chartOptions.yaxis = (chartOptions.yaxis ?? {}) as ApexYAxis;
+  chartOptions.yaxis.labels = {
+    formatter: (val: number, opts?: any) => numeral(val).format('$0,0'),
+  };
+
+  if (chartOptions.chart) {
+    chartOptions.chart.type = chartType;
+    chartOptions.chart.stacked = stacked;
+
+    chartOptions.chart.events = {
+      dataPointSelection: function (
+        event,
+        chartContext,
+        config: { seriesIndex: number; dataPointIndex: number }
+      ) {
+        let seriesTime = Number(Object.keys(timeData)[config.dataPointIndex]);
+        let aggTransactionSet = props.aggTransactions.filter(
+          (at) =>
+            at.classification.toLowerCase() === series[config.seriesIndex].name.toLowerCase() &&
+            seriesTime === at.date.getTime()
+        );
+
+        if (aggTransactionSet.length !== 1) {
+          return;
+        }
+
+        props.onSelectedTransactions(aggTransactionSet.pop()?.transactionIds ?? []);
+      },
+    };
+  }
+
+  return (
+    <Stack>
+      <Stack
+        spacing={2}
+        alignItems="center"
+        direction={{
+          xs: 'column',
+          md: 'row',
+        }}
+        sx={{ px: 2.5, py: 3 }}
+      >
+        <Typography variant="h4" component="div" flexGrow={1}>
+          Transactions
+        </Typography>
+        <TextField
+          fullWidth
+          select
+          label="Data"
+          value={dataType}
+          onChange={onSelectDataType}
+          SelectProps={{
+            MenuProps: {
+              PaperProps: {
+                sx: { maxHeight: 220 },
+              },
+            },
+          }}
+          sx={{
+            maxWidth: { md: 200 },
+            textTransform: 'capitalize',
+          }}
+        >
+          {dataTypes.map((option) => (
+            <MenuItem
+              key={option}
+              value={option}
+              sx={{
+                mx: 1,
+                my: 0.5,
+                borderRadius: 0.75,
+                typography: 'body2',
+                textTransform: 'capitalize',
+                '&:first-of-type': { mt: 0 },
+                '&:last-of-type': { mb: 0 },
+              }}
+            >
+              {option}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <TextField
+          fullWidth
+          select
+          label="Duration"
+          value={timeWindow}
+          onChange={onSelectTimeWindow}
+          SelectProps={{
+            MenuProps: {
+              PaperProps: {
+                sx: { maxHeight: 220 },
+              },
+            },
+          }}
+          sx={{
+            maxWidth: { md: 200 },
+            textTransform: 'capitalize',
+          }}
+        >
+          {timeWindows.map((option) => (
+            <MenuItem
+              key={option}
+              value={option}
+              sx={{
+                mx: 1,
+                my: 0.5,
+                borderRadius: 0.75,
+                typography: 'body2',
+                textTransform: 'capitalize',
+                '&:first-of-type': { mt: 0 },
+                '&:last-of-type': { mb: 0 },
+              }}
+            >
+              {option}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <TextField
+          fullWidth
+          select
+          label="Chart"
+          value={chartType}
+          onChange={onSelectChartType}
+          SelectProps={{
+            MenuProps: {
+              PaperProps: {
+                sx: { maxHeight: 220 },
+              },
+            },
+          }}
+          sx={{
+            maxWidth: { md: 200 },
+            textTransform: 'capitalize',
+          }}
+        >
+          {chartTypes.map((option) => (
+            <MenuItem
+              key={option}
+              value={option}
+              sx={{
+                mx: 1,
+                my: 0.5,
+                borderRadius: 0.75,
+                typography: 'body2',
+                textTransform: 'capitalize',
+                '&:first-of-type': { mt: 0 },
+                '&:last-of-type': { mb: 0 },
+              }}
+            >
+              {option}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <FormControlLabel
+          label="Stacked"
+          control={<Switch checked={stacked} onChange={onSetStacked} />}
+          sx={{
+            pl: 2,
+            py: 1.5,
+            top: 0,
+          }}
+        />
+      </Stack>
+      <Chart series={series} options={chartOptions} height={300} />
+    </Stack>
+  );
+}
+
+function getColor(name: string, theme: Theme): string {
+  switch (name) {
+    case 'duplicate':
+      return theme.palette.grey[300];
+    case 'hidden':
+      return theme.palette.info.light;
+    case 'transfer':
+      return theme.palette.info.main;
+    case 'expense':
+      return theme.palette.error.main;
+    case 'recurring':
+      return theme.palette.warning.main;
+    case 'income':
+      return theme.palette.success.main;
+    case 'investment':
+      return theme.palette.success.light;
+    default:
+      return '';
+  }
+}
+
+function getSeriesData(
+  duration: string,
+  at: IAggregatedTransaction[],
+  seriesConfig: ISeriesConfig[]
+) {
+  const getSeriesKey = (at: IAggregatedTransaction): string => {
+    if (!at.tags || at.tags.length === 0) {
+      return '';
+    }
+
+    let atTagNams = at.tags.map((t) => t.name);
+
+    for (let i = 0; i < seriesConfig.length; i++) {
+      let containsAll = seriesConfig[i].tags
+        .map((st) => atTagNams.indexOf(st) >= 0)
+        .every((r) => r);
+      if (containsAll) {
+        return seriesConfig[i].tags.sort().join('::');
+      }
+    }
+    return 'other';
+  };
+
+  const years: { [year: string]: number } = {};
+  const dates: {
+    [date: string]: { [classification: string]: { count: number; amountCents: number } };
+  } = {};
+  const groupKeys = at.reduce((memo: string[], t) => {
+    if (memo.indexOf(getSeriesKey(t)) !== -1) return memo;
+    memo.push(getSeriesKey(t));
+    return memo;
+  }, []);
+
+  getDates(duration, at).forEach((time) => {
+    dates[time] = groupKeys.reduce(
+      (memo: { [key: string]: { count: number; amountCents: number } }, k) => {
+        memo[k] = { count: 0, amountCents: 0 };
+        return memo;
+      },
+      {}
+    );
+  });
+
+  at.forEach((t) => {
+    let time = t.date.getTime();
+    let key = getSeriesKey(t);
+
+    if (!dates[time]) {
+      return;
+    }
+    dates[time][key].amountCents += t.amountCents;
+    dates[time][key].count += t.count;
+  });
+
+  Object.keys(dates).forEach((date) => {
+    let d = new Date(Number(date));
+    let year = d.getFullYear().toString();
+    if (Object.keys(years).indexOf(year) === -1) {
+      years[d.getFullYear()] = 0;
+    }
+
+    years[d.getFullYear()]++;
+  });
+
+  let groups = Object.keys(years).map((year) => {
+    return { title: year, cols: years[year] };
+  });
+
+  let seriesNames = Object.keys(dates).reduce((memo: string[], date) => {
+    return Object.keys(dates[date]).concat(memo);
+  }, []);
+
+  return { timeData: dates, groups, seriesNames: Array.from(new Set(seriesNames)) };
+}
+
+function getDates(duration: string, at: IAggregatedTransaction[]): number[] {
+  const date = new Date(new Date().toLocaleDateString());
+  date.setDate(1);
+
+  let results = [date.getTime()];
+  let months = getDuration(duration, at);
+
+  for (var i = 0; i < months; i++) {
+    date.setMonth(date.getMonth() - 1);
+    results.unshift(date.getTime());
+  }
+
+  return results;
+}
+
+function getDuration(duration: string, at: IAggregatedTransaction[]): number {
+  const now = new Date();
+  switch (duration) {
+    case '1 year':
+      return 11;
+    case '2 years':
+      return 23;
+    case '3 years':
+      return 35;
+    case '5 years':
+      return 59;
+    case 'year to date':
+      return now.getMonth();
+    case 'all':
+      let oldestDate = at.reduce((memo: Date, transaction) => {
+        return transaction.date.getTime() < memo.getTime() ? transaction.date : memo;
+      }, now);
+
+      let months = (now.getFullYear() - oldestDate.getFullYear()) * 12;
+      months -= oldestDate.getMonth();
+      months += now.getMonth();
+      return months <= 0 ? 0 : months;
+    default:
+      return 1;
+  }
 }
