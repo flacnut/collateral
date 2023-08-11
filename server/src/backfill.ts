@@ -220,7 +220,7 @@ async function getExistingTransactionsForAccount(
   return existingTransactions;
 }
 
-function mapRowToTransaction(
+function mapRowToInvestmentTransaction(
   data: any,
   account: Account,
 ): InvestmentTransaction {
@@ -244,6 +244,31 @@ function mapRowToTransaction(
   t.securityId = '<SECURITY_ID>';
   t.quantity = data.quantity;
   t.unitPriceCents = data.unitPriceCents;
+
+  return t;
+}
+
+function mapRowToTransaction(
+  data: any,
+  account: Account,
+): BackfilledTransaction {
+  const t = new BackfilledTransaction();
+  let creditCents = getCreditCents(data.Credit ?? data.Amount, data.Debit);
+
+  if (isNaN(creditCents)) {
+    process.abort();
+  }
+
+  if (account.invertTransactions) {
+    creditCents = creditCents * -1;
+  }
+
+  t.id = `backfill-${uuidv4()}`;
+  t.accountId = account.id;
+  t.amountCents = creditCents;
+  t.description = data.Description;
+  t.date = new Date(data.Date).toISOString().split('T')[0];
+  t.backfillDate = new Date().toISOString().split('T')[0];
 
   return t;
 }
