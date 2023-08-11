@@ -1,4 +1,9 @@
-import { Account, BackfilledTransaction, CoreTransaction } from '@entities';
+import {
+  Account,
+  BackfilledTransaction,
+  CoreTransaction,
+  InvestmentTransaction,
+} from '@entities';
 import { createConnection, getConnectionOptions } from 'typeorm';
 import { createInterface } from 'readline';
 import data from './../../data.json';
@@ -83,6 +88,8 @@ async function backfill(): Promise<[number, number]> {
         console.dir('skipping...');
         skipped++;
         continue;
+      } else {
+        console.dir('writing...');
       }
     }
 
@@ -95,7 +102,7 @@ async function backfill(): Promise<[number, number]> {
 
 function getPossibleDuplicates(
   existingTransactions: ExistingTransactions,
-  newTransaction: BackfilledTransaction,
+  newTransaction: BackfilledTransaction | InvestmentTransaction,
 ): { exact: CoreTransaction | null; similar: CoreTransaction[] } {
   let dayOfYear = getDayOfYear(new Date(newTransaction.date));
   let possibleDupes = [] as CoreTransaction[];
@@ -133,6 +140,10 @@ function getPossibleDuplicates(
 
 function getDecimalAsCents(num: string): number {
   let cleanNum = num.replace(',', '');
+  if (cleanNum.indexOf('.') === -1) {
+    return Number(cleanNum + '00');
+  }
+
   switch (cleanNum.length - cleanNum.indexOf('.')) {
     case 6:
     case 5:
@@ -151,9 +162,7 @@ function getDecimalAsCents(num: string): number {
       // x.
       return Number(cleanNum.replace('.', '') + '00');
     default:
-    case cleanNum.length + 1:
-      // x
-      return Number(cleanNum + '00');
+      throw new Error('invalid number format');
   }
 }
 
@@ -214,18 +223,16 @@ async function getExistingTransactionsForAccount(
 function mapRowToTransaction(
   data: any,
   account: Account,
-): BackfilledTransaction {
-  const t = new BackfilledTransaction();
+): InvestmentTransaction {
+  const t = new InvestmentTransaction();
   let creditCents = getCreditCents(data.Credit ?? data.Amount, data.Debit);
 
   if (isNaN(creditCents)) {
-    console.dir(data);
-    console.dir(creditCents);
     process.abort();
   }
 
   if (account.invertTransactions) {
-    //creditCents = creditCents * -1;
+    creditCents = creditCents * -1;
   }
 
   t.id = `backfill-${uuidv4()}`;
@@ -233,7 +240,10 @@ function mapRowToTransaction(
   t.amountCents = creditCents;
   t.description = data.Description;
   t.date = new Date(data.Date).toISOString().split('T')[0];
-  t.backfillDate = new Date().toLocaleDateString();
+
+  t.securityId = '<SECURITY_ID>';
+  t.quantity = data.quantity;
+  t.unitPriceCents = data.unitPriceCents;
 
   return t;
 }
