@@ -149,7 +149,7 @@ fragment CoreInvestmentTransactionParts on InvestmentTransaction {
   classification
 }`);
 
-const transactionsByIdQuery = gql(`
+export const transactionsByIdQuery = gql(`
 query getTransactionsbyId($ids:[String!]!) {
   getTransactionsById(ids:$ids) {
   

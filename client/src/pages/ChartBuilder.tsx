@@ -26,7 +26,11 @@ import {
   FilterType,
   TransactionClassification,
 } from 'src/__generated__/graphql';
-import { IBasicAccount } from 'src/components/tables/BasicTransactionTable';
+import {
+  BasicTransactionTable,
+  IBasicAccount,
+  IBasicTransaction,
+} from 'src/components/tables/BasicTransactionTable';
 import {
   AggregatedTransactionTable,
   Color,
@@ -37,6 +41,7 @@ import Chart from 'src/components/charts/Chart';
 import { ApexOptions } from 'apexcharts';
 import numeral from 'numeral';
 import { useChart } from 'src/utils/chartUtils';
+import { transactionsByIdQuery } from './AccountView';
 
 const getAggregatedTransactionsQuery = gql(`
 query advancedTransactionQuery($options:AdvancedTransactionQueryOptions!) {
@@ -121,6 +126,8 @@ export default function ChartBuilder() {
 
   const [aggTransactions, setAggTransactions] = useState<IAggregatedTransaction[]>([]);
   const [seriesConfig, setSeriesConfig] = useState<ISeriesConfig[]>([]);
+
+  const [selectedTransactionIds, setSelectedTransactionIds] = useState<string[]>([]);
 
   useEffect(() => {
     getTags();
@@ -238,19 +245,43 @@ export default function ChartBuilder() {
             <Card sx={{ marginBottom: 2 }}>
               <AggTransactionsChart
                 aggTransactions={aggTransactions}
-                onSelectedTransactions={() => {}}
+                onSelectedTransactions={setSelectedTransactionIds}
                 seriesConfig={seriesConfig}
               />
             </Card>
+
+            <Card sx={{ marginBottom: 2 }}>
+              <BasicTransactionTableViewById transactionIds={selectedTransactionIds} />
+            </Card>
           </Grid>
         </Grid>
-
-        <pre>
-          {JSON.stringify(getAggregatedTransactionsResults.data?.advancedTransactionQuery, null, 2)}
-        </pre>
       </Container>
     </>
   );
+}
+
+function BasicTransactionTableViewById(props: { transactionIds: string[] }) {
+  const [refetchByIds, getByIdsResponse] = useLazyQuery(transactionsByIdQuery);
+  const [transactions, setTransactions] = useState<IBasicTransaction[]>([]);
+
+  useEffect(() => {
+    refetchByIds({
+      variables: {
+        ids: props.transactionIds,
+      },
+    });
+  }, [props.transactionIds, refetchByIds]);
+
+  useEffect(() => {
+    let maybeTransactions = [...(getByIdsResponse.data?.getTransactionsById ?? [])];
+    setTransactions(
+      (maybeTransactions as unknown as IBasicTransaction[]).sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      )
+    );
+  }, [getByIdsResponse.data]);
+
+  return <BasicTransactionTable transactions={transactions} />;
 }
 
 function SeriesBuilder(props: {
@@ -830,17 +861,7 @@ function AggTransactionsChart(props: {
         config: { seriesIndex: number; dataPointIndex: number }
       ) {
         let seriesTime = Number(Object.keys(timeData)[config.dataPointIndex]);
-        let aggTransactionSet = props.aggTransactions.filter(
-          (at) =>
-            at.classification.toLowerCase() === series[config.seriesIndex].name.toLowerCase() &&
-            seriesTime === at.date.getTime()
-        );
-
-        if (aggTransactionSet.length !== 1) {
-          return;
-        }
-
-        props.onSelectedTransactions(aggTransactionSet.pop()?.transactionIds ?? []);
+        props.onSelectedTransactions(timeData[seriesTime][seriesNames[config.seriesIndex]].ids);
       },
     };
   }
@@ -1031,7 +1052,9 @@ function getSeriesData(
 
   const years: { [year: string]: number } = {};
   const dates: {
-    [date: string]: { [classification: string]: { count: number; amountCents: number } };
+    [date: string]: {
+      [classification: string]: { count: number; amountCents: number; ids: string[] };
+    };
   } = {};
   const groupKeys = at.reduce((memo: string[], t) => {
     if (memo.indexOf(getSeriesKey(t)) !== -1) return memo;
@@ -1041,8 +1064,8 @@ function getSeriesData(
 
   getDates(duration, at).forEach((time) => {
     dates[time] = groupKeys.reduce(
-      (memo: { [key: string]: { count: number; amountCents: number } }, k) => {
-        memo[k] = { count: 0, amountCents: 0 };
+      (memo: { [key: string]: { count: number; amountCents: number; ids: string[] } }, k) => {
+        memo[k] = { count: 0, amountCents: 0, ids: [] };
         return memo;
       },
       {}
@@ -1058,6 +1081,7 @@ function getSeriesData(
     }
     dates[time][key].amountCents += t.amountCents;
     dates[time][key].count += t.count;
+    dates[time][key].ids = dates[time][key].ids.concat(t.transactionIds);
   });
 
   Object.keys(dates).forEach((date) => {
