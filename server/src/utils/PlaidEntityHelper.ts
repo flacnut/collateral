@@ -184,7 +184,7 @@ export async function createInvestmentHolding(
   holding.institutionValueCents = Math.floor(
     rawHolding.institution_value * 100,
   );
-  holding.institutionPriceAsOfDate = rawHolding.institution_price_as_of;
+  holding.institutionPriceAsOfDate = rawHolding.institution_price_as_of ?? null;
   holding.currency = rawHolding.iso_currency_code;
   return await holding.save();
 }
@@ -194,7 +194,7 @@ export async function createOrUpdateInvestmentTransaction(
 ): Promise<InvestmentTransaction> {
   // verify Account ID & security
   const existingTransaction = await InvestmentTransaction.findOne({
-    id: rawIT.transaction_id,
+    id: rawIT.investment_transaction_id,
   });
   const investmentTransaction =
     existingTransaction ?? new InvestmentTransaction();
