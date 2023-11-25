@@ -32,7 +32,7 @@
     "moment": "^2.29.4",
     "node-schedule": "^2.1.0",
     "pg": "^8.7.3",
-    "plaid": "^10.9.0",
+    "plaid": "^17.0.0",
     "reflect-metadata": "^0.1.13",
     "sqlite3": "^4.2.0",
     "ts-loader": "^9.3.1",
