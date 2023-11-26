@@ -3,11 +3,15 @@ import {
   BackfilledTransaction,
   CoreTransaction,
   InvestmentTransaction,
+  Security,
 } from '@entities';
 import { createConnection, getConnectionOptions } from 'typeorm';
 import { createInterface } from 'readline';
-import data from './../../data.json';
+//import data from './../../data.json';
 import { v4 as uuidv4 } from 'uuid';
+import csv from 'csvtojson';
+
+const data: any[] = [];
 
 type ExistingTransactions = {
   raw: CoreTransaction[];
@@ -56,9 +60,10 @@ async function backfill(): Promise<[number, number]> {
   );
 
   // data
-  let transactions = data.map((row: any) => {
-    return mapRowToTransaction(row, account);
-  });
+  let transactions: Array<InvestmentTransaction | BackfilledTransaction> =
+    data.map((row: any) => {
+      return mapRowToTransaction(row, account);
+    });
 
   for (let i = 0; i < transactions.length; i++) {
     let possibleDupes = getPossibleDuplicates(
@@ -95,6 +100,48 @@ async function backfill(): Promise<[number, number]> {
 
     await transactions[i].save();
     inserted++;
+  }
+
+  return [inserted, skipped];
+}
+
+// ts-node ./src/backfill.ts fidelity <file>.csv
+async function fidelityBackfill(): Promise<[number, number]> {
+  let skipped = 0;
+  let inserted = 0;
+
+  let csvFile = null;
+  let rows: any[] = [];
+  try {
+    csvFile = process.argv.filter((arg) => arg.indexOf('csv') > 0)[0];
+    rows = await csv().fromFile(csvFile);
+  } catch (err) {
+    console.error('Could not read CSV file ' + csvFile);
+    throw err;
+  }
+
+  const options = await getConnectionOptions(
+    process.env.NODE_ENV || 'development',
+  );
+  await createConnection({ ...options, name: 'default' });
+
+  const securities = await Security.find();
+  const accounts = await Account.find({
+    institutionId: 'ins_12', // fidelity
+  });
+
+  let transactions = rows.map((row) =>
+    mapFidelityRowToTransaction(row, accounts, securities),
+  );
+
+  // save sequentially
+  for (let i = 0; i < transactions.length; i++) {
+    if (transactions[i]) {
+      await transactions[i]?.save();
+      inserted++;
+    } else {
+      skipped++;
+    }
   }
 
   return [inserted, skipped];
@@ -153,8 +200,8 @@ function getPossibleDuplicates(
   };
 }
 
-function getDecimalAsCents(num: string): number {
-  let cleanNum = num.replace(',', '');
+function getDecimalAsCents(num: string | null): number {
+  let cleanNum = num?.replace(',', '') ?? '';
   if (cleanNum.indexOf('.') === -1) {
     return Number(cleanNum + '00');
   }
@@ -184,13 +231,13 @@ function getDecimalAsCents(num: string): number {
 function getCreditCents(credit: string, debit: string | undefined) {
   if (!!debit) {
     // two values
-    let creditCents = getDecimalAsCents(credit);
-    let debitCents = getDecimalAsCents(debit);
+    let creditCents = getDecimalAsCents(credit ?? '');
+    let debitCents = getDecimalAsCents(debit ?? '');
 
     return !!creditCents ? Math.abs(creditCents) : Math.abs(debitCents) * -1;
   }
 
-  return getDecimalAsCents(credit) * -1;
+  return getDecimalAsCents(credit);
 }
 
 function getDayOfYear(date: Date): number {
@@ -235,7 +282,69 @@ async function getExistingTransactionsForAccount(
   return existingTransactions;
 }
 
-/*
+function getAccountFromDescription(
+  fidelityAccountDesc: string,
+  fidelityAccounts: Account[],
+): Account | null {
+  let maybeAccName = fidelityAccountDesc.split(' ').slice(0, -1).join(' ');
+  return (
+    fidelityAccounts
+      .filter((account) => account.name.indexOf(maybeAccName) > -1)
+      .pop() ?? null
+  );
+}
+
+function getSecurityFromSymbol(
+  symbol: string,
+  fidelitySecurities: Security[],
+): Security | null {
+  return (
+    fidelitySecurities.filter((security) => security.ticker === symbol).pop() ??
+    null
+  );
+}
+
+function mapFidelityRowToTransaction(
+  row: any,
+  fidelityAccounts: Account[],
+  fidelitySecurities: Security[],
+): InvestmentTransaction | BackfilledTransaction | null {
+  let account = getAccountFromDescription(row['Account'], fidelityAccounts);
+  if (!account) {
+    console.error(`Could not find account for: ${row['Account']}`);
+    return null;
+  }
+
+  if (row['Symbol'] != '') {
+    let security = getSecurityFromSymbol(row['Symbol'], fidelitySecurities);
+    if (!security) {
+      console.error(`Could not find security for: ${row['Symbol']}`);
+      return null;
+    }
+
+    return mapRowToInvestmentTransaction(
+      {
+        unitPriceCents: row['Price ($)'],
+        quantity: row['Quantity'],
+        Amount: row['Amount ($)'],
+        Description: row['Action'],
+        Date: row['Run Date'],
+        securityId: security.id,
+      },
+      account,
+    );
+  } else {
+    return mapRowToTransaction(
+      {
+        Amount: row['Amount ($)'],
+        Description: row['Action'],
+        Date: row['Run Date'],
+      },
+      account,
+    );
+  }
+}
+
 function mapRowToInvestmentTransaction(
   data: any,
   account: Account,
@@ -257,12 +366,12 @@ function mapRowToInvestmentTransaction(
   t.description = data.Description;
   t.date = new Date(data.Date).toISOString().split('T')[0];
 
-  t.securityId = '<SECURITY_ID>';
+  t.securityId = data.securityId;
   t.quantity = data.quantity;
   t.unitPriceCents = data.unitPriceCents;
 
   return t;
-} */
+}
 
 function mapRowToTransaction(
   data: any,
@@ -289,6 +398,18 @@ function mapRowToTransaction(
   return t;
 }
 
-backfill().then(([inserted, skipped]) => {
-  console.dir(`\n\nDone! ${inserted} rows backfilled, ${skipped} skipped.`);
-});
+if (process.argv.indexOf('fidelity') > 0) {
+  fidelityBackfill().then(
+    ([inserted, skipped]) => {
+      console.log(`\nDone! ${inserted} rows backfilled, ${skipped} skipped.`);
+    },
+    (err) => {
+      console.error(err);
+      console.log(`Failed: ${err.message}`);
+    },
+  );
+} else {
+  backfill().then(([inserted, skipped]) => {
+    console.dir(`\n\nDone! ${inserted} rows backfilled, ${skipped} skipped.`);
+  });
+}
